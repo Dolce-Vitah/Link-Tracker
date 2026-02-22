@@ -7,9 +7,21 @@ MODULES := $(notdir $(wildcard cmd/*))
 .PHONY: help
 help:
 	@echo "Available commands:"
+	@echo "  \033[36mmake run\033[0m   - Run the bot module locally (for development)"
+	@echo "  \033[36mmake tidy\033[0m  - Download and clean dependencies"
 	@echo "  \033[36mmake build\033[0m - Build all modules ($(MODULES))"
 	@$(foreach mod,$(MODULES),echo "  \033[36mmake build_$(mod)\033[0m - Build $(mod) module";)
-	@echo "  \033[36mmake test\033[0m - Run all tests"
+	@echo "  \033[36mmake test\033[0m  - Run all tests with coverage report"
+
+# Быстрый запуск бота для локальной разработки
+.PHONY: run
+run:
+	go run ./cmd/bot/main.go
+
+# Загрузка и очистка зависимостей (go.mod / go.sum)
+.PHONY: tidy
+tidy:
+	go mod tidy
 
 .PHONY: build
 build:
@@ -28,5 +40,5 @@ $(addprefix build_,$(MODULES)):
 ## test: run all tests
 .PHONY: test
 test:
-	@go test -coverpkg='github.com/es-debug/backend-academy-2024-go-template/...' --race -count=1 -coverprofile='$(COVERAGE_FILE)' ./...
+	@go test -coverpkg='./...' -count=1 -coverprofile='$(COVERAGE_FILE)' ./...
 	@go tool cover -func='$(COVERAGE_FILE)' | grep ^total | tr -s '\t'
