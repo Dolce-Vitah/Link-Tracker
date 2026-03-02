@@ -4,20 +4,11 @@ import (
 	"testing"
 
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/commands"
+	commandsmocks "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/commands/mocks"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/stretchr/testify/mock"
 )
-
-type MockSender struct {
-	SentMessages []tgbotapi.MessageConfig
-}
-
-func (m *MockSender) Send(c tgbotapi.Chattable) (tgbotapi.Message, error) {
-	if msg, ok := c.(tgbotapi.MessageConfig); ok {
-		m.SentMessages = append(m.SentMessages, msg)
-	}
-	return tgbotapi.Message{}, nil
-}
 
 func TestBot_HandleUpdate(t *testing.T) {
 	bot := &Bot{
@@ -50,7 +41,8 @@ func TestBot_HandleUpdate(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			mockSender := &MockSender{}
+			mockSender := commandsmocks.NewSender(t)
+			mockSender.On("Send", mock.AnythingOfType("tgbotapi.MessageConfig")).Return(tgbotapi.Message{}, nil).Once()
 
 			update := &tgbotapi.Update{
 				Message: &tgbotapi.Message{
@@ -68,11 +60,10 @@ func TestBot_HandleUpdate(t *testing.T) {
 
 			bot.handleUpdate(update, mockSender)
 
-			if len(mockSender.SentMessages) == 0 {
-				t.Fatalf("Ожидалась отправка сообщения, но ничего не было отправлено")
-			}
+			mockSender.AssertExpectations(t)
 
-			actualAnswer := mockSender.SentMessages[0].Text
+			sendCall := mockSender.Calls[0]
+			actualAnswer := sendCall.Arguments.Get(0).(tgbotapi.MessageConfig).Text
 			if actualAnswer != tc.expectedAnswer {
 				t.Errorf("\nОжидалось: %s\nПолучено:  %s", tc.expectedAnswer, actualAnswer)
 			}
