@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/commands"
+	command "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/commands"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/infrastructure/config"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/infrastructure/telegram"
 )
@@ -24,8 +24,8 @@ func (a *App) New() error {
 		return fmt.Errorf("create telegram bot: %w", err)
 	}
 
-	bot.RegisterCommand(&commands.StartCommand{})
-	bot.RegisterCommand(&commands.HelpCommand{})
+	bot.RegisterCommand(&command.StartCommand{})
+	bot.RegisterCommand(&command.HelpCommand{})
 
 	if err := bot.SetMyCommands(); err != nil {
 		slog.Error("Failed to set bot commands menu", slog.String("error", err.Error()))

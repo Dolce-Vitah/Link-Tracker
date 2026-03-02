@@ -3,19 +3,19 @@ package telegram
 import (
 	"testing"
 
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/commands"
-	commandsmocks "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/commands/mocks"
+	command "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/commands"
+	commandmock "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/commands/mock"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"github.com/stretchr/testify/mock"
+	testifymock "github.com/stretchr/testify/mock"
 )
 
 func TestBot_HandleUpdate(t *testing.T) {
 	bot := &Bot{
-		commands: make(map[string]commands.Command),
+		commands: make(map[string]command.Command),
 	}
-	bot.RegisterCommand(&commands.StartCommand{})
-	bot.RegisterCommand(&commands.HelpCommand{})
+	bot.RegisterCommand(&command.StartCommand{})
+	bot.RegisterCommand(&command.HelpCommand{})
 
 	tests := []struct {
 		name           string
@@ -44,8 +44,8 @@ func TestBot_HandleUpdate(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			mockSender := commandsmocks.NewSender(t)
-			mockSender.On("Send", mock.AnythingOfType("tgbotapi.MessageConfig")).Return(tgbotapi.Message{}, nil).Once()
+			mockSender := commandmock.NewSender(t)
+			mockSender.On("Send", testifymock.AnythingOfType("tgbotapi.MessageConfig")).Return(tgbotapi.Message{}, nil).Once()
 
 			update := &tgbotapi.Update{
 				Message: &tgbotapi.Message{

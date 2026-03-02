@@ -3,13 +3,14 @@ package telegram
 import (
 	"fmt"
 	"log/slog"
+
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/commands"
+	command "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/commands"
 )
 
 type Bot struct {
 	api		*tgbotapi.BotAPI
-	commands map[string]commands.Command
+	commands map[string]command.Command
 }
 
 func NewBot(token string) (*Bot, error) {
@@ -20,11 +21,11 @@ func NewBot(token string) (*Bot, error) {
 
 	return &Bot{
 		api: 		api,
-		commands:	make(map[string]commands.Command),
+		commands:	make(map[string]command.Command),
 	}, nil
 }
 
-func (b *Bot) RegisterCommand(cmd commands.Command) {
+func (b *Bot) RegisterCommand(cmd command.Command) {
 	b.commands[cmd.Name()] = cmd
 }
 
@@ -56,7 +57,7 @@ func (b *Bot) Start() {
 	}
 }
 
-func (b *Bot) handleUpdate(update *tgbotapi.Update, sender commands.Sender) {
+func (b *Bot) handleUpdate(update *tgbotapi.Update, sender command.Sender) {
 	if update.Message == nil || !update.Message.IsCommand() {
 		return
 	}
