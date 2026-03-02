@@ -31,8 +31,9 @@ func (b *Bot) RegisterCommand(cmd command.Command, handler command.Handler) {
 }
 
 func (b *Bot) SetMyCommands() error {
-	var tgCommands []tgbotapi.BotCommand
-	for _, cmd := range b.dispatcher.Commands() {
+	commands := b.dispatcher.Commands()
+	tgCommands := make([]tgbotapi.BotCommand, 0, len(commands))
+	for _, cmd := range commands {
 		tgCommands = append(tgCommands, tgbotapi.BotCommand{
 			Command:     cmd.Name(),
 			Description: cmd.Description(),
