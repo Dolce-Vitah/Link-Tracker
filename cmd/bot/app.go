@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log/slog"
 
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/commands"
@@ -15,12 +16,12 @@ type App struct {
 func (a *App) New() error {
 	cfg, err := config.Load("config.json")
 	if err != nil {
-		return err
+		return fmt.Errorf("load app config: %w", err)
 	}
 
 	bot, err := telegram.NewBot(cfg.TelegramToken)
 	if err != nil {
-		return err
+		return fmt.Errorf("create telegram bot: %w", err)
 	}
 
 	bot.RegisterCommand(&commands.StartCommand{})

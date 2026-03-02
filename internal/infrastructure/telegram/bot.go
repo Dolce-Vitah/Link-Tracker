@@ -1,6 +1,7 @@
 package telegram
 
 import (
+	"fmt"
 	"log/slog"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/commands"
@@ -14,7 +15,7 @@ type Bot struct {
 func NewBot(token string) (*Bot, error) {
 	api, err := tgbotapi.NewBotAPI(token)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("new telegram bot api: %w", err)
 	}
 
 	return &Bot{
@@ -38,8 +39,11 @@ func (b *Bot) SetMyCommands() error {
 
 	config := tgbotapi.NewSetMyCommands(tgCommands...)
 	_, err := b.api.Request(config)
+	if err != nil {
+		return fmt.Errorf("set telegram commands menu: %w", err)
+	}
 
-	return err
+	return nil
 }
 
 func (b *Bot) Start() {

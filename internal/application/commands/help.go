@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"fmt"
 	"log/slog"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
@@ -15,7 +16,10 @@ func (c *HelpCommand) Handle(update *tgbotapi.Update, bot Sender) error {
 
 	msg := tgbotapi.NewMessage(update.Message.Chat.ID, helpText)
 	_, err := bot.Send(msg)
+	if err != nil {
+		return fmt.Errorf("send help command response: %w", err)
+	}
 
 	slog.Info("Help command processed", slog.Int64("chat_id", update.Message.Chat.ID))
-	return err
+	return nil
 }
