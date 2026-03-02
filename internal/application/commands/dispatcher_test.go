@@ -15,10 +15,12 @@ func TestDispatcher_Dispatch(t *testing.T) {
 	t.Run("known command", func(t *testing.T) {
 		t.Parallel()
 
-		dispatcher := command.NewDispatcher()
+		var (
+			dispatcher = command.NewDispatcher()
+			mockSender = commandmock.NewSender(t)
+		)
 		dispatcher.Register(&command.StartCommand{}, &command.StartHandler{})
 
-		mockSender := commandmock.NewSender(t)
 		mockSender.On("Send", testifymock.AnythingOfType("tgbotapi.MessageConfig")).
 			Return(tgbotapi.Message{}, nil).
 			Once()
@@ -32,8 +34,10 @@ func TestDispatcher_Dispatch(t *testing.T) {
 	t.Run("unknown command", func(t *testing.T) {
 		t.Parallel()
 
-		dispatcher := command.NewDispatcher()
-		mockSender := commandmock.NewSender(t)
+		var (
+			dispatcher = command.NewDispatcher()
+			mockSender = commandmock.NewSender(t)
+		)
 
 		err := dispatcher.Dispatch(newCommandUpdate("abracadabra"), mockSender)
 		if !errors.Is(err, command.ErrUnknownCommand) {
@@ -44,8 +48,10 @@ func TestDispatcher_Dispatch(t *testing.T) {
 	t.Run("non command update", func(t *testing.T) {
 		t.Parallel()
 
-		dispatcher := command.NewDispatcher()
-		mockSender := commandmock.NewSender(t)
+		var (
+			dispatcher = command.NewDispatcher()
+			mockSender = commandmock.NewSender(t)
+		)
 
 		update := &tgbotapi.Update{
 			Message: &tgbotapi.Message{
@@ -64,8 +70,10 @@ func TestDispatcher_Dispatch(t *testing.T) {
 	t.Run("nil update", func(t *testing.T) {
 		t.Parallel()
 
-		dispatcher := command.NewDispatcher()
-		mockSender := commandmock.NewSender(t)
+		var (
+			dispatcher = command.NewDispatcher()
+			mockSender = commandmock.NewSender(t)
+		)
 
 		err := dispatcher.Dispatch(nil, mockSender)
 		if err != nil {
@@ -76,7 +84,7 @@ func TestDispatcher_Dispatch(t *testing.T) {
 	t.Run("commands are returned in stable order", func(t *testing.T) {
 		t.Parallel()
 
-		dispatcher := command.NewDispatcher()
+		var dispatcher = command.NewDispatcher()
 		dispatcher.Register(&command.StartCommand{}, &command.StartHandler{})
 		dispatcher.Register(&command.HelpCommand{}, &command.HelpHandler{})
 

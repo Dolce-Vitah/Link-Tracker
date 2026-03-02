@@ -44,22 +44,23 @@ func TestBot_HandleUpdate(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			mockSender := commandmock.NewSender(t)
+			var (
+				mockSender = commandmock.NewSender(t)
+				update     = &tgbotapi.Update{
+					Message: &tgbotapi.Message{
+						Text: "/" + tc.command,
+						Chat: &tgbotapi.Chat{ID: 12345},
+						From: &tgbotapi.User{
+							ID:       98765,
+							UserName: "test_user",
+						},
+						Entities: []tgbotapi.MessageEntity{
+							{Type: "bot_command", Offset: 0, Length: len("/" + tc.command)},
+						},
+					},
+				}
+			)
 			mockSender.On("Send", testifymock.AnythingOfType("tgbotapi.MessageConfig")).Return(tgbotapi.Message{}, nil).Once()
-
-			update := &tgbotapi.Update{
-				Message: &tgbotapi.Message{
-					Text: "/" + tc.command,
-					Chat: &tgbotapi.Chat{ID: 12345},
-					From: &tgbotapi.User{
-						ID:       98765,
-						UserName: "test_user",
-					},
-					Entities: []tgbotapi.MessageEntity{
-						{Type: "bot_command", Offset: 0, Length: len("/" + tc.command)},
-					},
-				},
-			}
 
 			bot.handleUpdate(update, mockSender)
 

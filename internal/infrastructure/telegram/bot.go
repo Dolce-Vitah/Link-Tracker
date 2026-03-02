@@ -66,9 +66,11 @@ func (b *Bot) handleUpdate(update *tgbotapi.Update, sender command.Sender) {
 	}
 
 	if errors.Is(err, command.ErrUnknownCommand) && update.Message != nil && update.Message.IsCommand() {
-		cmdName := update.Message.Command()
-		chatID := update.Message.Chat.ID
-		username := ""
+		var (
+			cmdName  = update.Message.Command()
+			chatID   = update.Message.Chat.ID
+			username string
+		)
 		if update.Message.From != nil {
 			username = update.Message.From.UserName
 		}
@@ -86,8 +88,10 @@ func (b *Bot) handleUpdate(update *tgbotapi.Update, sender command.Sender) {
 		return
 	}
 
-	cmdName := ""
-	chatID := int64(0)
+	var (
+		cmdName string
+		chatID  int64
+	)
 	if update.Message != nil {
 		chatID = update.Message.Chat.ID
 		if update.Message.IsCommand() {
