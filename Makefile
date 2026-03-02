@@ -17,7 +17,7 @@ help:
 # Быстрый запуск бота для локальной разработки
 .PHONY: run
 run:
-	go run ./cmd/bot/main.go
+	go run ./cmd/bot
 
 # Загрузка и очистка зависимостей (go.mod / go.sum)
 .PHONY: tidy

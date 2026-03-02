@@ -2,16 +2,20 @@ package command
 
 import (
 	"fmt"
-	"log/slog"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"log/slog"
 )
 
-type HelpCommand struct {}
+type HelpCommand struct{}
 
 func (c *HelpCommand) Name() string { return "help" }
-func (c *HelpCommand) Description() string { return "Вывести список доступных команд" }
+func (c *HelpCommand) Description() string {
+	return "Вывести список доступных команд"
+}
 
-func (c *HelpCommand) Handle(update *tgbotapi.Update, bot Sender) error {
+type HelpHandler struct{}
+
+func (h *HelpHandler) Handle(update *tgbotapi.Update, bot Sender) error {
 	helpText := "Доступные команды:\n/start - Начало работы с ботом\n/help - Показать этот список команд"
 
 	msg := tgbotapi.NewMessage(update.Message.Chat.ID, helpText)

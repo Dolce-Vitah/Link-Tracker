@@ -13,5 +13,8 @@ type Sender interface {
 type Command interface {
 	Name() string
 	Description() string
+}
+
+type Handler interface {
 	Handle(update *tgbotapi.Update, bot Sender) error
 }

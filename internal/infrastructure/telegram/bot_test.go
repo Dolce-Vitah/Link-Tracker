@@ -12,10 +12,10 @@ import (
 
 func TestBot_HandleUpdate(t *testing.T) {
 	bot := &Bot{
-		commands: make(map[string]command.Command),
+		dispatcher: command.NewDispatcher(),
 	}
-	bot.RegisterCommand(&command.StartCommand{})
-	bot.RegisterCommand(&command.HelpCommand{})
+	bot.RegisterCommand(&command.StartCommand{}, &command.StartHandler{})
+	bot.RegisterCommand(&command.HelpCommand{}, &command.HelpHandler{})
 
 	tests := []struct {
 		name           string

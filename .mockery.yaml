@@ -11,3 +11,4 @@ packages:
     interfaces:
       Sender:
       Command:
+      Handler:

@@ -1,6 +1,7 @@
 package telegram
 
 import (
+	"errors"
 	"fmt"
 	"log/slog"
 
@@ -9,8 +10,8 @@ import (
 )
 
 type Bot struct {
-	api		*tgbotapi.BotAPI
-	commands map[string]command.Command
+	api        *tgbotapi.BotAPI
+	dispatcher *command.Dispatcher
 }
 
 func NewBot(token string) (*Bot, error) {
@@ -20,20 +21,20 @@ func NewBot(token string) (*Bot, error) {
 	}
 
 	return &Bot{
-		api: 		api,
-		commands:	make(map[string]command.Command),
+		api:        api,
+		dispatcher: command.NewDispatcher(),
 	}, nil
 }
 
-func (b *Bot) RegisterCommand(cmd command.Command) {
-	b.commands[cmd.Name()] = cmd
+func (b *Bot) RegisterCommand(cmd command.Command, handler command.Handler) {
+	b.dispatcher.Register(cmd, handler)
 }
 
 func (b *Bot) SetMyCommands() error {
 	var tgCommands []tgbotapi.BotCommand
-	for _, cmd := range b.commands {
+	for _, cmd := range b.dispatcher.Commands() {
 		tgCommands = append(tgCommands, tgbotapi.BotCommand{
-			Command: cmd.Name(),
+			Command:     cmd.Name(),
 			Description: cmd.Description(),
 		})
 	}
@@ -58,20 +59,22 @@ func (b *Bot) Start() {
 }
 
 func (b *Bot) handleUpdate(update *tgbotapi.Update, sender command.Sender) {
-	if update.Message == nil || !update.Message.IsCommand() {
+	err := b.dispatcher.Dispatch(update, sender)
+	if err == nil {
 		return
 	}
 
-	cmdName := update.Message.Command()
-	chatID := update.Message.Chat.ID
-	username := update.Message.From.UserName
-
-	cmd, exists := b.commands[cmdName]
-	if !exists {
+	if errors.Is(err, command.ErrUnknownCommand) && update.Message != nil && update.Message.IsCommand() {
+		cmdName := update.Message.Command()
+		chatID := update.Message.Chat.ID
+		username := ""
+		if update.Message.From != nil {
+			username = update.Message.From.UserName
+		}
 		msg := tgbotapi.NewMessage(chatID, "Неизвестная команда. Воспользуйтесь /help, чтобы посмотреть список доступных команд.")
-		_, err := sender.Send(msg)
-		if err != nil {
-			slog.Error("Failed to send unknown command warning", slog.String("error", err.Error()))
+		_, sendErr := sender.Send(msg)
+		if sendErr != nil {
+			slog.Error("Failed to send unknown command warning", slog.String("error", sendErr.Error()))
 		}
 
 		slog.Warn("Unknown command received",
@@ -82,12 +85,18 @@ func (b *Bot) handleUpdate(update *tgbotapi.Update, sender command.Sender) {
 		return
 	}
 
-	err := cmd.Handle(update, sender)
-	if err != nil {
-		slog.Error("Failed to handle command",
-			slog.String("command", cmdName),
-			slog.String("error", err.Error()),
-			slog.Int64("chat_id", chatID),
-		)
+	cmdName := ""
+	chatID := int64(0)
+	if update.Message != nil {
+		chatID = update.Message.Chat.ID
+		if update.Message.IsCommand() {
+			cmdName = update.Message.Command()
+		}
 	}
+
+	slog.Error("Failed to handle command",
+		slog.String("command", cmdName),
+		slog.String("error", err.Error()),
+		slog.Int64("chat_id", chatID),
+	)
 }
