@@ -1,6 +1,7 @@
 package command_test
 
 import (
+	"context"
 	"errors"
 	"testing"
 
@@ -19,13 +20,13 @@ func TestDispatcher_Dispatch(t *testing.T) {
 			dispatcher = command.NewDispatcher()
 			mockSender = mock.NewSender(t)
 		)
-		dispatcher.Register(&command.StartCommand{}, &command.StartHandler{})
+		dispatcher.Register(&command.StartCommand{})
 
 		mockSender.On("Send", testifymock.AnythingOfType("tgbotapi.MessageConfig")).
 			Return(tgbotapi.Message{}, nil).
 			Once()
 
-		err := dispatcher.Dispatch(newCommandUpdate("start"), mockSender)
+		err := dispatcher.Dispatch(context.Background(), newCommandUpdate("start"), mockSender)
 		if err != nil {
 			t.Fatalf("dispatch should succeed: %v", err)
 		}
@@ -39,7 +40,7 @@ func TestDispatcher_Dispatch(t *testing.T) {
 			mockSender = mock.NewSender(t)
 		)
 
-		err := dispatcher.Dispatch(newCommandUpdate("abracadabra"), mockSender)
+		err := dispatcher.Dispatch(context.Background(), newCommandUpdate("abracadabra"), mockSender)
 		if !errors.Is(err, command.ErrUnknownCommand) {
 			t.Fatalf("expected ErrUnknownCommand, got: %v", err)
 		}
@@ -61,7 +62,7 @@ func TestDispatcher_Dispatch(t *testing.T) {
 			},
 		}
 
-		err := dispatcher.Dispatch(update, mockSender)
+		err := dispatcher.Dispatch(context.Background(), update, mockSender)
 		if err != nil {
 			t.Fatalf("dispatch should ignore non-command update: %v", err)
 		}
@@ -75,7 +76,7 @@ func TestDispatcher_Dispatch(t *testing.T) {
 			mockSender = mock.NewSender(t)
 		)
 
-		err := dispatcher.Dispatch(nil, mockSender)
+		err := dispatcher.Dispatch(context.Background(), nil, mockSender)
 		if err != nil {
 			t.Fatalf("dispatch should ignore nil update: %v", err)
 		}
@@ -85,8 +86,8 @@ func TestDispatcher_Dispatch(t *testing.T) {
 		t.Parallel()
 
 		var dispatcher = command.NewDispatcher()
-		dispatcher.Register(&command.StartCommand{}, &command.StartHandler{})
-		dispatcher.Register(&command.HelpCommand{}, &command.HelpHandler{})
+		dispatcher.Register(&command.StartCommand{})
+		dispatcher.Register(&command.HelpCommand{})
 
 		commands := dispatcher.Commands()
 		if len(commands) != 2 {

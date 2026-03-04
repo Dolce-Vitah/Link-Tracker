@@ -26,7 +26,7 @@ tidy:
 
 .PHONY: mocks
 mocks:
-	go generate ./internal/application/commands
+	go generate ./internal/application/command
 
 .PHONY: build
 build:

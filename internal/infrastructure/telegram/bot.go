@@ -1,6 +1,7 @@
 package telegram
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -26,8 +27,8 @@ func NewBot(token string) (*Bot, error) {
 	}, nil
 }
 
-func (b *Bot) RegisterCommand(cmd command.Command, handler command.Handler) {
-	b.dispatcher.Register(cmd, handler)
+func (b *Bot) RegisterCommand(cmd command.Command) {
+	b.dispatcher.Register(cmd)
 }
 
 func (b *Bot) SetMyCommands() error {
@@ -55,12 +56,12 @@ func (b *Bot) Start() {
 	updates := b.api.GetUpdatesChan(u)
 
 	for update := range updates {
-		b.handleUpdate(&update, b.api)
+		b.handleUpdate(context.Background(), &update, b.api)
 	}
 }
 
-func (b *Bot) handleUpdate(update *tgbotapi.Update, sender command.Sender) {
-	err := b.dispatcher.Dispatch(update, sender)
+func (b *Bot) handleUpdate(ctx context.Context, update *tgbotapi.Update, sender command.Sender) {
+	err := b.dispatcher.Dispatch(ctx, update, sender)
 	if err == nil {
 		return
 	}

@@ -1,6 +1,7 @@
 package command
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"sort"
@@ -24,20 +25,16 @@ func (e *UnknownCommandError) Unwrap() error {
 
 type Dispatcher struct {
 	commands map[string]Command
-	handlers map[string]Handler
 }
 
 func NewDispatcher() *Dispatcher {
 	return &Dispatcher{
 		commands: make(map[string]Command),
-		handlers: make(map[string]Handler),
 	}
 }
 
-func (d *Dispatcher) Register(cmd Command, handler Handler) {
-	name := cmd.Name()
-	d.commands[name] = cmd
-	d.handlers[name] = handler
+func (d *Dispatcher) Register(cmd Command) {
+	d.commands[cmd.Name()] = cmd
 }
 
 func (d *Dispatcher) Commands() []Command {
@@ -52,16 +49,16 @@ func (d *Dispatcher) Commands() []Command {
 	return result
 }
 
-func (d *Dispatcher) Dispatch(update *tgbotapi.Update, sender Sender) error {
+func (d *Dispatcher) Dispatch(ctx context.Context, update *tgbotapi.Update, sender Sender) error {
 	if update == nil || update.Message == nil || !update.Message.IsCommand() {
 		return nil
 	}
 
 	cmdName := update.Message.Command()
-	handler, exists := d.handlers[cmdName]
+	cmd, exists := d.commands[cmdName]
 	if !exists {
 		return &UnknownCommandError{Command: cmdName}
 	}
 
-	return handler.Handle(update, sender)
+	return cmd.Handle(ctx, update, sender)
 }

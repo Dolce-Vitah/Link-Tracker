@@ -1,6 +1,7 @@
 package telegram
 
 import (
+	"context"
 	"testing"
 
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/command"
@@ -14,8 +15,8 @@ func TestBot_HandleUpdate(t *testing.T) {
 	bot := &Bot{
 		dispatcher: command.NewDispatcher(),
 	}
-	bot.RegisterCommand(&command.StartCommand{}, &command.StartHandler{})
-	bot.RegisterCommand(&command.HelpCommand{}, &command.HelpHandler{})
+	bot.RegisterCommand(&command.StartCommand{})
+	bot.RegisterCommand(&command.HelpCommand{})
 
 	tests := []struct {
 		name           string
@@ -40,7 +41,6 @@ func TestBot_HandleUpdate(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -62,7 +62,7 @@ func TestBot_HandleUpdate(t *testing.T) {
 			)
 			mockSender.On("Send", testifymock.AnythingOfType("tgbotapi.MessageConfig")).Return(tgbotapi.Message{}, nil).Once()
 
-			bot.handleUpdate(update, mockSender)
+			bot.handleUpdate(context.Background(), update, mockSender)
 
 			mockSender.AssertExpectations(t)
 

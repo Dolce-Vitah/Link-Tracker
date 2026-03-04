@@ -1,9 +1,11 @@
 package command
 
 import (
+	"context"
 	"fmt"
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"log/slog"
+
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
 type StartCommand struct{}
@@ -11,9 +13,7 @@ type StartCommand struct{}
 func (c *StartCommand) Name() string        { return "start" }
 func (c *StartCommand) Description() string { return "Начать работу с ботом" }
 
-type StartHandler struct{}
-
-func (h *StartHandler) Handle(update *tgbotapi.Update, bot Sender) error {
+func (c *StartCommand) Handle(ctx context.Context, update *tgbotapi.Update, bot Sender) error {
 	msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Добро пожаловать! Используйте /help, чтобы узнать о доступных командах.")
 	_, err := bot.Send(msg)
 	if err != nil {
