@@ -6,7 +6,7 @@ import (
 	"log/slog"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	command "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/commands"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/command"
 )
 
 type Bot struct {

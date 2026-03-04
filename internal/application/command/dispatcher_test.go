@@ -4,8 +4,8 @@ import (
 	"errors"
 	"testing"
 
-	command "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/commands"
-	commandmock "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/commands/mock"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/command"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/command/mock"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	testifymock "github.com/stretchr/testify/mock"
@@ -17,7 +17,7 @@ func TestDispatcher_Dispatch(t *testing.T) {
 
 		var (
 			dispatcher = command.NewDispatcher()
-			mockSender = commandmock.NewSender(t)
+			mockSender = mock.NewSender(t)
 		)
 		dispatcher.Register(&command.StartCommand{}, &command.StartHandler{})
 
@@ -36,7 +36,7 @@ func TestDispatcher_Dispatch(t *testing.T) {
 
 		var (
 			dispatcher = command.NewDispatcher()
-			mockSender = commandmock.NewSender(t)
+			mockSender = mock.NewSender(t)
 		)
 
 		err := dispatcher.Dispatch(newCommandUpdate("abracadabra"), mockSender)
@@ -50,7 +50,7 @@ func TestDispatcher_Dispatch(t *testing.T) {
 
 		var (
 			dispatcher = command.NewDispatcher()
-			mockSender = commandmock.NewSender(t)
+			mockSender = mock.NewSender(t)
 		)
 
 		update := &tgbotapi.Update{
@@ -72,7 +72,7 @@ func TestDispatcher_Dispatch(t *testing.T) {
 
 		var (
 			dispatcher = command.NewDispatcher()
-			mockSender = commandmock.NewSender(t)
+			mockSender = mock.NewSender(t)
 		)
 
 		err := dispatcher.Dispatch(nil, mockSender)

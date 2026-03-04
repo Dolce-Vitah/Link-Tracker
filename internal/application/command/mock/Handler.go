@@ -3,8 +3,8 @@
 package mock
 
 import (
-	mock "github.com/stretchr/testify/mock"
-	command "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/commands"
+	"github.com/stretchr/testify/mock"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/command"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )

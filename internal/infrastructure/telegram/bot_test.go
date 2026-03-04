@@ -3,8 +3,8 @@ package telegram
 import (
 	"testing"
 
-	command "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/commands"
-	commandmock "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/commands/mock"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/command"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/command/mock"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	testifymock "github.com/stretchr/testify/mock"
@@ -45,7 +45,7 @@ func TestBot_HandleUpdate(t *testing.T) {
 			t.Parallel()
 
 			var (
-				mockSender = commandmock.NewSender(t)
+				mockSender = mock.NewSender(t)
 				update     = &tgbotapi.Update{
 					Message: &tgbotapi.Message{
 						Text: "/" + tc.command,
