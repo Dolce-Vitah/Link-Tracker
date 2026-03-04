@@ -6,8 +6,6 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
-//go:generate go run github.com/vektra/mockery/v2@latest --config ../../../.mockery.yaml
-
 type (
 	Sender interface {
 		Send(c tgbotapi.Chattable) (tgbotapi.Message, error)
