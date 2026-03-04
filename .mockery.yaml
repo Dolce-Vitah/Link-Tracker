@@ -1,14 +1,10 @@
 with-expecter: true
-resolve-type-alias: false
 disable-version-string: true
-issue-845-fix: true
 outpkg: mock
 filename: "{{.InterfaceName}}.go"
 mockname: "{{.InterfaceName}}"
 dir: "{{.InterfaceDir}}/mock"
 packages:
   gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/command:
-    interfaces:
-      Sender:
-      Command:
-      Handler:
+    config:
+      all: true
