@@ -60,17 +60,15 @@ func TestBot_HandleUpdate(t *testing.T) {
 					},
 				}
 			)
-			mockSender.On("Send", testifymock.AnythingOfType("tgbotapi.MessageConfig")).Return(tgbotapi.Message{}, nil).Once()
+
+			mockSender.EXPECT().
+				Send(testifymock.MatchedBy(func(msg tgbotapi.MessageConfig) bool {
+					return msg.Text == tc.expectedAnswer
+				})).
+				Return(tgbotapi.Message{}, nil).
+				Once()
 
 			bot.handleUpdate(context.Background(), update, mockSender)
-
-			mockSender.AssertExpectations(t)
-
-			sendCall := mockSender.Calls[0]
-			actualAnswer := sendCall.Arguments.Get(0).(tgbotapi.MessageConfig).Text
-			if actualAnswer != tc.expectedAnswer {
-				t.Errorf("\nОжидалось: %s\nПолучено:  %s", tc.expectedAnswer, actualAnswer)
-			}
 		})
 	}
 }

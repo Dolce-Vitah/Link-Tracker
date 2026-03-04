@@ -5,97 +5,123 @@ import (
 	"errors"
 	"testing"
 
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/stretchr/testify/assert"
+	testifymock "github.com/stretchr/testify/mock"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/command"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/command/mock"
-
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	testifymock "github.com/stretchr/testify/mock"
 )
 
 func TestDispatcher_Dispatch(t *testing.T) {
-	t.Run("known command", func(t *testing.T) {
-		t.Parallel()
+	type mockBehavior func(cmd *mock.Command, sender *mock.Sender)
 
-		var (
-			dispatcher = command.NewDispatcher()
-			mockSender = mock.NewSender(t)
-		)
-		dispatcher.Register(&command.StartCommand{})
-
-		mockSender.On("Send", testifymock.AnythingOfType("tgbotapi.MessageConfig")).
-			Return(tgbotapi.Message{}, nil).
-			Once()
-
-		err := dispatcher.Dispatch(context.Background(), newCommandUpdate("start"), mockSender)
-		if err != nil {
-			t.Fatalf("dispatch should succeed: %v", err)
-		}
-	})
-
-	t.Run("unknown command", func(t *testing.T) {
-		t.Parallel()
-
-		var (
-			dispatcher = command.NewDispatcher()
-			mockSender = mock.NewSender(t)
-		)
-
-		err := dispatcher.Dispatch(context.Background(), newCommandUpdate("abracadabra"), mockSender)
-		if !errors.Is(err, command.ErrUnknownCommand) {
-			t.Fatalf("expected ErrUnknownCommand, got: %v", err)
-		}
-	})
-
-	t.Run("non command update", func(t *testing.T) {
-		t.Parallel()
-
-		var (
-			dispatcher = command.NewDispatcher()
-			mockSender = mock.NewSender(t)
-		)
-
-		update := &tgbotapi.Update{
-			Message: &tgbotapi.Message{
-				Text: "hello",
-				Chat: &tgbotapi.Chat{ID: 12345},
-				From: &tgbotapi.User{UserName: "test_user"},
+	tests := []struct {
+		name          string
+		commandName   string
+		update        *tgbotapi.Update
+		mockBehavior  mockBehavior
+		expectedError error
+	}{
+		{
+			name:        "known command success",
+			commandName: "start",
+			update:      newCommandUpdate("start"),
+			mockBehavior: func(cmd *mock.Command, sender *mock.Sender) {
+				cmd.EXPECT().Name().Return("start")
+				cmd.EXPECT().Handle(testifymock.Anything, testifymock.AnythingOfType("*tgbotapi.Update"), sender).Return(nil)
 			},
-		}
+			expectedError: nil,
+		},
+		{
+			name:        "known command error",
+			commandName: "start",
+			update:      newCommandUpdate("start"),
+			mockBehavior: func(cmd *mock.Command, sender *mock.Sender) {
+				cmd.EXPECT().Name().Return("start")
+				cmd.EXPECT().Handle(testifymock.Anything, testifymock.AnythingOfType("*tgbotapi.Update"), sender).Return(errors.New("handle error"))
+			},
+			expectedError: errors.New("handle error"),
+		},
+		{
+			name:        "unknown command",
+			commandName: "",
+			update:      newCommandUpdate("unknown"),
+			mockBehavior: func(cmd *mock.Command, sender *mock.Sender) {
+			},
+			expectedError: command.ErrUnknownCommand,
+		},
+		{
+			name:        "non command update",
+			commandName: "",
+			update: &tgbotapi.Update{
+				Message: &tgbotapi.Message{
+					Text: "just text",
+					Chat: &tgbotapi.Chat{ID: 1},
+				},
+			},
+			mockBehavior: func(cmd *mock.Command, sender *mock.Sender) {
+			},
+			expectedError: nil,
+		},
+		{
+			name:        "nil update",
+			commandName: "",
+			update:      nil,
+			mockBehavior: func(cmd *mock.Command, sender *mock.Sender) {
+			},
+			expectedError: nil,
+		},
+	}
 
-		err := dispatcher.Dispatch(context.Background(), update, mockSender)
-		if err != nil {
-			t.Fatalf("dispatch should ignore non-command update: %v", err)
-		}
-	})
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 
-	t.Run("nil update", func(t *testing.T) {
-		t.Parallel()
+			var (
+				dispatcher = command.NewDispatcher()
+				mockSender = mock.NewSender(t)
+			)
 
-		var (
-			dispatcher = command.NewDispatcher()
-			mockSender = mock.NewSender(t)
-		)
+			if tt.commandName != "" {
+				mockCmd := mock.NewCommand(t)
+				tt.mockBehavior(mockCmd, mockSender)
+				dispatcher.Register(mockCmd)
+			}
 
-		err := dispatcher.Dispatch(context.Background(), nil, mockSender)
-		if err != nil {
-			t.Fatalf("dispatch should ignore nil update: %v", err)
-		}
-	})
+			err := dispatcher.Dispatch(context.Background(), tt.update, mockSender)
 
+			if tt.expectedError != nil {
+				if assert.Error(t, err) {
+					if err.Error() != tt.expectedError.Error() && !errors.Is(err, tt.expectedError) {
+						t.Errorf("expected error %v, got %v", tt.expectedError, err)
+					}
+				}
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestDispatcher_Commands(t *testing.T) {
 	t.Run("commands are returned in stable order", func(t *testing.T) {
 		t.Parallel()
 
-		var dispatcher = command.NewDispatcher()
-		dispatcher.Register(&command.StartCommand{})
-		dispatcher.Register(&command.HelpCommand{})
+		dispatcher := command.NewDispatcher()
+
+		cmd1 := mock.NewCommand(t)
+		cmd1.EXPECT().Name().Return("b_command")
+
+		cmd2 := mock.NewCommand(t)
+		cmd2.EXPECT().Name().Return("a_command")
+
+		dispatcher.Register(cmd1)
+		dispatcher.Register(cmd2)
 
 		commands := dispatcher.Commands()
-		if len(commands) != 2 {
-			t.Fatalf("expected 2 commands, got: %d", len(commands))
-		}
-		if commands[0].Name() != "help" || commands[1].Name() != "start" {
-			t.Fatalf("unexpected command order: %s, %s", commands[0].Name(), commands[1].Name())
-		}
+		assert.Equal(t, 2, len(commands))
+		assert.Equal(t, "a_command", commands[0].Name())
+		assert.Equal(t, "b_command", commands[1].Name())
 	})
 }
 

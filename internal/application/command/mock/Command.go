@@ -3,8 +3,11 @@
 package mock
 
 import (
-	mock "github.com/stretchr/testify/mock"
+	context "context"
+
 	command "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/command"
+
+	mock "github.com/stretchr/testify/mock"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
@@ -67,17 +70,17 @@ func (_c *Command_Description_Call) RunAndReturn(run func() string) *Command_Des
 	return _c
 }
 
-// Handle provides a mock function with given fields: update, sender
-func (_m *Command) Handle(update *tgbotapi.Update, sender command.Sender) error {
-	ret := _m.Called(update, sender)
+// Handle provides a mock function with given fields: ctx, update, sender
+func (_m *Command) Handle(ctx context.Context, update *tgbotapi.Update, sender command.Sender) error {
+	ret := _m.Called(ctx, update, sender)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Handle")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*tgbotapi.Update, command.Sender) error); ok {
-		r0 = rf(update, sender)
+	if rf, ok := ret.Get(0).(func(context.Context, *tgbotapi.Update, command.Sender) error); ok {
+		r0 = rf(ctx, update, sender)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -91,15 +94,16 @@ type Command_Handle_Call struct {
 }
 
 // Handle is a helper method to define mock.On call
+//   - ctx context.Context
 //   - update *tgbotapi.Update
 //   - sender command.Sender
-func (_e *Command_Expecter) Handle(update interface{}, sender interface{}) *Command_Handle_Call {
-	return &Command_Handle_Call{Call: _e.mock.On("Handle", update, sender)}
+func (_e *Command_Expecter) Handle(ctx interface{}, update interface{}, sender interface{}) *Command_Handle_Call {
+	return &Command_Handle_Call{Call: _e.mock.On("Handle", ctx, update, sender)}
 }
 
-func (_c *Command_Handle_Call) Run(run func(update *tgbotapi.Update, sender command.Sender)) *Command_Handle_Call {
+func (_c *Command_Handle_Call) Run(run func(ctx context.Context, update *tgbotapi.Update, sender command.Sender)) *Command_Handle_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(*tgbotapi.Update), args[1].(command.Sender))
+		run(args[0].(context.Context), args[1].(*tgbotapi.Update), args[2].(command.Sender))
 	})
 	return _c
 }
@@ -109,7 +113,7 @@ func (_c *Command_Handle_Call) Return(_a0 error) *Command_Handle_Call {
 	return _c
 }
 
-func (_c *Command_Handle_Call) RunAndReturn(run func(*tgbotapi.Update, command.Sender) error) *Command_Handle_Call {
+func (_c *Command_Handle_Call) RunAndReturn(run func(context.Context, *tgbotapi.Update, command.Sender) error) *Command_Handle_Call {
 	_c.Call.Return(run)
 	return _c
 }
