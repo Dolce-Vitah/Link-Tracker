@@ -13,9 +13,14 @@ import (
 type Bot struct {
 	api        *tgbotapi.BotAPI
 	dispatcher *command.Dispatcher
+	logger     *slog.Logger
 }
 
-func NewBot(token string) (*Bot, error) {
+func NewBot(token string, logger *slog.Logger) (*Bot, error) {
+	if logger == nil {
+		logger = slog.Default()
+	}
+
 	api, err := tgbotapi.NewBotAPI(token)
 	if err != nil {
 		return nil, fmt.Errorf("new telegram bot api: %w", err)
@@ -24,6 +29,7 @@ func NewBot(token string) (*Bot, error) {
 	return &Bot{
 		api:        api,
 		dispatcher: command.NewDispatcher(),
+		logger:     logger,
 	}, nil
 }
 
@@ -78,10 +84,10 @@ func (b *Bot) handleUpdate(ctx context.Context, update *tgbotapi.Update, sender 
 		msg := tgbotapi.NewMessage(chatID, "Неизвестная команда. Воспользуйтесь /help, чтобы посмотреть список доступных команд.")
 		_, sendErr := sender.Send(msg)
 		if sendErr != nil {
-			slog.Error("Failed to send unknown command warning", slog.String("error", sendErr.Error()))
+			b.logger.Error("Failed to send unknown command warning", slog.String("error", sendErr.Error()))
 		}
 
-		slog.Warn("Unknown command received",
+		b.logger.Warn("Unknown command received",
 			slog.String("command", cmdName),
 			slog.Int64("chat_id", chatID),
 			slog.String("username", username),
@@ -100,7 +106,7 @@ func (b *Bot) handleUpdate(ctx context.Context, update *tgbotapi.Update, sender 
 		}
 	}
 
-	slog.Error("Failed to handle command",
+	b.logger.Error("Failed to handle command",
 		slog.String("command", cmdName),
 		slog.String("error", err.Error()),
 		slog.Int64("chat_id", chatID),

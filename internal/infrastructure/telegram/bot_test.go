@@ -2,6 +2,7 @@ package telegram
 
 import (
 	"context"
+	"log/slog"
 	"testing"
 
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/command"
@@ -15,6 +16,7 @@ import (
 func TestBot_HandleUpdate(t *testing.T) {
 	bot := &Bot{
 		dispatcher: command.NewDispatcher(),
+		logger:     slog.Default(),
 	}
 	bot.RegisterCommand(handler.NewStartCommand(nil))
 	bot.RegisterCommand(handler.NewHelpCommand(nil))
