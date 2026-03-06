@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/command"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/command/mock"
 
@@ -49,7 +49,7 @@ func TestStartCommand_Handle(t *testing.T) {
 			t.Parallel()
 
 			var (
-				cmd        = &command.StartCommand{}
+				cmd        = command.NewStartCommand(nil)
 				mockSender = mock.NewSender(t)
 				ctx        = context.Background()
 				update     = &tgbotapi.Update{
@@ -69,16 +69,16 @@ func TestStartCommand_Handle(t *testing.T) {
 			err := cmd.Handle(ctx, update, mockSender)
 
 			if tt.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 		})
 	}
 }
 
 func TestStartCommand_Metadata(t *testing.T) {
-	cmd := &command.StartCommand{}
-	assert.Equal(t, "start", cmd.Name())
-	assert.NotEmpty(t, cmd.Description())
+	cmd := command.NewStartCommand(nil)
+	require.Equal(t, "start", cmd.Name())
+	require.NotEmpty(t, cmd.Description())
 }

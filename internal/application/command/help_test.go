@@ -9,8 +9,8 @@ import (
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/command/mock"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"github.com/stretchr/testify/assert"
 	testifymock "github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
 func TestHelpCommand_Handle(t *testing.T) {
@@ -49,7 +49,7 @@ func TestHelpCommand_Handle(t *testing.T) {
 			t.Parallel()
 
 			var (
-				cmd        = &command.HelpCommand{}
+				cmd        = command.NewHelpCommand(nil)
 				mockSender = mock.NewSender(t)
 				ctx        = context.Background()
 				update     = &tgbotapi.Update{
@@ -66,16 +66,16 @@ func TestHelpCommand_Handle(t *testing.T) {
 			err := cmd.Handle(ctx, update, mockSender)
 
 			if tt.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 		})
 	}
 }
 
 func TestHelpCommand_Metadata(t *testing.T) {
-	cmd := &command.HelpCommand{}
-	assert.Equal(t, "help", cmd.Name())
-	assert.NotEmpty(t, cmd.Description())
+	cmd := command.NewHelpCommand(nil)
+	require.Equal(t, "help", cmd.Name())
+	require.NotEmpty(t, cmd.Description())
 }

@@ -15,8 +15,8 @@ func TestBot_HandleUpdate(t *testing.T) {
 	bot := &Bot{
 		dispatcher: command.NewDispatcher(),
 	}
-	bot.RegisterCommand(&command.StartCommand{})
-	bot.RegisterCommand(&command.HelpCommand{})
+	bot.RegisterCommand(command.NewStartCommand(nil))
+	bot.RegisterCommand(command.NewHelpCommand(nil))
 
 	tests := []struct {
 		name           string
