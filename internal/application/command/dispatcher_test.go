@@ -8,12 +8,14 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/stretchr/testify/assert"
 	testifymock "github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/command"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/command/mock"
 )
 
 func TestDispatcher_Dispatch(t *testing.T) {
 	type mockBehavior func(cmd *mock.Command, sender *mock.Sender)
+	handleErr := errors.New("handle error")
 
 	tests := []struct {
 		name          string
@@ -38,9 +40,9 @@ func TestDispatcher_Dispatch(t *testing.T) {
 			update:      newCommandUpdate("start"),
 			mockBehavior: func(cmd *mock.Command, sender *mock.Sender) {
 				cmd.EXPECT().Name().Return("start")
-				cmd.EXPECT().Handle(testifymock.Anything, testifymock.AnythingOfType("*tgbotapi.Update"), sender).Return(errors.New("handle error"))
+				cmd.EXPECT().Handle(testifymock.Anything, testifymock.AnythingOfType("*tgbotapi.Update"), sender).Return(handleErr)
 			},
-			expectedError: errors.New("handle error"),
+			expectedError: handleErr,
 		},
 		{
 			name:        "unknown command",
@@ -91,13 +93,9 @@ func TestDispatcher_Dispatch(t *testing.T) {
 			err := dispatcher.Dispatch(context.Background(), tt.update, mockSender)
 
 			if tt.expectedError != nil {
-				if assert.Error(t, err) {
-					if err.Error() != tt.expectedError.Error() && !errors.Is(err, tt.expectedError) {
-						t.Errorf("expected error %v, got %v", tt.expectedError, err)
-					}
-				}
+				require.ErrorIs(t, err, tt.expectedError)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 		})
 	}
@@ -119,7 +117,7 @@ func TestDispatcher_Commands(t *testing.T) {
 		dispatcher.Register(cmd2)
 
 		commands := dispatcher.Commands()
-		assert.Equal(t, 2, len(commands))
+		require.Len(t, commands, 2)
 		assert.Equal(t, "a_command", commands[0].Name())
 		assert.Equal(t, "b_command", commands[1].Name())
 	})

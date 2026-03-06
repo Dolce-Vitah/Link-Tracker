@@ -6,7 +6,8 @@ import (
 	"log/slog"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-) //
+) 
+
 type HelpCommand struct{}
 
 func (c *HelpCommand) Name() string { return "help" }
