@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/command"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/command/handler"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/command/mock"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -15,8 +16,8 @@ func TestBot_HandleUpdate(t *testing.T) {
 	bot := &Bot{
 		dispatcher: command.NewDispatcher(),
 	}
-	bot.RegisterCommand(command.NewStartCommand(nil))
-	bot.RegisterCommand(command.NewHelpCommand(nil))
+	bot.RegisterCommand(handler.NewStartCommand(nil))
+	bot.RegisterCommand(handler.NewHelpCommand(nil))
 
 	tests := []struct {
 		name           string

@@ -1,4 +1,4 @@
-package command
+package handler
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"log/slog"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/command"
 )
 
 const defaultStartText = "Добро пожаловать! Используйте /help, чтобы узнать о доступных командах."
@@ -29,7 +30,7 @@ func NewStartCommand(logger *slog.Logger) *StartCommand {
 func (c *StartCommand) Name() string        { return "start" }
 func (c *StartCommand) Description() string { return "Начать работу с ботом" }
 
-func (c *StartCommand) Handle(ctx context.Context, update *tgbotapi.Update, bot Sender) error {
+func (c *StartCommand) Handle(ctx context.Context, update *tgbotapi.Update, bot command.Sender) error {
 	msg := tgbotapi.NewMessage(update.Message.Chat.ID, c.startText)
 	_, err := bot.Send(msg)
 	if err != nil {

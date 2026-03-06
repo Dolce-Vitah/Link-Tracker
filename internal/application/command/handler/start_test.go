@@ -1,19 +1,18 @@
-package command_test
+package handler_test
 
 import (
 	"context"
 	"errors"
 	"testing"
 
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/command"
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/command/mock"
-
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	testifymock "github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/command/handler"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/command/mock"
 )
 
-func TestHelpCommand_Handle(t *testing.T) {
+func TestStartCommand_Handle(t *testing.T) {
 	type args struct {
 		chatId int64
 	}
@@ -29,7 +28,7 @@ func TestHelpCommand_Handle(t *testing.T) {
 			args: args{
 				chatId: 12345,
 			},
-			expectedText:  "Доступные команды:\n/start - Начало работы с ботом\n/help - Показать этот список команд",
+			expectedText:  "Добро пожаловать! Используйте /help, чтобы узнать о доступных командах.",
 			mockSendError: nil,
 			wantErr:       false,
 		},
@@ -38,7 +37,7 @@ func TestHelpCommand_Handle(t *testing.T) {
 			args: args{
 				chatId: 67890,
 			},
-			expectedText:  "Доступные команды:\n/start - Начало работы с ботом\n/help - Показать этот список команд",
+			expectedText:  "Добро пожаловать! Используйте /help, чтобы узнать о доступных командах.",
 			mockSendError: errors.New("network error"),
 			wantErr:       true,
 		},
@@ -49,7 +48,7 @@ func TestHelpCommand_Handle(t *testing.T) {
 			t.Parallel()
 
 			var (
-				cmd        = command.NewHelpCommand(nil)
+				cmd        = handler.NewStartCommand(nil)
 				mockSender = mock.NewSender(t)
 				ctx        = context.Background()
 				update     = &tgbotapi.Update{
@@ -59,9 +58,12 @@ func TestHelpCommand_Handle(t *testing.T) {
 				}
 			)
 
-			mockSender.EXPECT().Send(testifymock.MatchedBy(func(msg tgbotapi.MessageConfig) bool {
-				return msg.ChatID == tt.args.chatId && msg.Text == tt.expectedText
-			})).Return(tgbotapi.Message{}, tt.mockSendError).Once()
+			mockSender.EXPECT().
+				Send(testifymock.MatchedBy(func(msg tgbotapi.MessageConfig) bool {
+					return msg.ChatID == tt.args.chatId && msg.Text == tt.expectedText
+				})).
+				Return(tgbotapi.Message{}, tt.mockSendError).
+				Once()
 
 			err := cmd.Handle(ctx, update, mockSender)
 
@@ -74,8 +76,8 @@ func TestHelpCommand_Handle(t *testing.T) {
 	}
 }
 
-func TestHelpCommand_Metadata(t *testing.T) {
-	cmd := command.NewHelpCommand(nil)
-	require.Equal(t, "help", cmd.Name())
+func TestStartCommand_Metadata(t *testing.T) {
+	cmd := handler.NewStartCommand(nil)
+	require.Equal(t, "start", cmd.Name())
 	require.NotEmpty(t, cmd.Description())
 }
