@@ -21,7 +21,7 @@ func TestStartCommand_Handle(t *testing.T) {
 		args          args
 		expectedText  string
 		mockSendError error
-		wantErr       bool
+		checkError    func(t *testing.T, err error)
 	}{
 		{
 			name: "success",
@@ -30,7 +30,10 @@ func TestStartCommand_Handle(t *testing.T) {
 			},
 			expectedText:  "Добро пожаловать! Используйте /help, чтобы узнать о доступных командах.",
 			mockSendError: nil,
-			wantErr:       false,
+			checkError: func(t *testing.T, err error) {
+				t.Helper()
+				require.NoError(t, err)
+			},
 		},
 		{
 			name: "send error",
@@ -39,7 +42,10 @@ func TestStartCommand_Handle(t *testing.T) {
 			},
 			expectedText:  "Добро пожаловать! Используйте /help, чтобы узнать о доступных командах.",
 			mockSendError: errors.New("network error"),
-			wantErr:       true,
+			checkError: func(t *testing.T, err error) {
+				t.Helper()
+				require.Error(t, err)
+			},
 		},
 	}
 
@@ -66,12 +72,7 @@ func TestStartCommand_Handle(t *testing.T) {
 				Once()
 
 			err := cmd.Handle(ctx, update, mockSender)
-
-			if tt.wantErr {
-				require.Error(t, err)
-			} else {
-				require.NoError(t, err)
-			}
+			tt.checkError(t, err)
 		})
 	}
 }

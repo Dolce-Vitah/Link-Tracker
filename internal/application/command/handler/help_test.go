@@ -21,7 +21,7 @@ func TestHelpCommand_Handle(t *testing.T) {
 		args          args
 		expectedText  string
 		mockSendError error
-		wantErr       bool
+		checkError    func(t *testing.T, err error)
 	}{
 		{
 			name: "success",
@@ -30,7 +30,10 @@ func TestHelpCommand_Handle(t *testing.T) {
 			},
 			expectedText:  "Доступные команды:\n/start - Начало работы с ботом\n/help - Показать этот список команд",
 			mockSendError: nil,
-			wantErr:       false,
+			checkError: func(t *testing.T, err error) {
+				t.Helper()
+				require.NoError(t, err)
+			},
 		},
 		{
 			name: "send error",
@@ -39,7 +42,10 @@ func TestHelpCommand_Handle(t *testing.T) {
 			},
 			expectedText:  "Доступные команды:\n/start - Начало работы с ботом\n/help - Показать этот список команд",
 			mockSendError: errors.New("network error"),
-			wantErr:       true,
+			checkError: func(t *testing.T, err error) {
+				t.Helper()
+				require.Error(t, err)
+			},
 		},
 	}
 
@@ -63,12 +69,7 @@ func TestHelpCommand_Handle(t *testing.T) {
 			})).Return(tgbotapi.Message{}, tt.mockSendError).Once()
 
 			err := cmd.Handle(ctx, update, mockSender)
-
-			if tt.wantErr {
-				require.Error(t, err)
-			} else {
-				require.NoError(t, err)
-			}
+			tt.checkError(t, err)
 		})
 	}
 }

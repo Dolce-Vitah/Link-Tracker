@@ -22,7 +22,7 @@ func TestDispatcher_Dispatch(t *testing.T) {
 		commandName   string
 		update        *tgbotapi.Update
 		mockBehavior  mockBehavior
-		expectedError error
+		checkError    func(t *testing.T, err error)
 	}{
 		{
 			name:        "known command success",
@@ -32,7 +32,10 @@ func TestDispatcher_Dispatch(t *testing.T) {
 				cmd.EXPECT().Name().Return("start")
 				cmd.EXPECT().Handle(testifymock.Anything, testifymock.AnythingOfType("*tgbotapi.Update"), sender).Return(nil)
 			},
-			expectedError: nil,
+			checkError: func(t *testing.T, err error) {
+				t.Helper()
+				require.NoError(t, err)
+			},
 		},
 		{
 			name:        "known command error",
@@ -42,7 +45,10 @@ func TestDispatcher_Dispatch(t *testing.T) {
 				cmd.EXPECT().Name().Return("start")
 				cmd.EXPECT().Handle(testifymock.Anything, testifymock.AnythingOfType("*tgbotapi.Update"), sender).Return(handleErr)
 			},
-			expectedError: handleErr,
+			checkError: func(t *testing.T, err error) {
+				t.Helper()
+				require.ErrorIs(t, err, handleErr)
+			},
 		},
 		{
 			name:        "unknown command",
@@ -50,7 +56,10 @@ func TestDispatcher_Dispatch(t *testing.T) {
 			update:      newCommandUpdate("unknown"),
 			mockBehavior: func(cmd *mock.Command, sender *mock.Sender) {
 			},
-			expectedError: command.ErrUnknownCommand,
+			checkError: func(t *testing.T, err error) {
+				t.Helper()
+				require.ErrorIs(t, err, command.ErrUnknownCommand)
+			},
 		},
 		{
 			name:        "non command update",
@@ -63,7 +72,10 @@ func TestDispatcher_Dispatch(t *testing.T) {
 			},
 			mockBehavior: func(cmd *mock.Command, sender *mock.Sender) {
 			},
-			expectedError: nil,
+			checkError: func(t *testing.T, err error) {
+				t.Helper()
+				require.NoError(t, err)
+			},
 		},
 		{
 			name:        "nil update",
@@ -71,7 +83,10 @@ func TestDispatcher_Dispatch(t *testing.T) {
 			update:      nil,
 			mockBehavior: func(cmd *mock.Command, sender *mock.Sender) {
 			},
-			expectedError: nil,
+			checkError: func(t *testing.T, err error) {
+				t.Helper()
+				require.NoError(t, err)
+			},
 		},
 	}
 
@@ -91,12 +106,7 @@ func TestDispatcher_Dispatch(t *testing.T) {
 			}
 
 			err := dispatcher.Dispatch(context.Background(), tt.update, mockSender)
-
-			if tt.expectedError != nil {
-				require.ErrorIs(t, err, tt.expectedError)
-			} else {
-				require.NoError(t, err)
-			}
+			tt.checkError(t, err)
 		})
 	}
 }
