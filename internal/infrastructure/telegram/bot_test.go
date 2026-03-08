@@ -18,8 +18,8 @@ func TestBot_HandleUpdate(t *testing.T) {
 		dispatcher: command.NewDispatcher(),
 		logger:     slog.Default(),
 	}
-	bot.RegisterCommand(handler.NewStartCommand(nil))
-	bot.RegisterCommand(handler.NewHelpCommand(nil))
+	bot.RegisterCommand(handler.NewStartCommandHandler(nil))
+	bot.RegisterCommand(handler.NewHelpCommandHandler(nil))
 
 	tests := []struct {
 		name           string

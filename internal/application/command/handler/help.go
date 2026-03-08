@@ -11,28 +11,28 @@ import (
 
 const defaultHelpText = "Доступные команды:\n/start - Начало работы с ботом\n/help - Показать этот список команд"
 
-type HelpCommand struct {
+type HelpCommandHandler struct {
 	logger   *slog.Logger
 	helpText string
 }
 
-func NewHelpCommand(logger *slog.Logger) *HelpCommand {
+func NewHelpCommandHandler(logger *slog.Logger) *HelpCommandHandler {
 	if logger == nil {
 		logger = slog.Default()
 	}
 
-	return &HelpCommand{
+	return &HelpCommandHandler{
 		logger:   logger,
 		helpText: defaultHelpText,
 	}
 }
 
-func (c *HelpCommand) Name() string { return "help" }
-func (c *HelpCommand) Description() string {
+func (c *HelpCommandHandler) Name() string { return "help" }
+func (c *HelpCommandHandler) Description() string {
 	return "Вывести список доступных команд"
 }
 
-func (c *HelpCommand) Handle(ctx context.Context, update *tgbotapi.Update, bot command.Sender) error {
+func (c *HelpCommandHandler) Handle(ctx context.Context, update *tgbotapi.Update, bot command.Sender) error {
 	msg := tgbotapi.NewMessage(update.Message.Chat.ID, c.helpText)
 	_, err := bot.Send(msg)
 	if err != nil {

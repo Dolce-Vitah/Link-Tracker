@@ -48,7 +48,7 @@ func TestHelpCommand_Handle(t *testing.T) {
 			t.Parallel()
 
 			var (
-				cmd        = handler.NewHelpCommand(nil)
+				cmd        = handler.NewHelpCommandHandler(nil)
 				mockSender = mock.NewSender(t)
 				ctx        = context.Background()
 				update     = &tgbotapi.Update{
@@ -74,7 +74,7 @@ func TestHelpCommand_Handle(t *testing.T) {
 }
 
 func TestHelpCommand_Metadata(t *testing.T) {
-	cmd := handler.NewHelpCommand(nil)
+	cmd := handler.NewHelpCommandHandler(nil)
 	require.Equal(t, "help", cmd.Name())
 	require.NotEmpty(t, cmd.Description())
 }

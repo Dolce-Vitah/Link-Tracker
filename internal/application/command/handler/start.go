@@ -11,26 +11,26 @@ import (
 
 const defaultStartText = "Добро пожаловать! Используйте /help, чтобы узнать о доступных командах."
 
-type StartCommand struct {
+type StartCommandHandler struct {
 	logger    *slog.Logger
 	startText string
 }
 
-func NewStartCommand(logger *slog.Logger) *StartCommand {
+func NewStartCommandHandler(logger *slog.Logger) *StartCommandHandler {
 	if logger == nil {
 		logger = slog.Default()
 	}
 
-	return &StartCommand{
+	return &StartCommandHandler{
 		logger:    logger,
 		startText: defaultStartText,
 	}
 }
 
-func (c *StartCommand) Name() string        { return "start" }
-func (c *StartCommand) Description() string { return "Начать работу с ботом" }
+func (c *StartCommandHandler) Name() string        { return "start" }
+func (c *StartCommandHandler) Description() string { return "Начать работу с ботом" }
 
-func (c *StartCommand) Handle(ctx context.Context, update *tgbotapi.Update, bot command.Sender) error {
+func (c *StartCommandHandler) Handle(ctx context.Context, update *tgbotapi.Update, bot command.Sender) error {
 	msg := tgbotapi.NewMessage(update.Message.Chat.ID, c.startText)
 	_, err := bot.Send(msg)
 	if err != nil {
