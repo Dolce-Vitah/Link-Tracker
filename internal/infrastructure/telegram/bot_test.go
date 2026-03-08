@@ -47,22 +47,20 @@ func TestBot_HandleUpdate(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			var (
-				mockSender = mock.NewSender(t)
-				update     = &tgbotapi.Update{
-					Message: &tgbotapi.Message{
-						Text: "/" + tc.command,
-						Chat: &tgbotapi.Chat{ID: 12345},
-						From: &tgbotapi.User{
-							ID:       98765,
-							UserName: "test_user",
-						},
-						Entities: []tgbotapi.MessageEntity{
-							{Type: "bot_command", Offset: 0, Length: len("/" + tc.command)},
-						},
+			mockSender := mock.NewSender(t)
+			update := &tgbotapi.Update{
+				Message: &tgbotapi.Message{
+					Text: "/" + tc.command,
+					Chat: &tgbotapi.Chat{ID: 12345},
+					From: &tgbotapi.User{
+						ID:       98765,
+						UserName: "test_user",
 					},
-				}
-			)
+					Entities: []tgbotapi.MessageEntity{
+						{Type: "bot_command", Offset: 0, Length: len("/" + tc.command)},
+					},
+				},
+			}
 
 			mockSender.EXPECT().
 				Send(testifymock.MatchedBy(func(msg tgbotapi.MessageConfig) bool {
