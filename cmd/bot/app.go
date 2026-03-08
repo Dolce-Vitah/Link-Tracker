@@ -25,7 +25,7 @@ func (a *App) New() error {
 		return fmt.Errorf("load app config: %w", err)
 	}
 
-	bot, err := telegram.NewBot(cfg.TelegramToken, slog.Default())
+	bot, err := telegram.NewBot(cfg.TelegramToken, cfg.TelegramAPIURL, slog.Default())
 	if err != nil {
 		return fmt.Errorf("create telegram bot: %w", err)
 	}

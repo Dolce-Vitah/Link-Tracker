@@ -27,12 +27,20 @@ type Bot struct {
 	sendMessage func(c tgbotapi.Chattable) (tgbotapi.Message, error)
 }
 
-func NewBot(token string, logger *slog.Logger) (*Bot, error) {
+func NewBot(token string, apiURL string, logger *slog.Logger) (*Bot, error) {
 	if logger == nil {
 		logger = slog.Default()
 	}
 
-	api, err := tgbotapi.NewBotAPI(token)
+	var api *tgbotapi.BotAPI
+	var err error
+
+	if apiURL != "" {
+		api, err = tgbotapi.NewBotAPIWithAPIEndpoint(token, apiURL)
+	} else {
+		api, err = tgbotapi.NewBotAPI(token)
+	}
+
 	if err != nil {
 		return nil, fmt.Errorf("new telegram bot api: %w", err)
 	}

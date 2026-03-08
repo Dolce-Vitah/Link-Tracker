@@ -8,6 +8,7 @@ import (
 
 type Config struct {
 	TelegramToken       string `json:"telegram_token"`
+	TelegramAPIURL      string `json:"telegram_api_url,omitempty"`
 	BotHTTPAddress      string `json:"bot_http_address"`
 	BotBaseURL          string `json:"bot_base_url"`
 	ScrapperHTTPAddress string `json:"scrapper_http_address"`

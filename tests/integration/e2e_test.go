@@ -4,7 +4,12 @@ package integration
 
 import (
 	"context"
+	"fmt"
+	"net"
 	"net/http"
+	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -16,13 +21,77 @@ import (
 func TestBotAndScrapperContainersStart(t *testing.T) {
 	ctx := context.Background()
 
+	// 1. Создаем локальный Mock-сервер для эмуляции API Telegram
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if strings.Contains(r.URL.Path, "/getMe") {
+			w.Write([]byte(`{"ok": true, "result": {"id": 1, "is_bot": true, "first_name": "TestBot", "username": "test_bot"}}`))
+			return
+		}
+		if strings.Contains(r.URL.Path, "/setMyCommands") {
+			w.Write([]byte(`{"ok": true, "result": true}`))
+			return
+		}
+		w.Write([]byte(`{"ok": true, "result": true}`))
+	})
+
+	mockTg := httptest.NewUnstartedServer(handler)
+	
+	// Важно: заставляем мок-сервер слушать на всех интерфейсах (0.0.0.0),
+	// чтобы Docker-контейнер мог получить к нему доступ через ��еть
+	l, err := net.Listen("tcp", "0.0.0.0:0")
+	if err != nil {
+		t.Fatalf("failed to listen on 0.0.0.0: %v", err)
+	}
+	mockTg.Listener = l
+	mockTg.Start()
+	defer mockTg.Close()
+
+	// Извлекаем порт мок-сервера
+	_, port, err := net.SplitHostPort(l.Addr().String())
+	if err != nil {
+		t.Fatalf("failed to parse port: %v", err)
+	}
+
+	// Формируем URL. "host.docker.internal" мы прокинем в контейнер ниже.
+	tgAPIEndpoint := fmt.Sprintf("http://host.docker.internal:%s/bot%%s/%%s", port)
+
+	// 2. Создаем временный файл конфигурации
+	tempDir := t.TempDir()
+	testConfigPath := filepath.Join(tempDir, "config.json")
+	testConfigContent := fmt.Sprintf(`{
+		"telegram_token": "fake-test-token",
+		"telegram_api_url": "%s",
+		"bot_http_address": ":8081",
+		"bot_base_url": "http://localhost:8081",
+		"scrapper_http_address": ":8080",
+		"scrapper_base_url": "http://localhost:8080",
+		"scrapper_grpc_address": ":8090",
+		"scrapper_grpc_target": "localhost:8090",
+		"transport_mode": "http",
+		"scheduler_interval": "30s",
+		"external_http_timeout": "5s"
+	}`, tgAPIEndpoint)
+	
+	if err := os.WriteFile(testConfigPath, []byte(testConfigContent), 0644); err != nil {
+		t.Fatalf("failed to write test config: %v", err)
+	}
+
+	// 3. Запускаем Scrapper
 	scrapperReq := testcontainers.ContainerRequest{
 		FromDockerfile: testcontainers.FromDockerfile{
 			Context:    "../../",
 			Dockerfile: "Dockerfile.scrapper",
 		},
 		ExposedPorts: []string{"8080/tcp", "8090/tcp"},
-		WaitingFor:   wait.ForListeningPort("8080/tcp").WithStartupTimeout(40 * time.Second),
+		Files: []testcontainers.ContainerFile{
+			{
+				HostFilePath:      testConfigPath,
+				ContainerFilePath: "/app/config.json",
+				FileMode:          0644,
+			},
+		},
+		WaitingFor: wait.ForListeningPort("8080/tcp").WithStartupTimeout(40 * time.Second),
 	}
 	scrapperC, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 		ContainerRequest: scrapperReq,
@@ -33,13 +102,28 @@ func TestBotAndScrapperContainersStart(t *testing.T) {
 	}
 	defer scrapperC.Terminate(ctx)
 
+	// 4. Запускаем Bot
 	botReq := testcontainers.ContainerRequest{
 		FromDockerfile: testcontainers.FromDockerfile{
 			Context:    "../../",
 			Dockerfile: "Dockerfile.bot",
 		},
 		ExposedPorts: []string{"8081/tcp"},
-		WaitingFor:   wait.ForListeningPort("8081/tcp").WithStartupTimeout(40 * time.Second),
+		// Прокидываем хост внутрь контейнера (универсальный кроссплатформенный способ)
+		ExtraHosts: []string{"host.docker.internal:host-gateway"},
+		Files: []testcontainers.ContainerFile{
+			{
+				HostFilePath:      testConfigPath,
+				ContainerFilePath: "/app/config.json",
+				FileMode:          0644,
+			},
+		},
+		WaitingFor: wait.ForHTTP("/updates").
+			WithPort("8081/tcp").
+			WithStatusCodeMatcher(func(status int) bool {
+				return status == http.StatusMethodNotAllowed || status == http.StatusOK
+			}).
+			WithStartupTimeout(40 * time.Second),
 	}
 	botC, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 		ContainerRequest: botReq,
@@ -50,21 +134,23 @@ func TestBotAndScrapperContainersStart(t *testing.T) {
 	}
 	defer botC.Terminate(ctx)
 
+	// 5. Тестируем взаимодействие
 	host, err := botC.Host(ctx)
 	if err != nil {
 		t.Fatalf("bot host: %v", err)
 	}
-	port, err := botC.MappedPort(ctx, "8081/tcp")
+	botPort, err := botC.MappedPort(ctx, "8081/tcp")
 	if err != nil {
 		t.Fatalf("bot mapped port: %v", err)
 	}
 
 	client := &http.Client{Timeout: 3 * time.Second}
-	resp, err := client.Post("http://"+host+":"+port.Port()+"/updates", "application/json", strings.NewReader(`{"id":1,"url":"https://github.com/user/repo","description":"ping","tgChatIds":[1]}`))
+	resp, err := client.Post("http://"+host+":"+botPort.Port()+"/updates", "application/json", strings.NewReader(`{"id":1,"url":"https://github.com/user/repo","description":"ping","tgChatIds":[1]}`))
 	if err != nil {
 		t.Fatalf("post /updates to bot: %v", err)
 	}
 	defer resp.Body.Close()
+	
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("expected 200 from bot /updates, got %d", resp.StatusCode)
 	}
