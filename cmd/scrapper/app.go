@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/go-co-op/gocron"
-	appscrapper "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/scrapper"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/scrapper"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/infrastructure/botclient"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/infrastructure/config"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/infrastructure/external"
@@ -21,9 +21,9 @@ import (
 
 type App struct {
 	config     *config.Config
-	service    *appscrapper.Service
+	service    *scrapper.Service
 	httpServer *httpscrapper.HTTPServer
-	scheduler  *appscrapper.Scheduler
+	scheduler  *scrapper.Scheduler
 	interval   time.Duration
 }
 
@@ -43,11 +43,11 @@ func (a *App) New() error {
 		return fmt.Errorf("parse scheduler interval: %w", err)
 	}
 
-	service := appscrapper.NewService()
+	service := scrapper.NewService()
 	httpServer := httpscrapper.NewHTTPServer(service)
 	externalClient := external.NewHTTPClient(timeout)
 	updatesClient := botclient.NewHTTPUpdatesClient(cfg.BotBaseURL, timeout)
-	scheduler := appscrapper.NewScheduler(service, externalClient, updatesClient, interval)
+	scheduler := scrapper.NewScheduler(service, externalClient, updatesClient, interval)
 
 	a.config = cfg
 	a.service = service

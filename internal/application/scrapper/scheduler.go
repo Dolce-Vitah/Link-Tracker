@@ -26,20 +26,6 @@ func NewScheduler(store *Service, externalClient external.LastUpdatedClient, upd
 	}
 }
 
-func (s *Scheduler) Run(ctx context.Context) {
-	ticker := time.NewTicker(s.interval)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-ticker.C:
-			s.ProcessOnce(ctx)
-		}
-	}
-}
-
 func (s *Scheduler) ProcessOnce(ctx context.Context) {
 	links := s.store.SnapshotLinks()
 	for _, link := range links {
