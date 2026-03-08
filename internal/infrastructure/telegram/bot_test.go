@@ -18,7 +18,7 @@ func TestBot_HandleUpdate(t *testing.T) {
 		dispatcher: command.NewDispatcher(),
 		logger:     slog.Default(),
 	}
-	bot.RegisterCommand(handler.NewStartCommandHandler(nil))
+	bot.RegisterCommand(handler.NewStartCommandHandler(nil, nil))
 	bot.RegisterCommand(handler.NewHelpCommandHandler(nil))
 
 	tests := []struct {
@@ -34,7 +34,7 @@ func TestBot_HandleUpdate(t *testing.T) {
 		{
 			name:           "Positive scenario: /help",
 			command:        "help",
-			expectedAnswer: "Доступные команды:\n/start - Начало работы с ботом\n/help - Показать этот список команд",
+			expectedAnswer: "Доступные команды:\n/start - Начало работы с ботом\n/help - Показать этот список команд\n/track - Добавить ссылку на отслеживание\n/untrack <url> - Убрать ссылку из отслеживания\n/list [tag] - Показать отслеживаемые ссылки\n/cancel - Отменить текущий диалог",
 		},
 		{
 			name:           "Negative scenario: unknown command",

@@ -9,7 +9,13 @@ import (
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/command"
 )
 
-const defaultHelpText = "Доступные команды:\n/start - Начало работы с ботом\n/help - Показать этот список команд"
+const defaultHelpText = "Доступные команды:\n" +
+	"/start - Начало работы с ботом\n" +
+	"/help - Показать этот список команд\n" +
+	"/track - Добавить ссылку на отслеживание\n" +
+	"/untrack <url> - Убрать ссылку из отслеживания\n" +
+	"/list [tag] - Показать отслеживаемые ссылки\n" +
+	"/cancel - Отменить текущий диалог"
 
 type HelpCommandHandler struct {
 	logger   *slog.Logger

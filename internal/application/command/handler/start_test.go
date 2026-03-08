@@ -54,7 +54,7 @@ func TestStartCommand_Handle(t *testing.T) {
 			t.Parallel()
 
 			var (
-				cmd        = handler.NewStartCommandHandler(nil)
+				cmd        = handler.NewStartCommandHandler(nil, nil)
 				mockSender = mock.NewSender(t)
 				ctx        = context.Background()
 				update     = &tgbotapi.Update{
@@ -78,7 +78,7 @@ func TestStartCommand_Handle(t *testing.T) {
 }
 
 func TestStartCommand_Metadata(t *testing.T) {
-	cmd := handler.NewStartCommandHandler(nil)
+	cmd := handler.NewStartCommandHandler(nil, nil)
 	require.Equal(t, "start", cmd.Name())
 	require.NotEmpty(t, cmd.Description())
 }

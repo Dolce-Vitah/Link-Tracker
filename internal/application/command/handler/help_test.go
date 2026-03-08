@@ -28,7 +28,7 @@ func TestHelpCommand_Handle(t *testing.T) {
 			args: args{
 				chatId: 12345,
 			},
-			expectedText:  "Доступные команды:\n/start - Начало работы с ботом\n/help - Показать этот список команд",
+			expectedText:  "Доступные команды:\n/start - Начало работы с ботом\n/help - Показать этот список команд\n/track - Добавить ссылку на отслеживание\n/untrack <url> - Убрать ссылку из отслеживания\n/list [tag] - Показать отслеживаемые ссылки\n/cancel - Отменить текущий диалог",
 			mockSendError: nil,
 			checkError: func(t *testing.T, err error) {
 				t.Helper()
@@ -40,7 +40,7 @@ func TestHelpCommand_Handle(t *testing.T) {
 			args: args{
 				chatId: 67890,
 			},
-			expectedText:  "Доступные команды:\n/start - Начало работы с ботом\n/help - Показать этот список команд",
+			expectedText:  "Доступные команды:\n/start - Начало работы с ботом\n/help - Показать этот список команд\n/track - Добавить ссылку на отслеживание\n/untrack <url> - Убрать ссылку из отслеживания\n/list [tag] - Показать отслеживаемые ссылки\n/cancel - Отменить текущий диалог",
 			mockSendError: errors.New("network error"),
 			checkError: func(t *testing.T, err error) {
 				t.Helper()

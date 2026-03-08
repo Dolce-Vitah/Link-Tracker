@@ -18,11 +18,11 @@ func TestDispatcher_Dispatch(t *testing.T) {
 	handleErr := errors.New("handle error")
 
 	tests := []struct {
-		name          string
-		commandName   string
-		update        *tgbotapi.Update
-		mockBehavior  mockBehavior
-		checkError    func(t *testing.T, err error)
+		name         string
+		commandName  string
+		update       *tgbotapi.Update
+		mockBehavior mockBehavior
+		checkError   func(t *testing.T, err error)
 	}{
 		{
 			name:        "known command success",

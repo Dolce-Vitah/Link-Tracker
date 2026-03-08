@@ -1,1 +1,19 @@
-package scrapper
+package main
+
+import (
+	"log/slog"
+	"os"
+)
+
+func main() {
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	slog.SetDefault(logger)
+
+	var app App
+	if err := app.New(); err != nil {
+		slog.Error("Failed to initialize app", slog.String("error", err.Error()))
+		os.Exit(1)
+	}
+
+	app.Run()
+}
