@@ -48,12 +48,12 @@ func (a *App) New() error {
 	bot.SetTrackerService(trackerService)
 	sessions := bot.Sessions()
 
-	bot.RegisterCommand(handler.NewStartCommandHandler(trackerService, slog.Default()))
-	bot.RegisterCommand(handler.NewHelpCommandHandler(slog.Default()))
-	bot.RegisterCommand(handler.NewTrackCommandHandler(sessions, trackerService, slog.Default()))
-	bot.RegisterCommand(handler.NewUntrackCommandHandler(trackerService, slog.Default()))
-	bot.RegisterCommand(handler.NewListCommandHandler(trackerService, slog.Default()))
-	bot.RegisterCommand(handler.NewCancelCommandHandler(sessions, slog.Default()))
+	bot.RegisterCommand(handler.NewStartCommandHandler(trackerService, slog.Default(), bot.Client()))
+	bot.RegisterCommand(handler.NewHelpCommandHandler(slog.Default(), bot.Client()))
+	bot.RegisterCommand(handler.NewTrackCommandHandler(sessions, trackerService, slog.Default(), bot.Client()))
+	bot.RegisterCommand(handler.NewUntrackCommandHandler(trackerService, slog.Default(), bot.Client()))
+	bot.RegisterCommand(handler.NewListCommandHandler(trackerService, slog.Default(), bot.Client()))
+	bot.RegisterCommand(handler.NewCancelCommandHandler(sessions, slog.Default(), bot.Client()))
 
 	if err := bot.SetMyCommands(); err != nil {
 		slog.Error("Failed to set bot commands menu", slog.String("error", err.Error()))

@@ -54,6 +54,10 @@ func NewBot(token string, apiURL string, logger *slog.Logger) (*Bot, error) {
 	}, nil
 }
 
+func (b *Bot) Client() command.Sender {
+	return b.api
+}
+
 func (b *Bot) RegisterCommand(cmd command.Command) {
 	b.dispatcher.Register(cmd)
 }
@@ -104,6 +108,14 @@ func (b *Bot) StartHTTPServer(address string) error {
 }
 
 func (b *Bot) handleUpdate(ctx context.Context, update *tgbotapi.Update, sender command.Sender) {
+	if update == nil || update.Message == nil {
+		return
+	}
+
+	chatID := update.Message.Chat.ID
+	cmdName := ""
+	text := update.Message.Text
+
 	if b.tracker != nil {
 		if err := handler.HandleTrackDialogStep(ctx, b.tracker, b.sessions, update, sender, b.logger); err != nil {
 			slog.Error("Failed to process track dialog step", slog.String("error", err.Error()))
@@ -111,17 +123,19 @@ func (b *Bot) handleUpdate(ctx context.Context, update *tgbotapi.Update, sender 
 		}
 	}
 
-	err := b.dispatcher.Dispatch(ctx, update, sender)
+	if !update.Message.IsCommand() {
+		return
+	}
+
+	cmdName = update.Message.Command()
+
+	err := b.dispatcher.Dispatch(ctx, text, chatID, cmdName)
 	if err == nil {
 		return
 	}
 
-	if errors.Is(err, command.ErrUnknownCommand) && update.Message != nil && update.Message.IsCommand() {
-		var (
-			cmdName  = update.Message.Command()
-			chatID   = update.Message.Chat.ID
-			username string
-		)
+	if errors.Is(err, command.ErrUnknownCommand) {
+		var username string
 		if update.Message.From != nil {
 			username = update.Message.From.UserName
 		}
@@ -139,10 +153,6 @@ func (b *Bot) handleUpdate(ctx context.Context, update *tgbotapi.Update, sender 
 		return
 	}
 
-	var (
-		cmdName string
-		chatID  int64
-	)
 	if update.Message != nil {
 		chatID = update.Message.Chat.ID
 		if update.Message.IsCommand() {

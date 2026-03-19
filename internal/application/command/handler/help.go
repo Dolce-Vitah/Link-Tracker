@@ -19,16 +19,18 @@ const defaultHelpText = "Доступные команды:\n" +
 
 type HelpCommandHandler struct {
 	logger   *slog.Logger
+	bot      command.Sender
 	helpText string
 }
 
-func NewHelpCommandHandler(logger *slog.Logger) *HelpCommandHandler {
+func NewHelpCommandHandler(logger *slog.Logger, bot command.Sender) *HelpCommandHandler {
 	if logger == nil {
 		logger = slog.Default()
 	}
 
 	return &HelpCommandHandler{
 		logger:   logger,
+		bot:      bot,
 		helpText: defaultHelpText,
 	}
 }
@@ -38,13 +40,13 @@ func (c *HelpCommandHandler) Description() string {
 	return "Вывести список доступных команд"
 }
 
-func (c *HelpCommandHandler) Handle(ctx context.Context, update *tgbotapi.Update, bot command.Sender) error {
-	msg := tgbotapi.NewMessage(update.Message.Chat.ID, c.helpText)
-	_, err := bot.Send(msg)
+func (c *HelpCommandHandler) Handle(ctx context.Context, text string, chatID int64) error {
+	msg := tgbotapi.NewMessage(chatID, c.helpText)
+	_, err := c.bot.Send(msg)
 	if err != nil {
 		return fmt.Errorf("send help command response: %w", err)
 	}
 
-	c.logger.Info("Help command processed", slog.Int64("chat_id", update.Message.Chat.ID))
+	c.logger.Info("Help command processed", slog.Int64("chat_id", chatID))
 	return nil
 }

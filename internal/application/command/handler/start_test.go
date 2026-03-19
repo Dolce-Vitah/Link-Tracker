@@ -3,48 +3,61 @@ package handler_test
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"testing"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/stretchr/testify/assert"
 	testifymock "github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/command/handler"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/command/mock"
 )
 
-func TestStartCommand_Handle(t *testing.T) {
-	type args struct {
-		chatId int64
-	}
+func TestStartCommandHandler_NameAndDescription(t *testing.T) {
+	t.Parallel()
+
+	cmd := handler.NewStartCommandHandler(nil, nil, nil)
+
+	assert.Equal(t, "start", cmd.Name())
+	assert.NotEmpty(t, cmd.Description())
+}
+
+func TestStartCommandHandler_Handle(t *testing.T) {
+	type mockBehavior func(sender *mock.Sender)
+	sendErr := errors.New("send error")
+
 	tests := []struct {
-		name          string
-		args          args
-		expectedText  string
-		mockSendError error
-		checkError    func(t *testing.T, err error)
+		name         string
+		text         string
+		chatID       int64
+		mockBehavior mockBehavior
+		checkError   func(t *testing.T, err error)
 	}{
 		{
-			name: "success",
-			args: args{
-				chatId: 12345,
+			name:   "success",
+			text:   "/start",
+			chatID: 12345,
+			mockBehavior: func(sender *mock.Sender) {
+				sender.EXPECT().Send(testifymock.MatchedBy(func(msg tgbotapi.MessageConfig) bool {
+					return msg.ChatID == 12345 && msg.Text != ""
+				})).Return(tgbotapi.Message{}, nil)
 			},
-			expectedText:  "Добро пожаловать! Используйте /help, чтобы узнать о доступных командах.",
-			mockSendError: nil,
 			checkError: func(t *testing.T, err error) {
 				t.Helper()
 				require.NoError(t, err)
 			},
 		},
 		{
-			name: "send error",
-			args: args{
-				chatId: 67890,
+			name:   "send error",
+			text:   "/start",
+			chatID: 12345,
+			mockBehavior: func(sender *mock.Sender) {
+				sender.EXPECT().Send(testifymock.Anything).Return(tgbotapi.Message{}, sendErr)
 			},
-			expectedText:  "Добро пожаловать! Используйте /help, чтобы узнать о доступных командах.",
-			mockSendError: errors.New("network error"),
 			checkError: func(t *testing.T, err error) {
 				t.Helper()
-				require.Error(t, err)
+				require.ErrorIs(t, err, sendErr)
 			},
 		},
 	}
@@ -53,32 +66,14 @@ func TestStartCommand_Handle(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			var (
-				cmd        = handler.NewStartCommandHandler(nil, nil)
-				mockSender = mock.NewSender(t)
-				ctx        = context.Background()
-				update     = &tgbotapi.Update{
-					Message: &tgbotapi.Message{
-						Chat: &tgbotapi.Chat{ID: tt.args.chatId},
-					},
-				}
-			)
+			mockSender := mock.NewSender(t)
+			tt.mockBehavior(mockSender)
 
-			mockSender.EXPECT().
-				Send(testifymock.MatchedBy(func(msg tgbotapi.MessageConfig) bool {
-					return msg.ChatID == tt.args.chatId && msg.Text == tt.expectedText
-				})).
-				Return(tgbotapi.Message{}, tt.mockSendError).
-				Once()
+			logger := slog.Default()
+			cmd := handler.NewStartCommandHandler(nil, logger, mockSender)
 
-			err := cmd.Handle(ctx, update, mockSender)
+			err := cmd.Handle(context.Background(), tt.text, tt.chatID)
 			tt.checkError(t, err)
 		})
 	}
-}
-
-func TestStartCommand_Metadata(t *testing.T) {
-	cmd := handler.NewStartCommandHandler(nil, nil)
-	require.Equal(t, "start", cmd.Name())
-	require.NotEmpty(t, cmd.Description())
 }

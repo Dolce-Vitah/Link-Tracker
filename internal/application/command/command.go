@@ -14,6 +14,6 @@ type (
 	Command interface {
 		Name() string
 		Description() string
-		Handle(ctx context.Context, update *tgbotapi.Update, sender Sender) error
+		Handle(ctx context.Context, text string, chatID int64) error
 	}
 )

@@ -14,13 +14,6 @@ import (
 )
 
 func TestBot_HandleUpdate(t *testing.T) {
-	bot := &Bot{
-		dispatcher: command.NewDispatcher(),
-		logger:     slog.Default(),
-	}
-	bot.RegisterCommand(handler.NewStartCommandHandler(nil, nil))
-	bot.RegisterCommand(handler.NewHelpCommandHandler(nil))
-
 	tests := []struct {
 		name           string
 		command        string
@@ -68,6 +61,13 @@ func TestBot_HandleUpdate(t *testing.T) {
 				})).
 				Return(tgbotapi.Message{}, nil).
 				Once()
+
+			bot := &Bot{
+				dispatcher: command.NewDispatcher(),
+				logger:     slog.Default(),
+			}
+			bot.RegisterCommand(handler.NewStartCommandHandler(nil, nil, mockSender))
+			bot.RegisterCommand(handler.NewHelpCommandHandler(nil, mockSender))
 
 			bot.handleUpdate(context.Background(), update, mockSender)
 		})

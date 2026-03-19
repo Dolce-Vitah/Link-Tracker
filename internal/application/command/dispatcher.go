@@ -5,8 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"sort"
-
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
 var ErrUnknownCommand = errors.New("unknown command")
@@ -49,16 +47,11 @@ func (d *Dispatcher) Commands() []Command {
 	return result
 }
 
-func (d *Dispatcher) Dispatch(ctx context.Context, update *tgbotapi.Update, sender Sender) error {
-	if update == nil || update.Message == nil || !update.Message.IsCommand() {
-		return nil
-	}
-
-	cmdName := update.Message.Command()
+func (d *Dispatcher) Dispatch(ctx context.Context, text string, chatID int64, cmdName string) error {
 	cmd, exists := d.commands[cmdName]
 	if !exists {
 		return &UnknownCommandError{Command: cmdName}
 	}
 
-	return cmd.Handle(ctx, update, sender)
+	return cmd.Handle(ctx, text, chatID)
 }
