@@ -14,14 +14,14 @@ import (
 )
 
 type TrackCommandHandler struct {
-	sessions *dialog.Store
+	sessions SessionStore
 	tracker  tracker.Service
 	logger   *slog.Logger
 	bot      command.Sender
 }
 
 func NewTrackCommandHandler(
-	sessions *dialog.Store,
+	sessions SessionStore,
 	trackerService tracker.Service,
 	logger *slog.Logger,
 	bot command.Sender,
@@ -62,12 +62,12 @@ func (c *TrackCommandHandler) Handle(ctx context.Context, request dto.CommandReq
 }
 
 type CancelCommandHandler struct {
-	sessions *dialog.Store
+	sessions SessionStore
 	logger   *slog.Logger
 	bot      command.Sender
 }
 
-func NewCancelCommandHandler(sessions *dialog.Store, logger *slog.Logger, bot command.Sender) *CancelCommandHandler {
+func NewCancelCommandHandler(sessions SessionStore, logger *slog.Logger, bot command.Sender) *CancelCommandHandler {
 	if logger == nil {
 		logger = slog.Default()
 	}

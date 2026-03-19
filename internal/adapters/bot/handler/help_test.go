@@ -6,8 +6,8 @@ import (
 	"log/slog"
 	"testing"
 
-	botdto "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/adapters/bot/dto"
-	bothandler "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/adapters/bot/handler"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/adapters/bot/dto"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/adapters/bot/handler"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/stretchr/testify/assert"
 	testifymock "github.com/stretchr/testify/mock"
@@ -18,7 +18,7 @@ import (
 func TestHelpCommandHandler_NameAndDescription(t *testing.T) {
 	t.Parallel()
 
-	cmd := bothandler.NewHelpCommandHandler(nil, nil)
+	cmd := handler.NewHelpCommandHandler(nil, nil)
 
 	assert.Equal(t, "help", cmd.Name())
 	assert.NotEmpty(t, cmd.Description())
@@ -30,15 +30,13 @@ func TestHelpCommandHandler_Handle(t *testing.T) {
 
 	tests := []struct {
 		name         string
-		text         string
-		chatID       int64
+		request      dto.CommandRequest
 		mockBehavior mockBehavior
 		checkError   func(t *testing.T, err error)
 	}{
 		{
-			name:   "success",
-			text:   "/help",
-			chatID: 12345,
+			name:    "success",
+			request: dto.CommandRequest{Text: "/help", ChatID: 12345},
 			mockBehavior: func(sender *mock.Sender) {
 				sender.EXPECT().Send(testifymock.MatchedBy(func(msg tgbotapi.MessageConfig) bool {
 					return msg.ChatID == 12345 && msg.Text != ""
@@ -50,15 +48,24 @@ func TestHelpCommandHandler_Handle(t *testing.T) {
 			},
 		},
 		{
-			name:   "send error",
-			text:   "/help",
-			chatID: 12345,
+			name:    "send error",
+			request: dto.CommandRequest{Text: "/help", ChatID: 12345},
 			mockBehavior: func(sender *mock.Sender) {
 				sender.EXPECT().Send(testifymock.Anything).Return(tgbotapi.Message{}, sendErr)
 			},
 			checkError: func(t *testing.T, err error) {
 				t.Helper()
 				require.ErrorIs(t, err, sendErr)
+			},
+		},
+		{
+			name:    "invalid request",
+			request: dto.CommandRequest{},
+			mockBehavior: func(sender *mock.Sender) {
+			},
+			checkError: func(t *testing.T, err error) {
+				t.Helper()
+				require.Error(t, err)
 			},
 		},
 	}
@@ -71,12 +78,9 @@ func TestHelpCommandHandler_Handle(t *testing.T) {
 			tt.mockBehavior(mockSender)
 
 			logger := slog.Default()
-			cmd := bothandler.NewHelpCommandHandler(logger, mockSender)
+			cmd := handler.NewHelpCommandHandler(logger, mockSender)
 
-			err := cmd.Handle(context.Background(), botdto.CommandRequest{
-				Text:   tt.text,
-				ChatID: tt.chatID,
-			})
+			err := cmd.Handle(context.Background(), tt.request)
 			tt.checkError(t, err)
 		})
 	}

@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	botdto "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/adapters/bot/dto"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/adapters/bot/dto"
 	"github.com/stretchr/testify/assert"
 	testifymock "github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -34,7 +34,7 @@ func TestDispatcher_Dispatch(t *testing.T) {
 			inputCmdName: "start",
 			mockBehavior: func(cmd *mock.Command) {
 				cmd.EXPECT().Name().Return("start")
-				cmd.EXPECT().Handle(testifymock.Anything, botdto.CommandRequest{
+				cmd.EXPECT().Handle(testifymock.Anything, dto.CommandRequest{
 					Text:   "/start",
 					ChatID: int64(12345),
 				}).Return(nil)
@@ -52,7 +52,7 @@ func TestDispatcher_Dispatch(t *testing.T) {
 			inputCmdName: "start",
 			mockBehavior: func(cmd *mock.Command) {
 				cmd.EXPECT().Name().Return("start")
-				cmd.EXPECT().Handle(testifymock.Anything, botdto.CommandRequest{
+				cmd.EXPECT().Handle(testifymock.Anything, dto.CommandRequest{
 					Text:   "/start",
 					ChatID: int64(12345),
 				}).Return(handleErr)
@@ -89,7 +89,7 @@ func TestDispatcher_Dispatch(t *testing.T) {
 				dispatcher.Register(mockCmd)
 			}
 
-			err := dispatcher.Dispatch(context.Background(), botdto.CommandRequest{
+			err := dispatcher.Dispatch(context.Background(), dto.CommandRequest{
 				Text:   tt.text,
 				ChatID: tt.chatID,
 			}, tt.inputCmdName)

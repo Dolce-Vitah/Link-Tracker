@@ -4,10 +4,12 @@ import (
 	"context"
 	"errors"
 	"log/slog"
+	"strings"
 	"testing"
 
-	botdto "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/adapters/bot/dto"
-	bothandler "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/adapters/bot/handler"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/adapters/bot/dto"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/adapters/bot/handler"
+	trackermock "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/tracker/mock"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/stretchr/testify/assert"
 	testifymock "github.com/stretchr/testify/mock"
@@ -18,47 +20,93 @@ import (
 func TestStartCommandHandler_NameAndDescription(t *testing.T) {
 	t.Parallel()
 
-	cmd := bothandler.NewStartCommandHandler(nil, nil, nil)
+	cmd := handler.NewStartCommandHandler(nil, nil, nil)
 
 	assert.Equal(t, "start", cmd.Name())
 	assert.NotEmpty(t, cmd.Description())
 }
 
 func TestStartCommandHandler_Handle(t *testing.T) {
-	type mockBehavior func(sender *mock.Sender)
 	sendErr := errors.New("send error")
+	registerErr := errors.New("register error")
 
 	tests := []struct {
-		name         string
-		text         string
-		chatID       int64
-		mockBehavior mockBehavior
-		checkError   func(t *testing.T, err error)
+		name          string
+		request       dto.CommandRequest
+		withTracker   bool
+		setupTracker  func(m *trackermock.MockService)
+		setupSender   func(m *mock.Sender)
+		assertErrFunc func(t *testing.T, err error)
 	}{
 		{
-			name:   "success",
-			text:   "/start",
-			chatID: 12345,
-			mockBehavior: func(sender *mock.Sender) {
-				sender.EXPECT().Send(testifymock.MatchedBy(func(msg tgbotapi.MessageConfig) bool {
-					return msg.ChatID == 12345 && msg.Text != ""
-				})).Return(tgbotapi.Message{}, nil)
+			name:    "success",
+			request: dto.CommandRequest{Text: "/start", ChatID: 12345},
+			withTracker: true,
+			setupTracker: func(m *trackermock.MockService) {
+				m.On("RegisterChat", testifymock.Anything, int64(12345)).Return(nil).Once()
 			},
-			checkError: func(t *testing.T, err error) {
+			setupSender: func(m *mock.Sender) {
+				m.EXPECT().Send(testifymock.MatchedBy(func(msg tgbotapi.MessageConfig) bool {
+					return msg.ChatID == 12345 && msg.Text != ""
+				})).Return(tgbotapi.Message{}, nil).Once()
+			},
+			assertErrFunc: func(t *testing.T, err error) {
 				t.Helper()
 				require.NoError(t, err)
 			},
 		},
 		{
-			name:   "send error",
-			text:   "/start",
-			chatID: 12345,
-			mockBehavior: func(sender *mock.Sender) {
-				sender.EXPECT().Send(testifymock.Anything).Return(tgbotapi.Message{}, sendErr)
+			name:    "register already exists is ignored",
+			request: dto.CommandRequest{Text: "/start", ChatID: 12345},
+			withTracker: true,
+			setupTracker: func(m *trackermock.MockService) {
+				m.On("RegisterChat", testifymock.Anything, int64(12345)).
+					Return(errors.New("already exists")).Once()
 			},
-			checkError: func(t *testing.T, err error) {
+			setupSender: func(m *mock.Sender) {
+				m.EXPECT().Send(testifymock.Anything).Return(tgbotapi.Message{}, nil).Once()
+			},
+			assertErrFunc: func(t *testing.T, err error) {
+				t.Helper()
+				require.NoError(t, err)
+			},
+		},
+		{
+			name:    "register error",
+			request: dto.CommandRequest{Text: "/start", ChatID: 12345},
+			withTracker: true,
+			setupTracker: func(m *trackermock.MockService) {
+				m.On("RegisterChat", testifymock.Anything, int64(12345)).Return(registerErr).Once()
+			},
+			setupSender: nil,
+			assertErrFunc: func(t *testing.T, err error) {
+				t.Helper()
+				require.Error(t, err)
+				require.True(t, strings.Contains(err.Error(), "register chat"))
+			},
+		},
+		{
+			name:    "send error",
+			request: dto.CommandRequest{Text: "/start", ChatID: 12345},
+			withTracker: true,
+			setupTracker: func(m *trackermock.MockService) {
+				m.On("RegisterChat", testifymock.Anything, int64(12345)).Return(nil).Once()
+			},
+			setupSender: func(m *mock.Sender) {
+				m.EXPECT().Send(testifymock.Anything).Return(tgbotapi.Message{}, sendErr).Once()
+			},
+			assertErrFunc: func(t *testing.T, err error) {
 				t.Helper()
 				require.ErrorIs(t, err, sendErr)
+			},
+		},
+		{
+			name:    "invalid request",
+			request: dto.CommandRequest{Text: "", ChatID: 0},
+			setupSender: nil,
+			assertErrFunc: func(t *testing.T, err error) {
+				t.Helper()
+				require.Error(t, err)
 			},
 		},
 	}
@@ -68,16 +116,21 @@ func TestStartCommandHandler_Handle(t *testing.T) {
 			t.Parallel()
 
 			mockSender := mock.NewSender(t)
-			tt.mockBehavior(mockSender)
+			if tt.setupSender != nil {
+				tt.setupSender(mockSender)
+			}
+			var trackerSvc *trackermock.MockService
+			if tt.withTracker {
+				trackerSvc = trackermock.NewMockService(t)
+				if tt.setupTracker != nil {
+					tt.setupTracker(trackerSvc)
+				}
+			}
 
 			logger := slog.Default()
-			cmd := bothandler.NewStartCommandHandler(nil, logger, mockSender)
-
-			err := cmd.Handle(context.Background(), botdto.CommandRequest{
-				Text:   tt.text,
-				ChatID: tt.chatID,
-			})
-			tt.checkError(t, err)
+			cmd := handler.NewStartCommandHandler(trackerSvc, logger, mockSender)
+			err := cmd.Handle(context.Background(), tt.request)
+			tt.assertErrFunc(t, err)
 		})
 	}
 }

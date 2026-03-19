@@ -2,10 +2,12 @@ package handler_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 
-	botdto "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/adapters/bot/dto"
-	bothandler "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/adapters/bot/handler"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/adapters/bot/dto"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/adapters/bot/handler"
+	trackermock "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/tracker/mock"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/stretchr/testify/assert"
 	testifymock "github.com/stretchr/testify/mock"
@@ -13,43 +15,93 @@ import (
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/api"
 )
 
-func TestListCommand_EmptyListMessage(t *testing.T) {
-	sender := mock.NewSender(t)
-	cmd := bothandler.NewListCommandHandler(&fakeTracker{}, nil, sender)
+func TestListCommand_Handle(t *testing.T) {
+	listErr := errors.New("list error")
+	registerErr := errors.New("register error")
+	sendErr := errors.New("send error")
 
-	sender.EXPECT().
-		Send(testifymock.MatchedBy(func(msg tgbotapi.MessageConfig) bool {
-			return msg.Text == "Список отслеживаемых ссылок пуст."
-		})).
-		Return(tgbotapi.Message{}, nil).
-		Once()
-
-	err := cmd.Handle(context.Background(), botdto.CommandRequest{
-		Text:   "/list",
-		ChatID: 7,
-	})
-	assert.NoError(t, err)
-}
-
-func TestListCommand_FilterByTag(t *testing.T) {
-	sender := mock.NewSender(t)
-	cmd := bothandler.NewListCommandHandler(&fakeTracker{
-		links: []api.LinkResponse{
-			{ID: 1, URL: "https://github.com/a/b", Tags: []string{"work"}},
-			{ID: 2, URL: "https://stackoverflow.com/questions/1/x", Tags: []string{"misc"}},
+	tests := []struct {
+		name       string
+		request    dto.CommandRequest
+		setupMocks func(tracker *trackermock.MockService, sender *mock.Sender)
+		assertErr  func(t *testing.T, err error)
+	}{
+		{
+			name:    "empty list",
+			request: dto.CommandRequest{Text: "/list", ChatID: 7},
+			setupMocks: func(tracker *trackermock.MockService, sender *mock.Sender) {
+				tracker.On("RegisterChat", testifymock.Anything, int64(7)).Return(nil).Once()
+				tracker.On("ListLinks", testifymock.Anything, int64(7)).
+					Return(api.ListLinksResponse{Links: nil, Size: 0}, nil).Once()
+				sender.EXPECT().
+					Send(testifymock.MatchedBy(func(msg tgbotapi.MessageConfig) bool {
+						return msg.Text == "Список отслеживаемых ссылок пуст."
+					})).
+					Return(tgbotapi.Message{}, nil).
+					Once()
+			},
+			assertErr: func(t *testing.T, err error) { assert.NoError(t, err) },
 		},
-	}, nil, sender)
+		{
+			name:    "filter by tag",
+			request: dto.CommandRequest{Text: "/list work", ChatID: 10},
+			setupMocks: func(tracker *trackermock.MockService, sender *mock.Sender) {
+				tracker.On("RegisterChat", testifymock.Anything, int64(10)).Return(nil).Once()
+				tracker.On("ListLinks", testifymock.Anything, int64(10)).
+					Return(api.ListLinksResponse{Links: []api.LinkResponse{
+						{ID: 1, URL: "https://github.com/a/b", Tags: []string{"work"}},
+						{ID: 2, URL: "https://stackoverflow.com/questions/1/x", Tags: []string{"misc"}},
+					}, Size: 2}, nil).Once()
+				sender.EXPECT().
+					Send(testifymock.MatchedBy(func(msg tgbotapi.MessageConfig) bool {
+						return msg.ChatID == 10 && msg.Text != "" && msg.Text != "Список отслеживаемых ссылок пуст."
+					})).
+					Return(tgbotapi.Message{}, nil).
+					Once()
+			},
+			assertErr: func(t *testing.T, err error) { assert.NoError(t, err) },
+		},
+		{
+			name:    "register error",
+			request: dto.CommandRequest{Text: "/list", ChatID: 10},
+			setupMocks: func(tracker *trackermock.MockService, sender *mock.Sender) {
+				tracker.On("RegisterChat", testifymock.Anything, int64(10)).Return(registerErr).Once()
+			},
+			assertErr: func(t *testing.T, err error) { assert.Error(t, err) },
+		},
+		{
+			name:    "list error",
+			request: dto.CommandRequest{Text: "/list", ChatID: 10},
+			setupMocks: func(tracker *trackermock.MockService, sender *mock.Sender) {
+				tracker.On("RegisterChat", testifymock.Anything, int64(10)).Return(nil).Once()
+				tracker.On("ListLinks", testifymock.Anything, int64(10)).Return(api.ListLinksResponse{}, listErr).Once()
+			},
+			assertErr: func(t *testing.T, err error) { assert.ErrorIs(t, err, listErr) },
+		},
+		{
+			name:    "send error",
+			request: dto.CommandRequest{Text: "/list", ChatID: 10},
+			setupMocks: func(tracker *trackermock.MockService, sender *mock.Sender) {
+				tracker.On("RegisterChat", testifymock.Anything, int64(10)).Return(nil).Once()
+				tracker.On("ListLinks", testifymock.Anything, int64(10)).
+					Return(api.ListLinksResponse{Links: nil, Size: 0}, nil).Once()
+				sender.EXPECT().Send(testifymock.Anything).Return(tgbotapi.Message{}, sendErr).Once()
+			},
+			assertErr: func(t *testing.T, err error) { assert.ErrorIs(t, err, sendErr) },
+		},
+	}
 
-	sender.EXPECT().
-		Send(testifymock.MatchedBy(func(msg tgbotapi.MessageConfig) bool {
-			return msg.ChatID == 10 && msg.Text != "" && msg.Text != "Список отслеживаемых ссылок пуст."
-		})).
-		Return(tgbotapi.Message{}, nil).
-		Once()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 
-	err := cmd.Handle(context.Background(), botdto.CommandRequest{
-		Text:   "/list work",
-		ChatID: 10,
-	})
-	assert.NoError(t, err)
+			tracker := trackermock.NewMockService(t)
+			sender := mock.NewSender(t)
+			tt.setupMocks(tracker, sender)
+
+			cmd := handler.NewListCommandHandler(tracker, nil, sender)
+			err := cmd.Handle(context.Background(), tt.request)
+			tt.assertErr(t, err)
+		})
+	}
 }

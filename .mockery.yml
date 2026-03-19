@@ -16,3 +16,17 @@ packages:
   gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker:
     config:
       all: true
+  gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/adapters/bot/handler:
+    config:
+      dir: '{{.InterfaceDir}}/mock'
+      filename: '{{.InterfaceName}}.go'
+      pkgname: mock
+    interfaces:
+      SessionStore:
+  gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/tracker:
+    config:
+      dir: '{{.InterfaceDir}}/mock'
+      filename: '{{.InterfaceName}}.go'
+      pkgname: mock
+    interfaces:
+      Service:

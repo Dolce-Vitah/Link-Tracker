@@ -17,14 +17,14 @@ import (
 
 type TrackDialogHandler struct {
 	trackerService tracker.Service
-	sessions       *dialog.Store
+	sessions       SessionStore
 	bot            command.Sender
 	logger         *slog.Logger
 }
 
 func NewTrackDialogHandler(
 	trackerService tracker.Service,
-	sessions *dialog.Store,
+	sessions SessionStore,
 	bot command.Sender,
 	logger *slog.Logger,
 ) *TrackDialogHandler {
