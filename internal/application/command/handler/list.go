@@ -14,14 +14,15 @@ import (
 type ListCommandHandler struct {
 	tracker tracker.Service
 	logger  *slog.Logger
+	bot     command.Sender
 }
 
-func NewListCommandHandler(trackerService tracker.Service, logger *slog.Logger) *ListCommandHandler {
+func NewListCommandHandler(trackerService tracker.Service, logger *slog.Logger, bot command.Sender) *ListCommandHandler {
 	if logger == nil {
 		logger = slog.Default()
 	}
 
-	return &ListCommandHandler{tracker: trackerService, logger: logger}
+	return &ListCommandHandler{tracker: trackerService, logger: logger, bot: bot}
 }
 
 func (c *ListCommandHandler) Name() string { return "list" }
@@ -29,8 +30,7 @@ func (c *ListCommandHandler) Description() string {
 	return "Показать отслеживаемые ссылки"
 }
 
-func (c *ListCommandHandler) Handle(ctx context.Context, update *tgbotapi.Update, bot command.Sender) error {
-	chatID := update.Message.Chat.ID
+func (c *ListCommandHandler) Handle(ctx context.Context, text string, chatID int64) error {
 	if err := c.tracker.RegisterChat(ctx, chatID); err != nil && !strings.Contains(err.Error(), tracker.ErrAlreadyExists.Error()) {
 		return fmt.Errorf("register chat before list: %w", err)
 	}
@@ -40,7 +40,7 @@ func (c *ListCommandHandler) Handle(ctx context.Context, update *tgbotapi.Update
 		return fmt.Errorf("list tracked links: %w", err)
 	}
 
-	filterTag := strings.TrimSpace(update.Message.CommandArguments())
+	filterTag := extractCommandArgs(text)
 	filtered := make([]string, 0, len(resp.Links))
 	for _, link := range resp.Links {
 		if filterTag == "" || hasTag(link.Tags, filterTag) {
@@ -54,13 +54,13 @@ func (c *ListCommandHandler) Handle(ctx context.Context, update *tgbotapi.Update
 
 	if len(filtered) == 0 {
 		msg := tgbotapi.NewMessage(chatID, "Список отслеживаемых ссылок пуст.")
-		_, sendErr := bot.Send(msg)
+		_, sendErr := c.bot.Send(msg)
 		return sendErr
 	}
 
-	text := "Ваши отслеживаемые ссылки:\n" + strings.Join(filtered, "\n")
-	msg := tgbotapi.NewMessage(chatID, text)
-	_, sendErr := bot.Send(msg)
+	listText := "Ваши отслеживаемые ссылки:\n" + strings.Join(filtered, "\n")
+	msg := tgbotapi.NewMessage(chatID, listText)
+	_, sendErr := c.bot.Send(msg)
 	if sendErr != nil {
 		return sendErr
 	}

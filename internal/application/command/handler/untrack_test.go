@@ -12,17 +12,8 @@ import (
 )
 
 func TestUntrackCommand_InvalidURL(t *testing.T) {
-	cmd := handler.NewUntrackCommandHandler(&fakeTracker{}, nil)
 	sender := mock.NewSender(t)
-	update := &tgbotapi.Update{
-		Message: &tgbotapi.Message{
-			Chat: &tgbotapi.Chat{ID: 9},
-			Text: "/untrack xxx",
-			Entities: []tgbotapi.MessageEntity{
-				{Type: "bot_command", Offset: 0, Length: 8},
-			},
-		},
-	}
+	cmd := handler.NewUntrackCommandHandler(&fakeTracker{}, nil, sender)
 
 	sender.EXPECT().
 		Send(testifymock.MatchedBy(func(msg tgbotapi.MessageConfig) bool {
@@ -31,6 +22,6 @@ func TestUntrackCommand_InvalidURL(t *testing.T) {
 		Return(tgbotapi.Message{}, nil).
 		Once()
 
-	err := cmd.Handle(context.Background(), update, sender)
+	err := cmd.Handle(context.Background(), "/untrack xxx", 9)
 	assert.NoError(t, err)
 }

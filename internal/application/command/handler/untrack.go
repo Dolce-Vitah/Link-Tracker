@@ -16,14 +16,15 @@ import (
 type UntrackCommandHandler struct {
 	tracker tracker.Service
 	logger  *slog.Logger
+	bot     command.Sender
 }
 
-func NewUntrackCommandHandler(trackerService tracker.Service, logger *slog.Logger) *UntrackCommandHandler {
+func NewUntrackCommandHandler(trackerService tracker.Service, logger *slog.Logger, bot command.Sender) *UntrackCommandHandler {
 	if logger == nil {
 		logger = slog.Default()
 	}
 
-	return &UntrackCommandHandler{tracker: trackerService, logger: logger}
+	return &UntrackCommandHandler{tracker: trackerService, logger: logger, bot: bot}
 }
 
 func (c *UntrackCommandHandler) Name() string { return "untrack" }
@@ -31,12 +32,11 @@ func (c *UntrackCommandHandler) Description() string {
 	return "Прекратить отслеживание ссылки"
 }
 
-func (c *UntrackCommandHandler) Handle(ctx context.Context, update *tgbotapi.Update, bot command.Sender) error {
-	chatID := update.Message.Chat.ID
-	args := strings.TrimSpace(update.Message.CommandArguments())
+func (c *UntrackCommandHandler) Handle(ctx context.Context, text string, chatID int64) error {
+	args := extractCommandArgs(text)
 	if !isValidUntrackURL(args) {
 		msg := tgbotapi.NewMessage(chatID, "Укажите ссылку после команды: /untrack https://example.com")
-		_, err := bot.Send(msg)
+		_, err := c.bot.Send(msg)
 		return err
 	}
 
@@ -48,14 +48,14 @@ func (c *UntrackCommandHandler) Handle(ctx context.Context, update *tgbotapi.Upd
 	if err != nil {
 		if strings.Contains(err.Error(), tracker.ErrNotFound.Error()) {
 			msg := tgbotapi.NewMessage(chatID, "Ссылка не найдена в отслеживаемых.")
-			_, sendErr := bot.Send(msg)
+			_, sendErr := c.bot.Send(msg)
 			return sendErr
 		}
 		return fmt.Errorf("remove link from tracking: %w", err)
 	}
 
 	msg := tgbotapi.NewMessage(chatID, "Ссылка удалена из отслеживания.")
-	_, sendErr := bot.Send(msg)
+	_, sendErr := c.bot.Send(msg)
 	if sendErr != nil {
 		return sendErr
 	}

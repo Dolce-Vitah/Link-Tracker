@@ -14,13 +14,8 @@ import (
 
 func TestTrackCommand_StartsDialog(t *testing.T) {
 	sessions := dialog.NewStore()
-	cmd := handler.NewTrackCommandHandler(sessions, &fakeTracker{}, nil)
 	sender := mock.NewSender(t)
-	update := &tgbotapi.Update{
-		Message: &tgbotapi.Message{
-			Chat: &tgbotapi.Chat{ID: 1},
-		},
-	}
+	cmd := handler.NewTrackCommandHandler(sessions, &fakeTracker{}, nil, sender)
 
 	sender.EXPECT().
 		Send(testifymock.MatchedBy(func(msg tgbotapi.MessageConfig) bool {
@@ -29,7 +24,7 @@ func TestTrackCommand_StartsDialog(t *testing.T) {
 		Return(tgbotapi.Message{}, nil).
 		Once()
 
-	err := cmd.Handle(context.Background(), update, sender)
+	err := cmd.Handle(context.Background(), "/track", 1)
 	assert.NoError(t, err)
 
 	session, ok := sessions.Get(1)

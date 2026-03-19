@@ -13,17 +13,8 @@ import (
 )
 
 func TestListCommand_EmptyListMessage(t *testing.T) {
-	cmd := handler.NewListCommandHandler(&fakeTracker{}, nil)
 	sender := mock.NewSender(t)
-	update := &tgbotapi.Update{
-		Message: &tgbotapi.Message{
-			Chat: &tgbotapi.Chat{ID: 7},
-			Text: "/list",
-			Entities: []tgbotapi.MessageEntity{
-				{Type: "bot_command", Offset: 0, Length: 5},
-			},
-		},
-	}
+	cmd := handler.NewListCommandHandler(&fakeTracker{}, nil, sender)
 
 	sender.EXPECT().
 		Send(testifymock.MatchedBy(func(msg tgbotapi.MessageConfig) bool {
@@ -32,27 +23,18 @@ func TestListCommand_EmptyListMessage(t *testing.T) {
 		Return(tgbotapi.Message{}, nil).
 		Once()
 
-	err := cmd.Handle(context.Background(), update, sender)
+	err := cmd.Handle(context.Background(), "/list", 7)
 	assert.NoError(t, err)
 }
 
 func TestListCommand_FilterByTag(t *testing.T) {
+	sender := mock.NewSender(t)
 	cmd := handler.NewListCommandHandler(&fakeTracker{
 		links: []api.LinkResponse{
 			{ID: 1, URL: "https://github.com/a/b", Tags: []string{"work"}},
 			{ID: 2, URL: "https://stackoverflow.com/questions/1/x", Tags: []string{"misc"}},
 		},
-	}, nil)
-	sender := mock.NewSender(t)
-	update := &tgbotapi.Update{
-		Message: &tgbotapi.Message{
-			Chat: &tgbotapi.Chat{ID: 10},
-			Text: "/list work",
-			Entities: []tgbotapi.MessageEntity{
-				{Type: "bot_command", Offset: 0, Length: 5},
-			},
-		},
-	}
+	}, nil, sender)
 
 	sender.EXPECT().
 		Send(testifymock.MatchedBy(func(msg tgbotapi.MessageConfig) bool {
@@ -61,6 +43,6 @@ func TestListCommand_FilterByTag(t *testing.T) {
 		Return(tgbotapi.Message{}, nil).
 		Once()
 
-	err := cmd.Handle(context.Background(), update, sender)
+	err := cmd.Handle(context.Background(), "/list work", 10)
 	assert.NoError(t, err)
 }

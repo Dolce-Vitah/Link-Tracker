@@ -16,9 +16,15 @@ type TrackCommandHandler struct {
 	sessions *dialog.Store
 	tracker  tracker.Service
 	logger   *slog.Logger
+	bot      command.Sender
 }
 
-func NewTrackCommandHandler(sessions *dialog.Store, trackerService tracker.Service, logger *slog.Logger) *TrackCommandHandler {
+func NewTrackCommandHandler(
+	sessions *dialog.Store,
+	trackerService tracker.Service,
+	logger *slog.Logger,
+	bot command.Sender,
+) *TrackCommandHandler {
 	if logger == nil {
 		logger = slog.Default()
 	}
@@ -26,6 +32,7 @@ func NewTrackCommandHandler(sessions *dialog.Store, trackerService tracker.Servi
 		sessions: sessions,
 		tracker:  trackerService,
 		logger:   logger,
+		bot:      bot,
 	}
 }
 
@@ -34,15 +41,14 @@ func (c *TrackCommandHandler) Description() string {
 	return "Начать отслеживание ссылки"
 }
 
-func (c *TrackCommandHandler) Handle(ctx context.Context, update *tgbotapi.Update, bot command.Sender) error {
-	chatID := update.Message.Chat.ID
+func (c *TrackCommandHandler) Handle(ctx context.Context, text string, chatID int64) error {
 	if err := c.tracker.RegisterChat(ctx, chatID); err != nil && !strings.Contains(err.Error(), tracker.ErrAlreadyExists.Error()) {
 		return fmt.Errorf("register chat before track: %w", err)
 	}
 
 	c.sessions.Set(chatID, dialog.Session{State: dialog.StateAwaitingURL})
 	msg := tgbotapi.NewMessage(chatID, "Отправьте ссылку, которую нужно отслеживать. Для отмены используйте /cancel.")
-	if _, err := bot.Send(msg); err != nil {
+	if _, err := c.bot.Send(msg); err != nil {
 		return fmt.Errorf("send track prompt: %w", err)
 	}
 
@@ -53,13 +59,14 @@ func (c *TrackCommandHandler) Handle(ctx context.Context, update *tgbotapi.Updat
 type CancelCommandHandler struct {
 	sessions *dialog.Store
 	logger   *slog.Logger
+	bot      command.Sender
 }
 
-func NewCancelCommandHandler(sessions *dialog.Store, logger *slog.Logger) *CancelCommandHandler {
+func NewCancelCommandHandler(sessions *dialog.Store, logger *slog.Logger, bot command.Sender) *CancelCommandHandler {
 	if logger == nil {
 		logger = slog.Default()
 	}
-	return &CancelCommandHandler{sessions: sessions, logger: logger}
+	return &CancelCommandHandler{sessions: sessions, logger: logger, bot: bot}
 }
 
 func (c *CancelCommandHandler) Name() string { return "cancel" }
@@ -67,11 +74,10 @@ func (c *CancelCommandHandler) Description() string {
 	return "Отменить текущий диалог"
 }
 
-func (c *CancelCommandHandler) Handle(_ context.Context, update *tgbotapi.Update, bot command.Sender) error {
-	chatID := update.Message.Chat.ID
+func (c *CancelCommandHandler) Handle(_ context.Context, text string, chatID int64) error {
 	c.sessions.Clear(chatID)
 	msg := tgbotapi.NewMessage(chatID, "Диалог отменен.")
-	if _, err := bot.Send(msg); err != nil {
+	if _, err := c.bot.Send(msg); err != nil {
 		return fmt.Errorf("send cancel confirmation: %w", err)
 	}
 
