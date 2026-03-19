@@ -13,16 +13,18 @@ const defaultStartText = "Добро пожаловать! Используйт�
 
 type StartCommandHandler struct {
 	logger    *slog.Logger
+	bot       command.Sender
 	startText string
 }
 
-func NewStartCommandHandler(logger *slog.Logger) *StartCommandHandler {
+func NewStartCommandHandler(logger *slog.Logger, bot command.Sender) *StartCommandHandler {
 	if logger == nil {
 		logger = slog.Default()
 	}
 
 	return &StartCommandHandler{
 		logger:    logger,
+		bot:       bot,
 		startText: defaultStartText,
 	}
 }
@@ -30,13 +32,13 @@ func NewStartCommandHandler(logger *slog.Logger) *StartCommandHandler {
 func (c *StartCommandHandler) Name() string        { return "start" }
 func (c *StartCommandHandler) Description() string { return "Начать работу с ботом" }
 
-func (c *StartCommandHandler) Handle(ctx context.Context, update *tgbotapi.Update, bot command.Sender) error {
-	msg := tgbotapi.NewMessage(update.Message.Chat.ID, c.startText)
-	_, err := bot.Send(msg)
+func (c *StartCommandHandler) Handle(ctx context.Context, text string, chatID int64) error {
+	msg := tgbotapi.NewMessage(chatID, c.startText)
+	_, err := c.bot.Send(msg)
 	if err != nil {
 		return fmt.Errorf("send start command response: %w", err)
 	}
 
-	c.logger.Info("Start command processed", slog.Int64("chat_id", update.Message.Chat.ID))
+	c.logger.Info("Start command processed", slog.Int64("chat_id", chatID))
 	return nil
 }

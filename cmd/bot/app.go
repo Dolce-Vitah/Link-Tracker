@@ -24,8 +24,8 @@ func (a *App) New() error {
 		return fmt.Errorf("create telegram bot: %w", err)
 	}
 
-	bot.RegisterCommand(handler.NewStartCommandHandler(slog.Default()))
-	bot.RegisterCommand(handler.NewHelpCommandHandler(slog.Default()))
+	bot.RegisterCommand(handler.NewStartCommandHandler(slog.Default(), bot.Client()))
+	bot.RegisterCommand(handler.NewHelpCommandHandler(slog.Default(), bot.Client()))
 
 	if err := bot.SetMyCommands(); err != nil {
 		slog.Error("Failed to set bot commands menu", slog.String("error", err.Error()))

@@ -5,7 +5,6 @@ import (
 	"errors"
 	"testing"
 
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/stretchr/testify/assert"
 	testifymock "github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -14,23 +13,27 @@ import (
 )
 
 func TestDispatcher_Dispatch(t *testing.T) {
-	type mockBehavior func(cmd *mock.Command, sender *mock.Sender)
+	type mockBehavior func(cmd *mock.Command)
 	handleErr := errors.New("handle error")
 
 	tests := []struct {
-		name          string
-		commandName   string
-		update        *tgbotapi.Update
-		mockBehavior  mockBehavior
-		checkError    func(t *testing.T, err error)
+		name         string
+		commandName  string
+		text         string
+		chatID       int64
+		inputCmdName string
+		mockBehavior mockBehavior
+		checkError   func(t *testing.T, err error)
 	}{
 		{
-			name:        "known command success",
-			commandName: "start",
-			update:      newCommandUpdate("start"),
-			mockBehavior: func(cmd *mock.Command, sender *mock.Sender) {
+			name:         "known command success",
+			commandName:  "start",
+			text:         "/start",
+			chatID:       12345,
+			inputCmdName: "start",
+			mockBehavior: func(cmd *mock.Command) {
 				cmd.EXPECT().Name().Return("start")
-				cmd.EXPECT().Handle(testifymock.Anything, testifymock.AnythingOfType("*tgbotapi.Update"), sender).Return(nil)
+				cmd.EXPECT().Handle(testifymock.Anything, "/start", int64(12345)).Return(nil)
 			},
 			checkError: func(t *testing.T, err error) {
 				t.Helper()
@@ -38,12 +41,14 @@ func TestDispatcher_Dispatch(t *testing.T) {
 			},
 		},
 		{
-			name:        "known command error",
-			commandName: "start",
-			update:      newCommandUpdate("start"),
-			mockBehavior: func(cmd *mock.Command, sender *mock.Sender) {
+			name:         "known command error",
+			commandName:  "start",
+			text:         "/start",
+			chatID:       12345,
+			inputCmdName: "start",
+			mockBehavior: func(cmd *mock.Command) {
 				cmd.EXPECT().Name().Return("start")
-				cmd.EXPECT().Handle(testifymock.Anything, testifymock.AnythingOfType("*tgbotapi.Update"), sender).Return(handleErr)
+				cmd.EXPECT().Handle(testifymock.Anything, "/start", int64(12345)).Return(handleErr)
 			},
 			checkError: func(t *testing.T, err error) {
 				t.Helper()
@@ -51,41 +56,16 @@ func TestDispatcher_Dispatch(t *testing.T) {
 			},
 		},
 		{
-			name:        "unknown command",
-			commandName: "",
-			update:      newCommandUpdate("unknown"),
-			mockBehavior: func(cmd *mock.Command, sender *mock.Sender) {
+			name:         "unknown command",
+			commandName:  "",
+			text:         "/unknown",
+			chatID:       12345,
+			inputCmdName: "unknown",
+			mockBehavior: func(cmd *mock.Command) {
 			},
 			checkError: func(t *testing.T, err error) {
 				t.Helper()
 				require.ErrorIs(t, err, command.ErrUnknownCommand)
-			},
-		},
-		{
-			name:        "non command update",
-			commandName: "",
-			update: &tgbotapi.Update{
-				Message: &tgbotapi.Message{
-					Text: "just text",
-					Chat: &tgbotapi.Chat{ID: 1},
-				},
-			},
-			mockBehavior: func(cmd *mock.Command, sender *mock.Sender) {
-			},
-			checkError: func(t *testing.T, err error) {
-				t.Helper()
-				require.NoError(t, err)
-			},
-		},
-		{
-			name:        "nil update",
-			commandName: "",
-			update:      nil,
-			mockBehavior: func(cmd *mock.Command, sender *mock.Sender) {
-			},
-			checkError: func(t *testing.T, err error) {
-				t.Helper()
-				require.NoError(t, err)
 			},
 		},
 	}
@@ -94,18 +74,15 @@ func TestDispatcher_Dispatch(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			var (
-				dispatcher = command.NewDispatcher()
-				mockSender = mock.NewSender(t)
-			)
+			dispatcher := command.NewDispatcher()
 
 			if tt.commandName != "" {
 				mockCmd := mock.NewCommand(t)
-				tt.mockBehavior(mockCmd, mockSender)
+				tt.mockBehavior(mockCmd)
 				dispatcher.Register(mockCmd)
 			}
 
-			err := dispatcher.Dispatch(context.Background(), tt.update, mockSender)
+			err := dispatcher.Dispatch(context.Background(), tt.text, tt.chatID, tt.inputCmdName)
 			tt.checkError(t, err)
 		})
 	}
@@ -131,20 +108,4 @@ func TestDispatcher_Commands(t *testing.T) {
 		assert.Equal(t, "a_command", commands[0].Name())
 		assert.Equal(t, "b_command", commands[1].Name())
 	})
-}
-
-func newCommandUpdate(cmd string) *tgbotapi.Update {
-	return &tgbotapi.Update{
-		Message: &tgbotapi.Message{
-			Text: "/" + cmd,
-			Chat: &tgbotapi.Chat{ID: 12345},
-			From: &tgbotapi.User{
-				ID:       98765,
-				UserName: "test_user",
-			},
-			Entities: []tgbotapi.MessageEntity{
-				{Type: "bot_command", Offset: 0, Length: len("/" + cmd)},
-			},
-		},
-	}
 }
