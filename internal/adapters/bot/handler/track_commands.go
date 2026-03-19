@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/adapters/bot/dto"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/command"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/dialog"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/tracker"
@@ -41,18 +42,22 @@ func (c *TrackCommandHandler) Description() string {
 	return "Начать отслеживание ссылки"
 }
 
-func (c *TrackCommandHandler) Handle(ctx context.Context, text string, chatID int64) error {
-	if err := c.tracker.RegisterChat(ctx, chatID); err != nil && !strings.Contains(err.Error(), tracker.ErrAlreadyExists.Error()) {
+func (c *TrackCommandHandler) Handle(ctx context.Context, request dto.CommandRequest) error {
+	if err := request.Validate(); err != nil {
+		return fmt.Errorf("validate track request: %w", err)
+	}
+
+	if err := c.tracker.RegisterChat(ctx, request.ChatID); err != nil && !strings.Contains(err.Error(), tracker.ErrAlreadyExists.Error()) {
 		return fmt.Errorf("register chat before track: %w", err)
 	}
 
-	c.sessions.Set(chatID, dialog.Session{State: dialog.StateAwaitingURL})
-	msg := tgbotapi.NewMessage(chatID, "Отправьте ссылку, которую нужно отслеживать. Для отмены используйте /cancel.")
+	c.sessions.Set(request.ChatID, dialog.Session{State: dialog.StateAwaitingURL})
+	msg := tgbotapi.NewMessage(request.ChatID, "Отправьте ссылку, которую нужно отслеживать. Для отмены используйте /cancel.")
 	if _, err := c.bot.Send(msg); err != nil {
 		return fmt.Errorf("send track prompt: %w", err)
 	}
 
-	c.logger.Info("Track command processed", slog.Int64("chat_id", chatID))
+	c.logger.Info("Track command processed", slog.Int64("chat_id", request.ChatID))
 	return nil
 }
 
@@ -74,13 +79,17 @@ func (c *CancelCommandHandler) Description() string {
 	return "Отменить текущий диалог"
 }
 
-func (c *CancelCommandHandler) Handle(_ context.Context, text string, chatID int64) error {
-	c.sessions.Clear(chatID)
-	msg := tgbotapi.NewMessage(chatID, "Диалог отменен.")
+func (c *CancelCommandHandler) Handle(_ context.Context, request dto.CommandRequest) error {
+	if err := request.Validate(); err != nil {
+		return fmt.Errorf("validate cancel request: %w", err)
+	}
+
+	c.sessions.Clear(request.ChatID)
+	msg := tgbotapi.NewMessage(request.ChatID, "Диалог отменен.")
 	if _, err := c.bot.Send(msg); err != nil {
 		return fmt.Errorf("send cancel confirmation: %w", err)
 	}
 
-	c.logger.Info("Cancel command processed", slog.Int64("chat_id", chatID))
+	c.logger.Info("Cancel command processed", slog.Int64("chat_id", request.ChatID))
 	return nil
 }

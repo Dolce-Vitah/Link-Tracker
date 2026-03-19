@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/adapters/bot/dto"
 )
 
 var ErrUnknownCommand = errors.New("unknown command")
@@ -47,11 +49,15 @@ func (d *Dispatcher) Commands() []Command {
 	return result
 }
 
-func (d *Dispatcher) Dispatch(ctx context.Context, text string, chatID int64, cmdName string) error {
+func (d *Dispatcher) Dispatch(ctx context.Context, request dto.CommandRequest, cmdName string) error {
+	if err := request.Validate(); err != nil {
+		return fmt.Errorf("validate command request: %w", err)
+	}
+
 	cmd, exists := d.commands[cmdName]
 	if !exists {
 		return &UnknownCommandError{Command: cmdName}
 	}
 
-	return cmd.Handle(ctx, text, chatID)
+	return cmd.Handle(ctx, request)
 }

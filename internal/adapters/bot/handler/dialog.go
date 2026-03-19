@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/adapters/bot/dto"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/command"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/dialog"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/tracker"
@@ -39,31 +40,20 @@ func NewTrackDialogHandler(
 	}
 }
 
-func HandleTrackDialogStep(
-	ctx context.Context,
-	trackerService tracker.Service,
-	sessions *dialog.Store,
-	update *tgbotapi.Update,
-	bot command.Sender,
-	logger *slog.Logger,
-) error {
-	return NewTrackDialogHandler(trackerService, sessions, bot, logger).Handle(ctx, update)
-}
-
-func (h *TrackDialogHandler) Handle(ctx context.Context, update *tgbotapi.Update) error {
-	if update == nil || update.Message == nil {
+func (h *TrackDialogHandler) Handle(ctx context.Context, request dto.DialogRequest) error {
+	if err := request.Validate(); err != nil {
 		return nil
 	}
 
-	chatID := update.Message.Chat.ID
+	chatID := request.ChatID()
 	session, ok := h.sessions.Get(chatID)
 	if !ok {
 		return nil
 	}
 
-	text := strings.TrimSpace(update.Message.Text)
-	if update.Message.IsCommand() {
-		return h.handleCommandDuringDialog(chatID, update.Message.Command())
+	text := request.Text()
+	if request.IsCommand() {
+		return h.handleCommandDuringDialog(chatID, request.Command())
 	}
 
 	if text == "" {

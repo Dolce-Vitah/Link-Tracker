@@ -5,10 +5,11 @@ import (
 	"fmt"
 	"testing"
 
+	botdto "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/adapters/bot/dto"
+	bothandler "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/adapters/bot/handler"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/stretchr/testify/assert"
 	testifymock "github.com/stretchr/testify/mock"
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/command/handler"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/command/mock"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/dialog"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/tracker"
@@ -36,12 +37,13 @@ func TestHandleTrackDialogStep_FullFlowWithTags(t *testing.T) {
 		Times(2)
 
 	// Step 1: URL
-	err := handler.HandleTrackDialogStep(context.Background(), tracker, sessions, &tgbotapi.Update{
+	dialogHandler := bothandler.NewTrackDialogHandler(tracker, sessions, sender, nil)
+	err := dialogHandler.Handle(context.Background(), botdto.DialogRequest{Update: &tgbotapi.Update{
 		Message: &tgbotapi.Message{
 			Chat: &tgbotapi.Chat{ID: 100},
 			Text: "https://github.com/user/repo",
 		},
-	}, sender, nil)
+	}})
 	assert.NoError(t, err)
 
 	session, ok := sessions.Get(100)
@@ -49,12 +51,12 @@ func TestHandleTrackDialogStep_FullFlowWithTags(t *testing.T) {
 	assert.Equal(t, dialog.StateAwaitingTags, session.State)
 
 	// Step 2: tags
-	err = handler.HandleTrackDialogStep(context.Background(), tracker, sessions, &tgbotapi.Update{
+	err = dialogHandler.Handle(context.Background(), botdto.DialogRequest{Update: &tgbotapi.Update{
 		Message: &tgbotapi.Message{
 			Chat: &tgbotapi.Chat{ID: 100},
 			Text: "work,docs",
 		},
-	}, sender, nil)
+	}})
 	assert.NoError(t, err)
 
 	_, ok = sessions.Get(100)
@@ -77,7 +79,8 @@ func TestHandleTrackDialogStep_CancelOnAnotherCommand(t *testing.T) {
 		Return(tgbotapi.Message{}, nil).
 		Once()
 
-	err := handler.HandleTrackDialogStep(context.Background(), tracker, sessions, &tgbotapi.Update{
+	dialogHandler := bothandler.NewTrackDialogHandler(tracker, sessions, sender, nil)
+	err := dialogHandler.Handle(context.Background(), botdto.DialogRequest{Update: &tgbotapi.Update{
 		Message: &tgbotapi.Message{
 			Chat: &tgbotapi.Chat{ID: 101},
 			Text: "/help",
@@ -85,7 +88,7 @@ func TestHandleTrackDialogStep_CancelOnAnotherCommand(t *testing.T) {
 				{Type: "bot_command", Offset: 0, Length: 5},
 			},
 		},
-	}, sender, nil)
+	}})
 	assert.NoError(t, err)
 
 	_, ok := sessions.Get(101)
@@ -104,12 +107,13 @@ func TestHandleTrackDialogStep_InvalidURL(t *testing.T) {
 		Return(tgbotapi.Message{}, nil).
 		Once()
 
-	err := handler.HandleTrackDialogStep(context.Background(), &fakeTracker{}, sessions, &tgbotapi.Update{
+	dialogHandler := bothandler.NewTrackDialogHandler(&fakeTracker{}, sessions, sender, nil)
+	err := dialogHandler.Handle(context.Background(), botdto.DialogRequest{Update: &tgbotapi.Update{
 		Message: &tgbotapi.Message{
 			Chat: &tgbotapi.Chat{ID: 102},
 			Text: "tbank://github.com/user/repo",
 		},
-	}, sender, nil)
+	}})
 	assert.NoError(t, err)
 }
 
@@ -133,11 +137,12 @@ func TestHandleTrackDialogStep_DuplicateLink(t *testing.T) {
 		Return(tgbotapi.Message{}, nil).
 		Once()
 
-	err := handler.HandleTrackDialogStep(context.Background(), trackerSvc, sessions, &tgbotapi.Update{
+	dialogHandler := bothandler.NewTrackDialogHandler(trackerSvc, sessions, sender, nil)
+	err := dialogHandler.Handle(context.Background(), botdto.DialogRequest{Update: &tgbotapi.Update{
 		Message: &tgbotapi.Message{
 			Chat: &tgbotapi.Chat{ID: 103},
 			Text: "work",
 		},
-	}, sender, nil)
+	}})
 	assert.NoError(t, err)
 }

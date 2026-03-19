@@ -6,18 +6,19 @@ import (
 	"log/slog"
 	"testing"
 
+	botdto "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/adapters/bot/dto"
+	bothandler "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/adapters/bot/handler"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/stretchr/testify/assert"
 	testifymock "github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/command/handler"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/command/mock"
 )
 
 func TestStartCommandHandler_NameAndDescription(t *testing.T) {
 	t.Parallel()
 
-	cmd := handler.NewStartCommandHandler(nil, nil, nil)
+	cmd := bothandler.NewStartCommandHandler(nil, nil, nil)
 
 	assert.Equal(t, "start", cmd.Name())
 	assert.NotEmpty(t, cmd.Description())
@@ -70,9 +71,12 @@ func TestStartCommandHandler_Handle(t *testing.T) {
 			tt.mockBehavior(mockSender)
 
 			logger := slog.Default()
-			cmd := handler.NewStartCommandHandler(nil, logger, mockSender)
+			cmd := bothandler.NewStartCommandHandler(nil, logger, mockSender)
 
-			err := cmd.Handle(context.Background(), tt.text, tt.chatID)
+			err := cmd.Handle(context.Background(), botdto.CommandRequest{
+				Text:   tt.text,
+				ChatID: tt.chatID,
+			})
 			tt.checkError(t, err)
 		})
 	}

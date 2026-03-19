@@ -6,6 +6,7 @@ import (
 	"log/slog"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/adapters/bot/dto"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/command"
 )
 
@@ -40,13 +41,17 @@ func (c *HelpCommandHandler) Description() string {
 	return "Вывести список доступных команд"
 }
 
-func (c *HelpCommandHandler) Handle(ctx context.Context, text string, chatID int64) error {
-	msg := tgbotapi.NewMessage(chatID, c.helpText)
+func (c *HelpCommandHandler) Handle(ctx context.Context, request dto.CommandRequest) error {
+	if err := request.Validate(); err != nil {
+		return fmt.Errorf("validate help request: %w", err)
+	}
+
+	msg := tgbotapi.NewMessage(request.ChatID, c.helpText)
 	_, err := c.bot.Send(msg)
 	if err != nil {
 		return fmt.Errorf("send help command response: %w", err)
 	}
 
-	c.logger.Info("Help command processed", slog.Int64("chat_id", chatID))
+	c.logger.Info("Help command processed", slog.Int64("chat_id", request.ChatID))
 	return nil
 }

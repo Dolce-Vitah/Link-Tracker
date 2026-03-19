@@ -4,6 +4,7 @@ import (
 	"context"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/adapters/bot/dto"
 )
 
 type (
@@ -14,6 +15,6 @@ type (
 	Command interface {
 		Name() string
 		Description() string
-		Handle(ctx context.Context, text string, chatID int64) error
+		Handle(ctx context.Context, request dto.CommandRequest) error
 	}
 )

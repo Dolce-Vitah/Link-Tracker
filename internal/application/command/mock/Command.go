@@ -5,6 +5,7 @@ package mock
 import (
 	context "context"
 
+	dto "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/adapters/bot/dto"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -66,17 +67,17 @@ func (_c *Command_Description_Call) RunAndReturn(run func() string) *Command_Des
 	return _c
 }
 
-// Handle provides a mock function with given fields: ctx, text, chatID.
-func (_m *Command) Handle(ctx context.Context, text string, chatID int64) error {
-	ret := _m.Called(ctx, text, chatID)
+// Handle provides a mock function with given fields: ctx, request.
+func (_m *Command) Handle(ctx context.Context, request dto.CommandRequest) error {
+	ret := _m.Called(ctx, request)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Handle")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, int64) error); ok {
-		r0 = rf(ctx, text, chatID)
+	if rf, ok := ret.Get(0).(func(context.Context, dto.CommandRequest) error); ok {
+		r0 = rf(ctx, request)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -91,15 +92,14 @@ type Command_Handle_Call struct {
 
 // Handle is a helper method to define mock.On call.
 //   - ctx context.Context
-//   - text string
-//   - chatID int64
-func (_e *Command_Expecter) Handle(ctx interface{}, text interface{}, chatID interface{}) *Command_Handle_Call {
-	return &Command_Handle_Call{Call: _e.mock.On("Handle", ctx, text, chatID)}
+//   - request dto.CommandRequest
+func (_e *Command_Expecter) Handle(ctx interface{}, request interface{}) *Command_Handle_Call {
+	return &Command_Handle_Call{Call: _e.mock.On("Handle", ctx, request)}
 }
 
-func (_c *Command_Handle_Call) Run(run func(ctx context.Context, text string, chatID int64)) *Command_Handle_Call {
+func (_c *Command_Handle_Call) Run(run func(ctx context.Context, request dto.CommandRequest)) *Command_Handle_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string), args[2].(int64))
+		run(args[0].(context.Context), args[1].(dto.CommandRequest))
 	})
 	return _c
 }
@@ -109,7 +109,7 @@ func (_c *Command_Handle_Call) Return(_a0 error) *Command_Handle_Call {
 	return _c
 }
 
-func (_c *Command_Handle_Call) RunAndReturn(run func(context.Context, string, int64) error) *Command_Handle_Call {
+func (_c *Command_Handle_Call) RunAndReturn(run func(context.Context, dto.CommandRequest) error) *Command_Handle_Call {
 	_c.Call.Return(run)
 	return _c
 }

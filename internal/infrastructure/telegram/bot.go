@@ -11,8 +11,9 @@ import (
 	"strings"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	botdto "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/adapters/bot/dto"
+	bothandler "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/adapters/bot/handler"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/command"
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/command/handler"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/dialog"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/tracker"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/api"
@@ -117,8 +118,8 @@ func (b *Bot) handleUpdate(ctx context.Context, update *tgbotapi.Update, sender 
 	text := update.Message.Text
 
 	if b.tracker != nil {
-		dialogHandler := handler.NewTrackDialogHandler(b.tracker, b.sessions, sender, b.logger)
-		if err := dialogHandler.Handle(ctx, update); err != nil {
+		dialogHandler := bothandler.NewTrackDialogHandler(b.tracker, b.sessions, sender, b.logger)
+		if err := dialogHandler.Handle(ctx, botdto.DialogRequest{Update: update}); err != nil {
 			slog.Error("Failed to process track dialog step", slog.String("error", err.Error()))
 			return
 		}
@@ -130,7 +131,10 @@ func (b *Bot) handleUpdate(ctx context.Context, update *tgbotapi.Update, sender 
 
 	cmdName = update.Message.Command()
 
-	err := b.dispatcher.Dispatch(ctx, text, chatID, cmdName)
+	err := b.dispatcher.Dispatch(ctx, botdto.CommandRequest{
+		Text:   text,
+		ChatID: chatID,
+	}, cmdName)
 	if err == nil {
 		return
 	}
