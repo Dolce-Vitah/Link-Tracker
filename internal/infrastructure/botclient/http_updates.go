@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -20,6 +21,17 @@ type HTTPUpdatesClient struct {
 	baseURL string
 	client  *http.Client
 }
+
+var (
+	ErrBadRequest      = errors.New("bad request")
+	ErrUnauthorized    = errors.New("unauthorized")
+	ErrForbidden       = errors.New("forbidden")
+	ErrNotFound        = errors.New("not found")
+	ErrConflict        = errors.New("conflict")
+	ErrTooManyRequests = errors.New("too many requests")
+	ErrClient          = errors.New("client error")
+	ErrInternal        = errors.New("internal error")
+)
 
 func NewHTTPUpdatesClient(baseURL string, timeout time.Duration) *HTTPUpdatesClient {
 	return &HTTPUpdatesClient{
@@ -46,7 +58,32 @@ func (c *HTTPUpdatesClient) SendUpdate(ctx context.Context, update api.LinkUpdat
 	defer resp.Body.Close()
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return fmt.Errorf("bot update endpoint returned status %d", resp.StatusCode)
+		return mapStatusError(resp.StatusCode)
 	}
 	return nil
+}
+
+func mapStatusError(status int) error {
+	switch status {
+	case http.StatusBadRequest:
+		return ErrBadRequest
+	case http.StatusUnauthorized:
+		return ErrUnauthorized
+	case http.StatusForbidden:
+		return ErrForbidden
+	case http.StatusNotFound:
+		return ErrNotFound
+	case http.StatusConflict:
+		return ErrConflict
+	case http.StatusTooManyRequests:
+		return ErrTooManyRequests
+	default:
+		if status >= 400 && status < 500 {
+			return ErrClient
+		}
+		if status >= 500 {
+			return ErrInternal
+		}
+		return fmt.Errorf("unexpected status code: %d", status)
+	}
 }
