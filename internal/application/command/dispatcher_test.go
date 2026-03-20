@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/adapters/bot/dto"
-	"github.com/stretchr/testify/assert"
 	testifymock "github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/command"
@@ -115,7 +114,7 @@ func TestDispatcher_Commands(t *testing.T) {
 
 		commands := dispatcher.Commands()
 		require.Len(t, commands, 2)
-		assert.Equal(t, "a_command", commands[0].Name())
-		assert.Equal(t, "b_command", commands[1].Name())
+		require.Equal(t, "a_command", commands[0].Name())
+		require.Equal(t, "b_command", commands[1].Name())
 	})
 }

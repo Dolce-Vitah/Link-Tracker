@@ -9,8 +9,8 @@ import (
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/adapters/bot/handler"
 	handlermock "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/adapters/bot/handler/mock"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"github.com/stretchr/testify/assert"
 	testifymock "github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/command/mock"
 )
 
@@ -30,7 +30,7 @@ func TestCancelCommandHandler_Handle(t *testing.T) {
 				sessions.On("Clear", int64(1)).Once()
 				sender.EXPECT().Send(testifymock.Anything).Return(tgbotapi.Message{}, nil).Once()
 			},
-			assertErr: func(t *testing.T, err error) { assert.NoError(t, err) },
+			assertErr: func(t *testing.T, err error) { require.NoError(t, err) },
 		},
 		{
 			name:    "send error",
@@ -39,7 +39,7 @@ func TestCancelCommandHandler_Handle(t *testing.T) {
 				sessions.On("Clear", int64(1)).Once()
 				sender.EXPECT().Send(testifymock.Anything).Return(tgbotapi.Message{}, sendErr).Once()
 			},
-			assertErr: func(t *testing.T, err error) { assert.ErrorIs(t, err, sendErr) },
+			assertErr: func(t *testing.T, err error) { require.ErrorIs(t, err, sendErr) },
 		},
 	}
 

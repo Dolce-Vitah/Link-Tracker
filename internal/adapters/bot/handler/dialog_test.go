@@ -14,8 +14,8 @@ import (
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/command/mock"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"github.com/stretchr/testify/assert"
 	testifymock "github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
 func TestTrackDialogHandler_Handle(t *testing.T) {
@@ -32,7 +32,7 @@ func TestTrackDialogHandler_Handle(t *testing.T) {
 			name:    "invalid request ignored",
 			request: dto.DialogRequest{},
 			setupMocks: func(tracker *trackermock.MockService, sessions *handlermock.MockSessionStore, sender *mock.Sender) {},
-			assertErr:  func(t *testing.T, err error) { assert.NoError(t, err) },
+			assertErr:  func(t *testing.T, err error) { require.NoError(t, err) },
 		},
 		{
 			name: "no session found",
@@ -42,7 +42,7 @@ func TestTrackDialogHandler_Handle(t *testing.T) {
 			setupMocks: func(tracker *trackermock.MockService, sessions *handlermock.MockSessionStore, sender *mock.Sender) {
 				sessions.On("Get", int64(100)).Return(dialog.Session{}, false).Once()
 			},
-			assertErr: func(t *testing.T, err error) { assert.NoError(t, err) },
+			assertErr: func(t *testing.T, err error) { require.NoError(t, err) },
 		},
 		{
 			name: "awaiting url invalid",
@@ -53,7 +53,7 @@ func TestTrackDialogHandler_Handle(t *testing.T) {
 				sessions.On("Get", int64(102)).Return(dialog.Session{State: dialog.StateAwaitingURL}, true).Once()
 				sender.EXPECT().Send(testifymock.Anything).Return(tgbotapi.Message{}, nil).Once()
 			},
-			assertErr: func(t *testing.T, err error) { assert.NoError(t, err) },
+			assertErr: func(t *testing.T, err error) { require.NoError(t, err) },
 		},
 		{
 			name: "awaiting url success",
@@ -68,7 +68,7 @@ func TestTrackDialogHandler_Handle(t *testing.T) {
 				}).Once()
 				sender.EXPECT().Send(testifymock.Anything).Return(tgbotapi.Message{}, nil).Once()
 			},
-			assertErr: func(t *testing.T, err error) { assert.NoError(t, err) },
+			assertErr: func(t *testing.T, err error) { require.NoError(t, err) },
 		},
 		{
 			name: "awaiting tags success",
@@ -87,7 +87,7 @@ func TestTrackDialogHandler_Handle(t *testing.T) {
 				sessions.On("Clear", int64(100)).Once()
 				sender.EXPECT().Send(testifymock.Anything).Return(tgbotapi.Message{}, nil).Once()
 			},
-			assertErr: func(t *testing.T, err error) { assert.NoError(t, err) },
+			assertErr: func(t *testing.T, err error) { require.NoError(t, err) },
 		},
 		{
 			name: "awaiting tags duplicate link",
@@ -106,7 +106,7 @@ func TestTrackDialogHandler_Handle(t *testing.T) {
 				sessions.On("Clear", int64(103)).Once()
 				sender.EXPECT().Send(testifymock.Anything).Return(tgbotapi.Message{}, nil).Once()
 			},
-			assertErr: func(t *testing.T, err error) { assert.NoError(t, err) },
+			assertErr: func(t *testing.T, err error) { require.NoError(t, err) },
 		},
 		{
 			name: "awaiting tags add error",
@@ -123,7 +123,7 @@ func TestTrackDialogHandler_Handle(t *testing.T) {
 					Tags: []string{"work"},
 				}).Return(api.LinkResponse{}, addErr).Once()
 			},
-			assertErr: func(t *testing.T, err error) { assert.ErrorIs(t, err, addErr) },
+			assertErr: func(t *testing.T, err error) { require.ErrorIs(t, err, addErr) },
 		},
 		{
 			name: "command during dialog cancels",
@@ -138,7 +138,7 @@ func TestTrackDialogHandler_Handle(t *testing.T) {
 				sessions.On("Clear", int64(101)).Once()
 				sender.EXPECT().Send(testifymock.Anything).Return(tgbotapi.Message{}, nil).Once()
 			},
-			assertErr: func(t *testing.T, err error) { assert.NoError(t, err) },
+			assertErr: func(t *testing.T, err error) { require.NoError(t, err) },
 		},
 		{
 			name: "command cancel keeps dialog",
@@ -151,7 +151,7 @@ func TestTrackDialogHandler_Handle(t *testing.T) {
 			setupMocks: func(tracker *trackermock.MockService, sessions *handlermock.MockSessionStore, sender *mock.Sender) {
 				sessions.On("Get", int64(101)).Return(dialog.Session{State: dialog.StateAwaitingURL}, true).Once()
 			},
-			assertErr: func(t *testing.T, err error) { assert.NoError(t, err) },
+			assertErr: func(t *testing.T, err error) { require.NoError(t, err) },
 		},
 		{
 			name: "send error while cancelling by command",
@@ -166,7 +166,7 @@ func TestTrackDialogHandler_Handle(t *testing.T) {
 				sessions.On("Clear", int64(101)).Once()
 				sender.EXPECT().Send(testifymock.Anything).Return(tgbotapi.Message{}, sendErr).Once()
 			},
-			assertErr: func(t *testing.T, err error) { assert.ErrorIs(t, err, sendErr) },
+			assertErr: func(t *testing.T, err error) { require.ErrorIs(t, err, sendErr) },
 		},
 	}
 

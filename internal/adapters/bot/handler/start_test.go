@@ -11,7 +11,6 @@ import (
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/adapters/bot/handler"
 	trackermock "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/tracker/mock"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"github.com/stretchr/testify/assert"
 	testifymock "github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/command/mock"
@@ -22,8 +21,8 @@ func TestStartCommandHandler_NameAndDescription(t *testing.T) {
 
 	cmd := handler.NewStartCommandHandler(nil, nil, nil)
 
-	assert.Equal(t, "start", cmd.Name())
-	assert.NotEmpty(t, cmd.Description())
+	require.Equal(t, "start", cmd.Name())
+	require.NotEmpty(t, cmd.Description())
 }
 
 func TestStartCommandHandler_Handle(t *testing.T) {

@@ -10,8 +10,8 @@ import (
 	handlermock "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/adapters/bot/handler/mock"
 	trackermock "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/tracker/mock"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"github.com/stretchr/testify/assert"
 	testifymock "github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/command/mock"
 )
 
@@ -35,7 +35,7 @@ func TestTrackCommand_Handle(t *testing.T) {
 					return msg.ChatID == 1
 				})).Return(tgbotapi.Message{}, nil).Once()
 			},
-			assertErr: func(t *testing.T, err error) { assert.NoError(t, err) },
+			assertErr: func(t *testing.T, err error) { require.NoError(t, err) },
 		},
 		{
 			name:    "register error",
@@ -43,7 +43,7 @@ func TestTrackCommand_Handle(t *testing.T) {
 			setupMocks: func(trackerMock *trackermock.MockService, sessions *handlermock.MockSessionStore, sender *mock.Sender) {
 				trackerMock.On("RegisterChat", testifymock.Anything, int64(1)).Return(registerErr).Once()
 			},
-			assertErr: func(t *testing.T, err error) { assert.Error(t, err) },
+			assertErr: func(t *testing.T, err error) { require.Error(t, err) },
 		},
 		{
 			name:    "send error",
@@ -53,7 +53,7 @@ func TestTrackCommand_Handle(t *testing.T) {
 				sessions.On("Set", int64(1), testifymock.Anything).Once()
 				sender.EXPECT().Send(testifymock.Anything).Return(tgbotapi.Message{}, sendErr).Once()
 			},
-			assertErr: func(t *testing.T, err error) { assert.ErrorIs(t, err, sendErr) },
+			assertErr: func(t *testing.T, err error) { require.ErrorIs(t, err, sendErr) },
 		},
 	}
 

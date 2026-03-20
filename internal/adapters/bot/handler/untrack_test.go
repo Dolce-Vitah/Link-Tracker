@@ -9,8 +9,8 @@ import (
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/adapters/bot/handler"
 	trackermock "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/tracker/mock"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"github.com/stretchr/testify/assert"
 	testifymock "github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/command/mock"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/tracker"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/api"
@@ -33,7 +33,7 @@ func TestUntrackCommand_Handle(t *testing.T) {
 			setupMocks: func(trackerMock *trackermock.MockService, sender *mock.Sender) {
 				sender.EXPECT().Send(testifymock.Anything).Return(tgbotapi.Message{}, nil).Once()
 			},
-			assertErr: func(t *testing.T, err error) { assert.NoError(t, err) },
+			assertErr: func(t *testing.T, err error) { require.NoError(t, err) },
 		},
 		{
 			name:    "register error",
@@ -41,7 +41,7 @@ func TestUntrackCommand_Handle(t *testing.T) {
 			setupMocks: func(trackerMock *trackermock.MockService, sender *mock.Sender) {
 				trackerMock.On("RegisterChat", testifymock.Anything, int64(9)).Return(registerErr).Once()
 			},
-			assertErr: func(t *testing.T, err error) { assert.Error(t, err) },
+			assertErr: func(t *testing.T, err error) { require.Error(t, err) },
 		},
 		{
 			name:    "not found",
@@ -52,7 +52,7 @@ func TestUntrackCommand_Handle(t *testing.T) {
 					Return(api.LinkResponse{}, errors.New(tracker.ErrNotFound.Error())).Once()
 				sender.EXPECT().Send(testifymock.Anything).Return(tgbotapi.Message{}, nil).Once()
 			},
-			assertErr: func(t *testing.T, err error) { assert.NoError(t, err) },
+			assertErr: func(t *testing.T, err error) { require.NoError(t, err) },
 		},
 		{
 			name:    "remove error",
@@ -62,7 +62,7 @@ func TestUntrackCommand_Handle(t *testing.T) {
 				trackerMock.On("RemoveLink", testifymock.Anything, int64(9), api.RemoveLinkRequest{Link: "https://a.b"}).
 					Return(api.LinkResponse{}, removeErr).Once()
 			},
-			assertErr: func(t *testing.T, err error) { assert.ErrorIs(t, err, removeErr) },
+			assertErr: func(t *testing.T, err error) { require.ErrorIs(t, err, removeErr) },
 		},
 		{
 			name:    "success",
@@ -73,7 +73,7 @@ func TestUntrackCommand_Handle(t *testing.T) {
 					Return(api.LinkResponse{}, nil).Once()
 				sender.EXPECT().Send(testifymock.Anything).Return(tgbotapi.Message{}, nil).Once()
 			},
-			assertErr: func(t *testing.T, err error) { assert.NoError(t, err) },
+			assertErr: func(t *testing.T, err error) { require.NoError(t, err) },
 		},
 		{
 			name:    "send error after remove",
@@ -84,7 +84,7 @@ func TestUntrackCommand_Handle(t *testing.T) {
 					Return(api.LinkResponse{}, nil).Once()
 				sender.EXPECT().Send(testifymock.Anything).Return(tgbotapi.Message{}, sendErr).Once()
 			},
-			assertErr: func(t *testing.T, err error) { assert.ErrorIs(t, err, sendErr) },
+			assertErr: func(t *testing.T, err error) { require.ErrorIs(t, err, sendErr) },
 		},
 	}
 

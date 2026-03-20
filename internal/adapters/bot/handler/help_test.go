@@ -9,7 +9,6 @@ import (
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/adapters/bot/dto"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/adapters/bot/handler"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"github.com/stretchr/testify/assert"
 	testifymock "github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/command/mock"
@@ -20,8 +19,8 @@ func TestHelpCommandHandler_NameAndDescription(t *testing.T) {
 
 	cmd := handler.NewHelpCommandHandler(nil, nil)
 
-	assert.Equal(t, "help", cmd.Name())
-	assert.NotEmpty(t, cmd.Description())
+	require.Equal(t, "help", cmd.Name())
+	require.NotEmpty(t, cmd.Description())
 }
 
 func TestHelpCommandHandler_Handle(t *testing.T) {
