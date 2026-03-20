@@ -1,4 +1,4 @@
-﻿package telegram
+package telegram
 
 import (
 	"context"
@@ -14,6 +14,8 @@ import (
 )
 
 func TestBot_HandleUpdate(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name           string
 		command        string

@@ -53,5 +53,10 @@ func (d *Dispatcher) Dispatch(ctx context.Context, text string, chatID int64, cm
 		return &UnknownCommandError{Command: cmdName}
 	}
 
-	return cmd.Handle(ctx, text, chatID)
+	handleErr := cmd.Handle(ctx, text, chatID)
+	if handleErr != nil {
+		return fmt.Errorf("handle command %q: %w", cmdName, handleErr)
+	}
+
+	return nil
 }

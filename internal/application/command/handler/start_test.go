@@ -24,6 +24,8 @@ func TestStartCommandHandler_NameAndDescription(t *testing.T) {
 }
 
 func TestStartCommandHandler_Handle(t *testing.T) {
+	t.Parallel()
+
 	type mockBehavior func(sender *mock.Sender)
 	sendErr := errors.New("send error")
 

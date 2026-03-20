@@ -27,8 +27,9 @@ func (a *App) New() error {
 	bot.RegisterCommand(handler.NewStartCommandHandler(slog.Default(), bot.Client()))
 	bot.RegisterCommand(handler.NewHelpCommandHandler(slog.Default(), bot.Client()))
 
-	if err := bot.SetMyCommands(); err != nil {
-		slog.Error("Failed to set bot commands menu", slog.String("error", err.Error()))
+	setCommandsErr := bot.SetMyCommands()
+	if setCommandsErr != nil {
+		slog.Error("Failed to set bot commands menu", slog.String("error", setCommandsErr.Error()))
 	} else {
 		slog.Info("Bot commands menu updated successfully in UI")
 	}

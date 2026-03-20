@@ -13,6 +13,8 @@ import (
 )
 
 func TestDispatcher_Dispatch(t *testing.T) {
+	t.Parallel()
+
 	type mockBehavior func(cmd *mock.Command)
 	handleErr := errors.New("handle error")
 
@@ -61,7 +63,7 @@ func TestDispatcher_Dispatch(t *testing.T) {
 			text:         "/unknown",
 			chatID:       12345,
 			inputCmdName: "unknown",
-			mockBehavior: func(cmd *mock.Command) {
+			mockBehavior: func(_ *mock.Command) {
 			},
 			checkError: func(t *testing.T, err error) {
 				t.Helper()
@@ -89,6 +91,8 @@ func TestDispatcher_Dispatch(t *testing.T) {
 }
 
 func TestDispatcher_Commands(t *testing.T) {
+	t.Parallel()
+
 	t.Run("commands are returned in stable order", func(t *testing.T) {
 		t.Parallel()
 

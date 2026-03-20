@@ -1,46 +1,27 @@
 package handler
 
 import (
-	"context"
-	"fmt"
 	"log/slog"
 
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/command"
 )
 
 const defaultHelpText = "Доступные команды:\n/start - Начало работы с ботом\n/help - Показать этот список команд"
 
 type HelpCommandHandler struct {
-	logger   *slog.Logger
-	bot      command.Sender
-	helpText string
+	*textCommandHandler
 }
 
 func NewHelpCommandHandler(logger *slog.Logger, bot command.Sender) *HelpCommandHandler {
-	if logger == nil {
-		logger = slog.Default()
-	}
-
 	return &HelpCommandHandler{
-		logger:   logger,
-		bot:      bot,
-		helpText: defaultHelpText,
+		textCommandHandler: newTextCommandHandler(
+			logger,
+			bot,
+			"help",
+			"Вывести список доступных команд",
+			defaultHelpText,
+			"Help command processed",
+			"send help command response",
+		),
 	}
-}
-
-func (c *HelpCommandHandler) Name() string { return "help" }
-func (c *HelpCommandHandler) Description() string {
-	return "Вывести список доступных команд"
-}
-
-func (c *HelpCommandHandler) Handle(ctx context.Context, text string, chatID int64) error {
-	msg := tgbotapi.NewMessage(chatID, c.helpText)
-	_, err := c.bot.Send(msg)
-	if err != nil {
-		return fmt.Errorf("send help command response: %w", err)
-	}
-
-	c.logger.Info("Help command processed", slog.Int64("chat_id", chatID))
-	return nil
 }
