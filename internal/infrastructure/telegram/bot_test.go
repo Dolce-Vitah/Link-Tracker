@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"testing"
 
-	bothandler "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/adapters/bot/handler"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/adapters/bot/handler"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/command"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/command/mock"
 
@@ -66,8 +66,8 @@ func TestBot_HandleUpdate(t *testing.T) {
 				dispatcher: command.NewDispatcher(),
 				logger:     slog.Default(),
 			}
-			bot.RegisterCommand(bothandler.NewStartCommandHandler(nil, nil, mockSender))
-			bot.RegisterCommand(bothandler.NewHelpCommandHandler(nil, mockSender))
+			bot.RegisterCommand(handler.NewStartCommandHandler(nil, nil, mockSender))
+			bot.RegisterCommand(handler.NewHelpCommandHandler(nil, mockSender))
 
 			bot.handleUpdate(context.Background(), update, mockSender)
 		})

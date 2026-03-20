@@ -10,21 +10,21 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/adapters/bot/dto"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/command"
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/dialog"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/repository"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/tracker"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/api"
 )
 
 type TrackDialogHandler struct {
 	trackerService tracker.Service
-	sessions       SessionStore
+	sessions       repository.SessionRepository
 	bot            command.Sender
 	logger         *slog.Logger
 }
 
 func NewTrackDialogHandler(
 	trackerService tracker.Service,
-	sessions SessionStore,
+	sessions repository.SessionRepository,
 	bot command.Sender,
 	logger *slog.Logger,
 ) *TrackDialogHandler {
@@ -61,9 +61,9 @@ func (h *TrackDialogHandler) Handle(ctx context.Context, request dto.DialogReque
 	}
 
 	switch session.State {
-	case dialog.StateAwaitingURL:
+	case repository.StateAwaitingURL:
 		return h.handleAwaitingURL(chatID, text)
-	case dialog.StateAwaitingTags:
+	case repository.StateAwaitingTags:
 		return h.handleAwaitingTags(ctx, chatID, session.PendingURL, text)
 	default:
 		return nil
@@ -92,8 +92,8 @@ func (h *TrackDialogHandler) handleAwaitingURL(chatID int64, text string) error 
 		return h.sendPlainMessage(chatID, "Ссылка некорректна. Введите ссылку в формате https://example.com/path")
 	}
 
-	h.sessions.Set(chatID, dialog.Session{
-		State:      dialog.StateAwaitingTags,
+	h.sessions.Set(chatID, repository.Session{
+		State:      repository.StateAwaitingTags,
 		PendingURL: text,
 	})
 

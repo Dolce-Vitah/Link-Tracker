@@ -9,19 +9,19 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/adapters/bot/dto"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/command"
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/dialog"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/repository"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/tracker"
 )
 
 type TrackCommandHandler struct {
-	sessions SessionStore
+	sessions repository.SessionRepository
 	tracker  tracker.Service
 	logger   *slog.Logger
 	bot      command.Sender
 }
 
 func NewTrackCommandHandler(
-	sessions SessionStore,
+	sessions repository.SessionRepository,
 	trackerService tracker.Service,
 	logger *slog.Logger,
 	bot command.Sender,
@@ -51,7 +51,7 @@ func (c *TrackCommandHandler) Handle(ctx context.Context, request dto.CommandReq
 		return fmt.Errorf("register chat before track: %w", err)
 	}
 
-	c.sessions.Set(request.ChatID, dialog.Session{State: dialog.StateAwaitingURL})
+	c.sessions.Set(request.ChatID, repository.Session{State: repository.StateAwaitingURL})
 	msg := tgbotapi.NewMessage(request.ChatID, "Отправьте ссылку, которую нужно отслеживать. Для отмены используйте /cancel.")
 	if _, err := c.bot.Send(msg); err != nil {
 		return fmt.Errorf("send track prompt: %w", err)
@@ -62,12 +62,12 @@ func (c *TrackCommandHandler) Handle(ctx context.Context, request dto.CommandReq
 }
 
 type CancelCommandHandler struct {
-	sessions SessionStore
+	sessions repository.SessionRepository
 	logger   *slog.Logger
 	bot      command.Sender
 }
 
-func NewCancelCommandHandler(sessions SessionStore, logger *slog.Logger, bot command.Sender) *CancelCommandHandler {
+func NewCancelCommandHandler(sessions repository.SessionRepository, logger *slog.Logger, bot command.Sender) *CancelCommandHandler {
 	if logger == nil {
 		logger = slog.Default()
 	}

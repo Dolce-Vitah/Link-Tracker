@@ -7,8 +7,9 @@ import (
 
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/adapters/bot/dto"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/adapters/bot/handler"
-	handlermock "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/adapters/bot/handler/mock"
+	repositorymock "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/repository/mock"
 	trackermock "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/tracker/mock"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/repository"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	testifymock "github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -22,15 +23,15 @@ func TestTrackCommand_Handle(t *testing.T) {
 	tests := []struct {
 		name       string
 		request    dto.CommandRequest
-		setupMocks func(trackerMock *trackermock.MockService, sessions *handlermock.MockSessionStore, sender *mock.Sender)
+		setupMocks func(trackerMock *trackermock.MockService, sessions *repositorymock.MockSessionRepository, sender *mock.Sender)
 		assertErr  func(t *testing.T, err error)
 	}{
 		{
 			name:    "success",
 			request: dto.CommandRequest{Text: "/track", ChatID: 1},
-			setupMocks: func(trackerMock *trackermock.MockService, sessions *handlermock.MockSessionStore, sender *mock.Sender) {
+			setupMocks: func(trackerMock *trackermock.MockService, sessions *repositorymock.MockSessionRepository, sender *mock.Sender) {
 				trackerMock.On("RegisterChat", testifymock.Anything, int64(1)).Return(nil).Once()
-				sessions.On("Set", int64(1), testifymock.Anything).Once()
+				sessions.On("Set", int64(1), repository.Session{State: repository.StateAwaitingURL}).Once()
 				sender.EXPECT().Send(testifymock.MatchedBy(func(msg tgbotapi.MessageConfig) bool {
 					return msg.ChatID == 1
 				})).Return(tgbotapi.Message{}, nil).Once()
@@ -40,7 +41,7 @@ func TestTrackCommand_Handle(t *testing.T) {
 		{
 			name:    "register error",
 			request: dto.CommandRequest{Text: "/track", ChatID: 1},
-			setupMocks: func(trackerMock *trackermock.MockService, sessions *handlermock.MockSessionStore, sender *mock.Sender) {
+			setupMocks: func(trackerMock *trackermock.MockService, sessions *repositorymock.MockSessionRepository, sender *mock.Sender) {
 				trackerMock.On("RegisterChat", testifymock.Anything, int64(1)).Return(registerErr).Once()
 			},
 			assertErr: func(t *testing.T, err error) { require.Error(t, err) },
@@ -48,9 +49,9 @@ func TestTrackCommand_Handle(t *testing.T) {
 		{
 			name:    "send error",
 			request: dto.CommandRequest{Text: "/track", ChatID: 1},
-			setupMocks: func(trackerMock *trackermock.MockService, sessions *handlermock.MockSessionStore, sender *mock.Sender) {
+			setupMocks: func(trackerMock *trackermock.MockService, sessions *repositorymock.MockSessionRepository, sender *mock.Sender) {
 				trackerMock.On("RegisterChat", testifymock.Anything, int64(1)).Return(nil).Once()
-				sessions.On("Set", int64(1), testifymock.Anything).Once()
+				sessions.On("Set", int64(1), repository.Session{State: repository.StateAwaitingURL}).Once()
 				sender.EXPECT().Send(testifymock.Anything).Return(tgbotapi.Message{}, sendErr).Once()
 			},
 			assertErr: func(t *testing.T, err error) { require.ErrorIs(t, err, sendErr) },
@@ -62,7 +63,7 @@ func TestTrackCommand_Handle(t *testing.T) {
 			t.Parallel()
 
 			trackerMock := trackermock.NewMockService(t)
-			sessions := handlermock.NewMockSessionStore(t)
+			sessions := repositorymock.NewMockSessionRepository(t)
 			sender := mock.NewSender(t)
 			tt.setupMocks(trackerMock, sessions, sender)
 

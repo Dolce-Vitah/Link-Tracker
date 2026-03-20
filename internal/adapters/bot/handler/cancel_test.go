@@ -7,7 +7,7 @@ import (
 
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/adapters/bot/dto"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/adapters/bot/handler"
-	handlermock "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/adapters/bot/handler/mock"
+	repositorymock "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/repository/mock"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	testifymock "github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -20,13 +20,13 @@ func TestCancelCommandHandler_Handle(t *testing.T) {
 	tests := []struct {
 		name       string
 		request    dto.CommandRequest
-		setupMocks func(sessions *handlermock.MockSessionStore, sender *mock.Sender)
+		setupMocks func(sessions *repositorymock.MockSessionRepository, sender *mock.Sender)
 		assertErr  func(t *testing.T, err error)
 	}{
 		{
 			name:    "success",
 			request: dto.CommandRequest{Text: "/cancel", ChatID: 1},
-			setupMocks: func(sessions *handlermock.MockSessionStore, sender *mock.Sender) {
+			setupMocks: func(sessions *repositorymock.MockSessionRepository, sender *mock.Sender) {
 				sessions.On("Clear", int64(1)).Once()
 				sender.EXPECT().Send(testifymock.Anything).Return(tgbotapi.Message{}, nil).Once()
 			},
@@ -35,7 +35,7 @@ func TestCancelCommandHandler_Handle(t *testing.T) {
 		{
 			name:    "send error",
 			request: dto.CommandRequest{Text: "/cancel", ChatID: 1},
-			setupMocks: func(sessions *handlermock.MockSessionStore, sender *mock.Sender) {
+			setupMocks: func(sessions *repositorymock.MockSessionRepository, sender *mock.Sender) {
 				sessions.On("Clear", int64(1)).Once()
 				sender.EXPECT().Send(testifymock.Anything).Return(tgbotapi.Message{}, sendErr).Once()
 			},
@@ -47,7 +47,7 @@ func TestCancelCommandHandler_Handle(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			sessions := handlermock.NewMockSessionStore(t)
+			sessions := repositorymock.NewMockSessionRepository(t)
 			sender := mock.NewSender(t)
 			tt.setupMocks(sessions, sender)
 

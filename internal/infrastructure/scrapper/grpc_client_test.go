@@ -6,14 +6,14 @@ import (
 	"testing"
 	"time"
 
-	appscrapper "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/scrapper"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/scrapper"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/infrastructure/grpcscrapper"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/api"
 	"google.golang.org/grpc"
 )
 
 func TestGRPCClient_AddAndListLinks(t *testing.T) {
-	service := appscrapper.NewService()
+	service := scrapper.NewService()
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatalf("listen: %v", err)
