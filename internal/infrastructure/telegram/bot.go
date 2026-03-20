@@ -8,14 +8,15 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"strconv"
 	"strings"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/adapters/bot/dto"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/adapters/bot/handler"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/command"
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/repository"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/tracker"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/repository"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/api"
 )
 
@@ -105,7 +106,12 @@ func (b *Bot) StartHTTPServer(address string) error {
 	mux.HandleFunc("/updates", b.handleLinkUpdateHTTP)
 
 	slog.Info("Starting bot HTTP server", slog.String("address", address))
-	return http.ListenAndServe(address, mux)
+	err := http.ListenAndServe(address, mux)
+	if err != nil {
+		return fmt.Errorf("start bot http server: %w", err)
+	}
+
+	return nil
 }
 
 func (b *Bot) handleUpdate(ctx context.Context, update *tgbotapi.Update, sender command.Sender) {
@@ -114,7 +120,7 @@ func (b *Bot) handleUpdate(ctx context.Context, update *tgbotapi.Update, sender 
 	}
 
 	chatID := update.Message.Chat.ID
-	cmdName := ""
+	cmdName := update.Message.Command()
 	text := update.Message.Text
 
 	if b.tracker != nil {
@@ -128,8 +134,6 @@ func (b *Bot) handleUpdate(ctx context.Context, update *tgbotapi.Update, sender 
 	if !update.Message.IsCommand() {
 		return
 	}
-
-	cmdName = update.Message.Command()
 
 	err := b.dispatcher.Dispatch(ctx, dto.CommandRequest{
 		Text:   text,
@@ -158,13 +162,6 @@ func (b *Bot) handleUpdate(ctx context.Context, update *tgbotapi.Update, sender 
 		return
 	}
 
-	if update.Message != nil {
-		chatID = update.Message.Chat.ID
-		if update.Message.IsCommand() {
-			cmdName = update.Message.Command()
-		}
-	}
-
 	b.logger.Error("Failed to handle command",
 		slog.String("command", cmdName),
 		slog.String("error", err.Error()),
@@ -183,10 +180,13 @@ func (b *Bot) handleLinkUpdateHTTP(w http.ResponseWriter, r *http.Request) {
 		writeAPIError(w, http.StatusBadRequest, "failed to read body")
 		return
 	}
-	defer r.Body.Close()
+	defer func() {
+		_ = r.Body.Close()
+	}()
 
 	var update api.LinkUpdate
-	if err := json.Unmarshal(body, &update); err != nil {
+	unmarshalErr := json.Unmarshal(body, &update)
+	if unmarshalErr != nil {
 		writeAPIError(w, http.StatusBadRequest, "invalid request schema")
 		return
 	}
@@ -202,9 +202,9 @@ func (b *Bot) handleLinkUpdateHTTP(w http.ResponseWriter, r *http.Request) {
 			text = update.Description
 		}
 		msg := tgbotapi.NewMessage(chatID, text)
-		if _, err := b.sendMessage(msg); err != nil {
+		if _, sendErr := b.sendMessage(msg); sendErr != nil {
 			slog.Error("Failed to send update message",
-				slog.String("error", err.Error()),
+				slog.String("error", sendErr.Error()),
 				slog.Int64("chat_id", chatID),
 				slog.String("url", update.URL),
 			)
@@ -217,8 +217,8 @@ func (b *Bot) handleLinkUpdateHTTP(w http.ResponseWriter, r *http.Request) {
 func writeAPIError(w http.ResponseWriter, status int, description string) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	_ = json.NewEncoder(w).Encode(api.ApiErrorResponse{
+	_ = json.NewEncoder(w).Encode(api.ErrorResponse{
 		Description: description,
-		Code:        fmt.Sprintf("%d", status),
+		Code:        strconv.Itoa(status),
 	})
 }

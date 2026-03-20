@@ -6,11 +6,11 @@ import (
 	"log/slog"
 	"testing"
 
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/adapters/bot/dto"
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/adapters/bot/handler"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	testifymock "github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/adapters/bot/dto"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/adapters/bot/handler"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/command/mock"
 )
 
@@ -24,6 +24,8 @@ func TestHelpCommandHandler_NameAndDescription(t *testing.T) {
 }
 
 func TestHelpCommandHandler_Handle(t *testing.T) {
+	t.Parallel()
+
 	type mockBehavior func(sender *mock.Sender)
 	sendErr := errors.New("send error")
 
@@ -60,7 +62,7 @@ func TestHelpCommandHandler_Handle(t *testing.T) {
 		{
 			name:    "invalid request",
 			request: dto.CommandRequest{},
-			mockBehavior: func(sender *mock.Sender) {
+			mockBehavior: func(_ *mock.Sender) {
 			},
 			checkError: func(t *testing.T, err error) {
 				t.Helper()

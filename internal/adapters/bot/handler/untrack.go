@@ -41,8 +41,11 @@ func (c *UntrackCommandHandler) Handle(ctx context.Context, request dto.CommandR
 	args := extractCommandArgs(request.Text)
 	if !isValidUntrackURL(args) {
 		msg := tgbotapi.NewMessage(request.ChatID, "Укажите ссылку после команды: /untrack https://example.com")
-		_, err := c.bot.Send(msg)
-		return err
+		_, sendErr := c.bot.Send(msg)
+		if sendErr != nil {
+			return fmt.Errorf("send untrack usage hint: %w", sendErr)
+		}
+		return nil
 	}
 
 	if err := c.tracker.RegisterChat(ctx, request.ChatID); err != nil && !strings.Contains(err.Error(), tracker.ErrAlreadyExists.Error()) {
@@ -54,7 +57,10 @@ func (c *UntrackCommandHandler) Handle(ctx context.Context, request dto.CommandR
 		if strings.Contains(err.Error(), tracker.ErrNotFound.Error()) {
 			msg := tgbotapi.NewMessage(request.ChatID, "Ссылка не найдена в отслеживаемых.")
 			_, sendErr := c.bot.Send(msg)
-			return sendErr
+			if sendErr != nil {
+				return fmt.Errorf("send not-tracked response: %w", sendErr)
+			}
+			return nil
 		}
 		return fmt.Errorf("remove link from tracking: %w", err)
 	}
@@ -62,7 +68,7 @@ func (c *UntrackCommandHandler) Handle(ctx context.Context, request dto.CommandR
 	msg := tgbotapi.NewMessage(request.ChatID, "Ссылка удалена из отслеживания.")
 	_, sendErr := c.bot.Send(msg)
 	if sendErr != nil {
-		return sendErr
+		return fmt.Errorf("send untrack success response: %w", sendErr)
 	}
 
 	c.logger.Info("Untrack command processed", slog.Int64("chat_id", request.ChatID), slog.String("url", args))

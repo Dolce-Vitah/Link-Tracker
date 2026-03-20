@@ -5,9 +5,9 @@ import (
 	"errors"
 	"testing"
 
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/adapters/bot/dto"
 	testifymock "github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/adapters/bot/dto"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/command"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/command/mock"
 )
@@ -67,7 +67,7 @@ func TestDispatcher_Dispatch(t *testing.T) {
 			text:         "/unknown",
 			chatID:       12345,
 			inputCmdName: "unknown",
-			mockBehavior: func(cmd *mock.Command) {
+			mockBehavior: func(_ *mock.Command) {
 			},
 			checkError: func(t *testing.T, err error) {
 				t.Helper()
@@ -78,8 +78,6 @@ func TestDispatcher_Dispatch(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
 			dispatcher := command.NewDispatcher()
 
 			if tt.commandName != "" {
@@ -98,23 +96,19 @@ func TestDispatcher_Dispatch(t *testing.T) {
 }
 
 func TestDispatcher_Commands(t *testing.T) {
-	t.Run("commands are returned in stable order", func(t *testing.T) {
-		t.Parallel()
+	dispatcher := command.NewDispatcher()
 
-		dispatcher := command.NewDispatcher()
+	cmd1 := mock.NewCommand(t)
+	cmd1.EXPECT().Name().Return("b_command")
 
-		cmd1 := mock.NewCommand(t)
-		cmd1.EXPECT().Name().Return("b_command")
+	cmd2 := mock.NewCommand(t)
+	cmd2.EXPECT().Name().Return("a_command")
 
-		cmd2 := mock.NewCommand(t)
-		cmd2.EXPECT().Name().Return("a_command")
+	dispatcher.Register(cmd1)
+	dispatcher.Register(cmd2)
 
-		dispatcher.Register(cmd1)
-		dispatcher.Register(cmd2)
-
-		commands := dispatcher.Commands()
-		require.Len(t, commands, 2)
-		require.Equal(t, "a_command", commands[0].Name())
-		require.Equal(t, "b_command", commands[1].Name())
-	})
+	commands := dispatcher.Commands()
+	require.Len(t, commands, 2)
+	require.Equal(t, "a_command", commands[0].Name())
+	require.Equal(t, "b_command", commands[1].Name())
 }

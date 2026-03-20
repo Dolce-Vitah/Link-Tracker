@@ -10,8 +10,8 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/adapters/bot/dto"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/command"
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/repository"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/tracker"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/repository"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/api"
 )
 
@@ -65,6 +65,8 @@ func (h *TrackDialogHandler) Handle(ctx context.Context, request dto.DialogReque
 		return h.handleAwaitingURL(chatID, text)
 	case repository.StateAwaitingTags:
 		return h.handleAwaitingTags(ctx, chatID, session.PendingURL, text)
+	case repository.StateIdle:
+		return nil
 	default:
 		return nil
 	}
@@ -134,7 +136,10 @@ func (h *TrackDialogHandler) handleAwaitingTags(ctx context.Context, chatID int6
 func (h *TrackDialogHandler) sendPlainMessage(chatID int64, text string) error {
 	msg := tgbotapi.NewMessage(chatID, text)
 	_, err := h.bot.Send(msg)
-	return err
+	if err != nil {
+		return fmt.Errorf("send dialog message: %w", err)
+	}
+	return nil
 }
 
 func parseTags(raw string) []string {

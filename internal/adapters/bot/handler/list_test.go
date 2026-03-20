@@ -5,17 +5,19 @@ import (
 	"errors"
 	"testing"
 
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/adapters/bot/dto"
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/adapters/bot/handler"
-	trackermock "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/tracker/mock"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	testifymock "github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/adapters/bot/dto"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/adapters/bot/handler"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/command/mock"
+	trackermock "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/tracker/mock"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/api"
 )
 
 func TestListCommand_Handle(t *testing.T) {
+	t.Parallel()
+
 	listErr := errors.New("list error")
 	registerErr := errors.New("register error")
 	sendErr := errors.New("send error")
@@ -64,7 +66,7 @@ func TestListCommand_Handle(t *testing.T) {
 		{
 			name:    "register error",
 			request: dto.CommandRequest{Text: "/list", ChatID: 10},
-			setupMocks: func(tracker *trackermock.MockService, sender *mock.Sender) {
+			setupMocks: func(tracker *trackermock.MockService, _ *mock.Sender) {
 				tracker.On("RegisterChat", testifymock.Anything, int64(10)).Return(registerErr).Once()
 			},
 			assertErr: func(t *testing.T, err error) { require.Error(t, err) },
@@ -72,7 +74,7 @@ func TestListCommand_Handle(t *testing.T) {
 		{
 			name:    "list error",
 			request: dto.CommandRequest{Text: "/list", ChatID: 10},
-			setupMocks: func(tracker *trackermock.MockService, sender *mock.Sender) {
+			setupMocks: func(tracker *trackermock.MockService, _ *mock.Sender) {
 				tracker.On("RegisterChat", testifymock.Anything, int64(10)).Return(nil).Once()
 				tracker.On("ListLinks", testifymock.Anything, int64(10)).Return(api.ListLinksResponse{}, listErr).Once()
 			},

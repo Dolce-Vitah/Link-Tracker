@@ -37,9 +37,9 @@ func (a *App) New() error {
 
 	var trackerService tracker.Service
 	if strings.EqualFold(cfg.TransportMode, "grpc") {
-		grpcClient, err := scrapper.NewGRPCClient(cfg.ScrapperGRPCTarget, timeout)
-		if err != nil {
-			return fmt.Errorf("create scrapper grpc client: %w", err)
+		grpcClient, grpcErr := scrapper.NewGRPCClient(cfg.ScrapperGRPCTarget, timeout)
+		if grpcErr != nil {
+			return fmt.Errorf("create scrapper grpc client: %w", grpcErr)
 		}
 		trackerService = grpcClient
 	} else {
@@ -55,8 +55,9 @@ func (a *App) New() error {
 	bot.RegisterCommand(handler.NewListCommandHandler(trackerService, slog.Default(), bot.Client()))
 	bot.RegisterCommand(handler.NewCancelCommandHandler(sessions, slog.Default(), bot.Client()))
 
-	if err := bot.SetMyCommands(); err != nil {
-		slog.Error("Failed to set bot commands menu", slog.String("error", err.Error()))
+	setCommandsErr := bot.SetMyCommands()
+	if setCommandsErr != nil {
+		slog.Error("Failed to set bot commands menu", slog.String("error", setCommandsErr.Error()))
 	} else {
 		slog.Info("Bot commands menu updated successfully in UI")
 	}

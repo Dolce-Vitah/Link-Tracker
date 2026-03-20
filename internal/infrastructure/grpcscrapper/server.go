@@ -43,10 +43,11 @@ func Register(server *grpc.Server, service *repository.Service) {
 	}, s)
 }
 
-func (s *Server) registerChatHandler(_ any, ctx context.Context, dec func(any) error, _ grpc.UnaryServerInterceptor) (any, error) {
+//nolint:revive 
+func (s *Server) registerChatHandler(_ any, _ context.Context, dec func(any) error, _ grpc.UnaryServerInterceptor) (any, error) {
 	var req RegisterChatRequest
 	if err := dec(&req); err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+		return nil, fmt.Errorf("decode register chat request: %w", status.Error(codes.InvalidArgument, err.Error()))
 	}
 	if err := s.service.RegisterChat(req.ChatID); err != nil {
 		return nil, mapError(err)
@@ -54,10 +55,11 @@ func (s *Server) registerChatHandler(_ any, ctx context.Context, dec func(any) e
 	return RegisterChatResponse{}, nil
 }
 
-func (s *Server) deleteChatHandler(_ any, ctx context.Context, dec func(any) error, _ grpc.UnaryServerInterceptor) (any, error) {
+//nolint:revive 
+func (s *Server) deleteChatHandler(_ any, _ context.Context, dec func(any) error, _ grpc.UnaryServerInterceptor) (any, error) {
 	var req DeleteChatRequest
 	if err := dec(&req); err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+		return nil, fmt.Errorf("decode delete chat request: %w", status.Error(codes.InvalidArgument, err.Error()))
 	}
 	if err := s.service.DeleteChat(req.ChatID); err != nil {
 		return nil, mapError(err)
@@ -65,10 +67,11 @@ func (s *Server) deleteChatHandler(_ any, ctx context.Context, dec func(any) err
 	return DeleteChatResponse{}, nil
 }
 
-func (s *Server) addLinkHandler(_ any, ctx context.Context, dec func(any) error, _ grpc.UnaryServerInterceptor) (any, error) {
+//nolint:revive 
+func (s *Server) addLinkHandler(_ any, _ context.Context, dec func(any) error, _ grpc.UnaryServerInterceptor) (any, error) {
 	var req AddLinkGRPCRequest
 	if err := dec(&req); err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+		return nil, fmt.Errorf("decode add link request: %w", status.Error(codes.InvalidArgument, err.Error()))
 	}
 	link, err := s.service.AddLink(req.ChatID, req.Body)
 	if err != nil {
@@ -77,10 +80,11 @@ func (s *Server) addLinkHandler(_ any, ctx context.Context, dec func(any) error,
 	return AddLinkGRPCResponse{Link: link}, nil
 }
 
-func (s *Server) removeLinkHandler(_ any, ctx context.Context, dec func(any) error, _ grpc.UnaryServerInterceptor) (any, error) {
+//nolint:revive 
+func (s *Server) removeLinkHandler(_ any, _ context.Context, dec func(any) error, _ grpc.UnaryServerInterceptor) (any, error) {
 	var req RemoveLinkGRPCRequest
 	if err := dec(&req); err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+		return nil, fmt.Errorf("decode remove link request: %w", status.Error(codes.InvalidArgument, err.Error()))
 	}
 	link, err := s.service.RemoveLink(req.ChatID, req.Body)
 	if err != nil {
@@ -89,10 +93,11 @@ func (s *Server) removeLinkHandler(_ any, ctx context.Context, dec func(any) err
 	return RemoveLinkGRPCResponse{Link: link}, nil
 }
 
-func (s *Server) listLinksHandler(_ any, ctx context.Context, dec func(any) error, _ grpc.UnaryServerInterceptor) (any, error) {
+//nolint:revive 
+func (s *Server) listLinksHandler(_ any, _ context.Context, dec func(any) error, _ grpc.UnaryServerInterceptor) (any, error) {
 	var req ListLinksRequest
 	if err := dec(&req); err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+		return nil, fmt.Errorf("decode list links request: %w", status.Error(codes.InvalidArgument, err.Error()))
 	}
 	resp, err := s.service.ListLinks(req.ChatID)
 	if err != nil {
@@ -104,12 +109,12 @@ func (s *Server) listLinksHandler(_ any, ctx context.Context, dec func(any) erro
 func mapError(err error) error {
 	switch {
 	case errors.Is(err, repository.ErrChatExists), errors.Is(err, repository.ErrLinkExists):
-		return status.Error(codes.AlreadyExists, err.Error())
+		return fmt.Errorf("map grpc conflict error: %w", status.Error(codes.AlreadyExists, err.Error()))
 	case errors.Is(err, repository.ErrChatNotFound), errors.Is(err, repository.ErrLinkNotFound):
-		return status.Error(codes.NotFound, err.Error())
+		return fmt.Errorf("map grpc not found error: %w", status.Error(codes.NotFound, err.Error()))
 	case errors.Is(err, repository.ErrInvalidLink):
-		return status.Error(codes.InvalidArgument, err.Error())
+		return fmt.Errorf("map grpc invalid argument error: %w", status.Error(codes.InvalidArgument, err.Error()))
 	default:
-		return status.Error(codes.Internal, fmt.Sprintf("internal server error: %s", err.Error()))
+		return fmt.Errorf("map grpc internal error: %w", status.Error(codes.Internal, fmt.Sprintf("internal server error: %s", err.Error())))
 	}
 }

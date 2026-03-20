@@ -19,13 +19,9 @@ type GRPCClient struct {
 	target string
 }
 
-func NewGRPCClient(target string, timeout time.Duration) (*GRPCClient, error) {
+func NewGRPCClient(target string, _ time.Duration) (*GRPCClient, error) {
 	grpcscrapper.RegisterJSONCodec()
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	defer cancel()
-
-	conn, err := grpc.DialContext(
-		ctx,
+	conn, err := grpc.NewClient(
 		target,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithDefaultCallOptions(grpc.ForceCodec(grpcscrapper.JSONCodec{})),
@@ -33,6 +29,9 @@ func NewGRPCClient(target string, timeout time.Duration) (*GRPCClient, error) {
 	if err != nil {
 		return nil, fmt.Errorf("dial scrapper grpc target: %w", err)
 	}
+
+	conn.Connect()
+
 	return &GRPCClient{
 		conn:   conn,
 		target: target,
@@ -85,7 +84,12 @@ func (c *GRPCClient) ListLinks(ctx context.Context, chatID int64) (api.ListLinks
 }
 
 func (c *GRPCClient) Close() error {
-	return c.conn.Close()
+	err := c.conn.Close()
+	if err != nil {
+		return fmt.Errorf("close grpc client connection: %w", err)
+	}
+
+	return nil
 }
 
 func mapGRPCError(err error) error {
@@ -103,7 +107,22 @@ func mapGRPCError(err error) error {
 		return fmt.Errorf("%w: %s", tracker.ErrAlreadyExists, st.Message())
 	case codes.InvalidArgument:
 		return fmt.Errorf("%w: %s", tracker.ErrBadRequest, st.Message())
-	default:
+	case codes.OK,
+		codes.Canceled,
+		codes.Unknown,
+		codes.DeadlineExceeded,
+		codes.PermissionDenied,
+		codes.ResourceExhausted,
+		codes.FailedPrecondition,
+		codes.Aborted,
+		codes.OutOfRange,
+		codes.Unimplemented,
+		codes.Internal,
+		codes.Unavailable,
+		codes.DataLoss,
+		codes.Unauthenticated:
 		return err
 	}
+
+	return err
 }

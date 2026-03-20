@@ -2,6 +2,7 @@ package grpcscrapper
 
 import (
 	"encoding/json"
+	"fmt"
 	"sync"
 
 	"google.golang.org/grpc/encoding"
@@ -10,11 +11,19 @@ import (
 type JSONCodec struct{}
 
 func (JSONCodec) Marshal(v any) ([]byte, error) {
-	return json.Marshal(v)
+	data, err := json.Marshal(v)
+	if err != nil {
+		return nil, fmt.Errorf("marshal grpc json payload: %w", err)
+	}
+	return data, nil
 }
 
 func (JSONCodec) Unmarshal(data []byte, v any) error {
-	return json.Unmarshal(data, v)
+	err := json.Unmarshal(data, v)
+	if err != nil {
+		return fmt.Errorf("unmarshal grpc json payload: %w", err)
+	}
+	return nil
 }
 
 func (JSONCodec) Name() string {

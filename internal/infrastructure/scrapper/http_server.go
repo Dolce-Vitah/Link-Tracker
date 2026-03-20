@@ -3,7 +3,6 @@ package scrapper
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -73,64 +72,80 @@ func (s *HTTPServer) handleLinks(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case http.MethodGet:
-		resp, err := s.service.ListLinks(chatID)
-		if err != nil {
-			if errors.Is(err, repository.ErrChatNotFound) {
-				writeError(w, http.StatusNotFound, "chat does not exist")
-				return
-			}
-			writeError(w, http.StatusBadRequest, err.Error())
-			return
-		}
-		writeJSON(w, http.StatusOK, resp)
+		s.handleListLinks(w, chatID)
 	case http.MethodPost:
-		var req api.AddLinkRequest
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			writeError(w, http.StatusBadRequest, "invalid add link request")
-			return
-		}
-		resp, err := s.service.AddLink(chatID, req)
-		if err != nil {
-			switch {
-			case errors.Is(err, repository.ErrChatNotFound):
-				writeError(w, http.StatusNotFound, "chat does not exist")
-			case errors.Is(err, repository.ErrLinkExists):
-				writeError(w, http.StatusConflict, "link already tracked")
-			default:
-				writeError(w, http.StatusBadRequest, err.Error())
-			}
-			return
-		}
-		writeJSON(w, http.StatusOK, resp)
+		s.handleAddLink(w, r, chatID)
 	case http.MethodDelete:
-		var req api.RemoveLinkRequest
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			writeError(w, http.StatusBadRequest, "invalid remove link request")
-			return
-		}
-		resp, err := s.service.RemoveLink(chatID, req)
-		if err != nil {
-			if errors.Is(err, repository.ErrChatNotFound) || errors.Is(err, repository.ErrLinkNotFound) {
-				writeError(w, http.StatusNotFound, "chat does not exist or link not found")
-				return
-			}
-			writeError(w, http.StatusBadRequest, err.Error())
-			return
-		}
-		writeJSON(w, http.StatusOK, resp)
+		s.handleRemoveLink(w, r, chatID)
 	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
 }
 
+func (s *HTTPServer) handleListLinks(w http.ResponseWriter, chatID int64) {
+	resp, listErr := s.service.ListLinks(chatID)
+	if listErr != nil {
+		if errors.Is(listErr, repository.ErrChatNotFound) {
+			writeError(w, http.StatusNotFound, "chat does not exist")
+			return
+		}
+		writeError(w, http.StatusBadRequest, listErr.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, resp)
+}
+
+func (s *HTTPServer) handleAddLink(w http.ResponseWriter, r *http.Request, chatID int64) {
+	var req api.AddLinkRequest
+	decodeErr := json.NewDecoder(r.Body).Decode(&req)
+	if decodeErr != nil {
+		writeError(w, http.StatusBadRequest, "invalid add link request")
+		return
+	}
+
+	resp, addErr := s.service.AddLink(chatID, req)
+	if addErr != nil {
+		switch {
+		case errors.Is(addErr, repository.ErrChatNotFound):
+			writeError(w, http.StatusNotFound, "chat does not exist")
+		case errors.Is(addErr, repository.ErrLinkExists):
+			writeError(w, http.StatusConflict, "link already tracked")
+		default:
+			writeError(w, http.StatusBadRequest, addErr.Error())
+		}
+		return
+	}
+	writeJSON(w, http.StatusOK, resp)
+}
+
+func (s *HTTPServer) handleRemoveLink(w http.ResponseWriter, r *http.Request, chatID int64) {
+	var req api.RemoveLinkRequest
+	decodeErr := json.NewDecoder(r.Body).Decode(&req)
+	if decodeErr != nil {
+		writeError(w, http.StatusBadRequest, "invalid remove link request")
+		return
+	}
+
+	resp, removeErr := s.service.RemoveLink(chatID, req)
+	if removeErr != nil {
+		if errors.Is(removeErr, repository.ErrChatNotFound) || errors.Is(removeErr, repository.ErrLinkNotFound) {
+			writeError(w, http.StatusNotFound, "chat does not exist or link not found")
+			return
+		}
+		writeError(w, http.StatusBadRequest, removeErr.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, resp)
+}
+
 func parseChatIDHeader(r *http.Request) (int64, error) {
 	rawID := strings.TrimSpace(r.Header.Get("Tg-Chat-Id"))
 	if rawID == "" {
-		return 0, fmt.Errorf("missing Tg-Chat-Id header")
+		return 0, errors.New("missing Tg-Chat-Id header")
 	}
 	chatID, err := strconv.ParseInt(rawID, 10, 64)
 	if err != nil {
-		return 0, fmt.Errorf("invalid Tg-Chat-Id header")
+		return 0, errors.New("invalid Tg-Chat-Id header")
 	}
 	return chatID, nil
 }
@@ -144,8 +159,8 @@ func writeJSON(w http.ResponseWriter, code int, payload any) {
 }
 
 func writeError(w http.ResponseWriter, code int, description string) {
-	writeJSON(w, code, api.ApiErrorResponse{
+	writeJSON(w, code, api.ErrorResponse{
 		Description: description,
-		Code:        fmt.Sprintf("%d", code),
+		Code:        strconv.Itoa(code),
 	})
 }

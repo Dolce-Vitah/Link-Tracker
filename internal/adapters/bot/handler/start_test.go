@@ -4,16 +4,15 @@ import (
 	"context"
 	"errors"
 	"log/slog"
-	"strings"
 	"testing"
 
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/adapters/bot/dto"
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/adapters/bot/handler"
-	trackermock "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/tracker/mock"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	testifymock "github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/adapters/bot/dto"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/adapters/bot/handler"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/command/mock"
+	trackermock "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/tracker/mock"
 )
 
 func TestStartCommandHandler_NameAndDescription(t *testing.T) {
@@ -26,6 +25,8 @@ func TestStartCommandHandler_NameAndDescription(t *testing.T) {
 }
 
 func TestStartCommandHandler_Handle(t *testing.T) {
+	t.Parallel()
+
 	sendErr := errors.New("send error")
 	registerErr := errors.New("register error")
 
@@ -38,8 +39,8 @@ func TestStartCommandHandler_Handle(t *testing.T) {
 		assertErrFunc func(t *testing.T, err error)
 	}{
 		{
-			name:    "success",
-			request: dto.CommandRequest{Text: "/start", ChatID: 12345},
+			name:        "success",
+			request:     dto.CommandRequest{Text: "/start", ChatID: 12345},
 			withTracker: true,
 			setupTracker: func(m *trackermock.MockService) {
 				m.On("RegisterChat", testifymock.Anything, int64(12345)).Return(nil).Once()
@@ -55,8 +56,8 @@ func TestStartCommandHandler_Handle(t *testing.T) {
 			},
 		},
 		{
-			name:    "register already exists is ignored",
-			request: dto.CommandRequest{Text: "/start", ChatID: 12345},
+			name:        "register already exists is ignored",
+			request:     dto.CommandRequest{Text: "/start", ChatID: 12345},
 			withTracker: true,
 			setupTracker: func(m *trackermock.MockService) {
 				m.On("RegisterChat", testifymock.Anything, int64(12345)).
@@ -71,8 +72,8 @@ func TestStartCommandHandler_Handle(t *testing.T) {
 			},
 		},
 		{
-			name:    "register error",
-			request: dto.CommandRequest{Text: "/start", ChatID: 12345},
+			name:        "register error",
+			request:     dto.CommandRequest{Text: "/start", ChatID: 12345},
 			withTracker: true,
 			setupTracker: func(m *trackermock.MockService) {
 				m.On("RegisterChat", testifymock.Anything, int64(12345)).Return(registerErr).Once()
@@ -81,12 +82,12 @@ func TestStartCommandHandler_Handle(t *testing.T) {
 			assertErrFunc: func(t *testing.T, err error) {
 				t.Helper()
 				require.Error(t, err)
-				require.True(t, strings.Contains(err.Error(), "register chat"))
+				require.ErrorContains(t, err, "register chat")
 			},
 		},
 		{
-			name:    "send error",
-			request: dto.CommandRequest{Text: "/start", ChatID: 12345},
+			name:        "send error",
+			request:     dto.CommandRequest{Text: "/start", ChatID: 12345},
 			withTracker: true,
 			setupTracker: func(m *trackermock.MockService) {
 				m.On("RegisterChat", testifymock.Anything, int64(12345)).Return(nil).Once()
@@ -100,8 +101,8 @@ func TestStartCommandHandler_Handle(t *testing.T) {
 			},
 		},
 		{
-			name:    "invalid request",
-			request: dto.CommandRequest{Text: "", ChatID: 0},
+			name:        "invalid request",
+			request:     dto.CommandRequest{Text: "", ChatID: 0},
 			setupSender: nil,
 			assertErrFunc: func(t *testing.T, err error) {
 				t.Helper()

@@ -12,7 +12,7 @@ import (
 func TestBot_HandleLinkUpdateHTTP(t *testing.T) {
 	t.Run("valid payload returns 200", func(t *testing.T) {
 		bot := &Bot{
-			sendMessage: func(c tgbotapi.Chattable) (tgbotapi.Message, error) {
+			sendMessage: func(_ tgbotapi.Chattable) (tgbotapi.Message, error) {
 				return tgbotapi.Message{}, nil
 			},
 		}
@@ -29,7 +29,7 @@ func TestBot_HandleLinkUpdateHTTP(t *testing.T) {
 
 	t.Run("invalid payload returns 400", func(t *testing.T) {
 		bot := &Bot{
-			sendMessage: func(c tgbotapi.Chattable) (tgbotapi.Message, error) {
+			sendMessage: func(_ tgbotapi.Chattable) (tgbotapi.Message, error) {
 				return tgbotapi.Message{}, nil
 			},
 		}
@@ -46,7 +46,7 @@ func TestBot_HandleLinkUpdateHTTP(t *testing.T) {
 
 	t.Run("missing required fields returns 400", func(t *testing.T) {
 		bot := &Bot{
-			sendMessage: func(c tgbotapi.Chattable) (tgbotapi.Message, error) {
+			sendMessage: func(_ tgbotapi.Chattable) (tgbotapi.Message, error) {
 				return tgbotapi.Message{}, nil
 			},
 		}

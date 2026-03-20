@@ -41,7 +41,7 @@ func (c *HelpCommandHandler) Description() string {
 	return "Вывести список доступных команд"
 }
 
-func (c *HelpCommandHandler) Handle(ctx context.Context, request dto.CommandRequest) error {
+func (c *HelpCommandHandler) Handle(_ context.Context, request dto.CommandRequest) error {
 	if err := request.Validate(); err != nil {
 		return fmt.Errorf("validate help request: %w", err)
 	}

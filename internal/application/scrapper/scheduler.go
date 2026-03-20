@@ -5,9 +5,9 @@ import (
 	"log/slog"
 	"time"
 
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/repository"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/infrastructure/botclient"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/infrastructure/external"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/repository"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/api"
 )
 
@@ -51,8 +51,9 @@ func (s *Scheduler) ProcessOnce(ctx context.Context) {
 			Description: "Обнаружено новое обновление",
 			TgChatIDs:   chatIDs,
 		}
-		if err := s.botUpdates.SendUpdate(ctx, update); err != nil {
-			logger.Warn("Failed to send update to bot", slog.String("error", err.Error()))
+		sendErr := s.botUpdates.SendUpdate(ctx, update)
+		if sendErr != nil {
+			logger.Warn("Failed to send update to bot", slog.String("error", sendErr.Error()))
 			continue
 		}
 		s.store.UpdateLastUpdated(link.Response.URL, lastUpdated)

@@ -6,12 +6,12 @@ import (
 	"testing"
 	"time"
 
+	testifymock "github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 	botclientmock "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/infrastructure/botclient/mock"
 	externalmock "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/infrastructure/external/mock"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/repository"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/api"
-	testifymock "github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 )
 
 func TestScheduler_ProcessOnce_Flow(t *testing.T) {
@@ -51,7 +51,7 @@ func TestScheduler_ProcessOnce_Flow(t *testing.T) {
 		},
 		{
 			name: "skip when external source returns error",
-			setup: func(t *testing.T, service *repository.Service, external *externalmock.MockLastUpdatedClient, updates *botclientmock.MockUpdatesSender, sent *[]api.LinkUpdate, now time.Time) {
+			setup: func(t *testing.T, service *repository.Service, external *externalmock.MockLastUpdatedClient, _ *botclientmock.MockUpdatesSender, _ *[]api.LinkUpdate, _ time.Time) {
 				registerChats(t, service, 10)
 				addLink(t, service, 10, urlMain)
 				external.On("GetLastUpdated", testifymock.Anything, urlMain).Return(time.Time{}, errors.New("external failure")).Once()
@@ -64,7 +64,7 @@ func TestScheduler_ProcessOnce_Flow(t *testing.T) {
 		},
 		{
 			name: "skip when last updated is not newer",
-			setup: func(t *testing.T, service *repository.Service, external *externalmock.MockLastUpdatedClient, updates *botclientmock.MockUpdatesSender, sent *[]api.LinkUpdate, now time.Time) {
+			setup: func(t *testing.T, service *repository.Service, external *externalmock.MockLastUpdatedClient, _ *botclientmock.MockUpdatesSender, _ *[]api.LinkUpdate, now time.Time) {
 				registerChats(t, service, 20)
 				addLink(t, service, 20, urlMain)
 				service.UpdateLastUpdated(urlMain, now.Add(30*time.Minute))

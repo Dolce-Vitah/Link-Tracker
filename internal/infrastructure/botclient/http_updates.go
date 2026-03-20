@@ -55,7 +55,9 @@ func (c *HTTPUpdatesClient) SendUpdate(ctx context.Context, update api.LinkUpdat
 	if err != nil {
 		return fmt.Errorf("send update request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		return mapStatusError(resp.StatusCode)
@@ -64,6 +66,8 @@ func (c *HTTPUpdatesClient) SendUpdate(ctx context.Context, update api.LinkUpdat
 }
 
 func mapStatusError(status int) error {
+	const serverErrorMinStatus = 500
+
 	switch status {
 	case http.StatusBadRequest:
 		return ErrBadRequest
@@ -81,7 +85,7 @@ func mapStatusError(status int) error {
 		if status >= 400 && status < 500 {
 			return ErrClient
 		}
-		if status >= 500 {
+		if status >= serverErrorMinStatus {
 			return ErrInternal
 		}
 		return fmt.Errorf("unexpected status code: %d", status)

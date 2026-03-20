@@ -5,18 +5,20 @@ import (
 	"errors"
 	"testing"
 
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/adapters/bot/dto"
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/adapters/bot/handler"
-	trackermock "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/tracker/mock"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	testifymock "github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/adapters/bot/dto"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/adapters/bot/handler"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/command/mock"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/tracker"
+	trackermock "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/tracker/mock"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/api"
 )
 
 func TestUntrackCommand_Handle(t *testing.T) {
+	t.Parallel()
+
 	registerErr := errors.New("register error")
 	removeErr := errors.New("remove error")
 	sendErr := errors.New("send error")
@@ -30,7 +32,7 @@ func TestUntrackCommand_Handle(t *testing.T) {
 		{
 			name:    "invalid url",
 			request: dto.CommandRequest{Text: "/untrack xxx", ChatID: 9},
-			setupMocks: func(trackerMock *trackermock.MockService, sender *mock.Sender) {
+			setupMocks: func(_ *trackermock.MockService, sender *mock.Sender) {
 				sender.EXPECT().Send(testifymock.Anything).Return(tgbotapi.Message{}, nil).Once()
 			},
 			assertErr: func(t *testing.T, err error) { require.NoError(t, err) },
@@ -38,7 +40,7 @@ func TestUntrackCommand_Handle(t *testing.T) {
 		{
 			name:    "register error",
 			request: dto.CommandRequest{Text: "/untrack https://a.b", ChatID: 9},
-			setupMocks: func(trackerMock *trackermock.MockService, sender *mock.Sender) {
+			setupMocks: func(trackerMock *trackermock.MockService, _ *mock.Sender) {
 				trackerMock.On("RegisterChat", testifymock.Anything, int64(9)).Return(registerErr).Once()
 			},
 			assertErr: func(t *testing.T, err error) { require.Error(t, err) },
@@ -57,7 +59,7 @@ func TestUntrackCommand_Handle(t *testing.T) {
 		{
 			name:    "remove error",
 			request: dto.CommandRequest{Text: "/untrack https://a.b", ChatID: 9},
-			setupMocks: func(trackerMock *trackermock.MockService, sender *mock.Sender) {
+			setupMocks: func(trackerMock *trackermock.MockService, _ *mock.Sender) {
 				trackerMock.On("RegisterChat", testifymock.Anything, int64(9)).Return(nil).Once()
 				trackerMock.On("RemoveLink", testifymock.Anything, int64(9), api.RemoveLinkRequest{Link: "https://a.b"}).
 					Return(api.LinkResponse{}, removeErr).Once()

@@ -5,16 +5,18 @@ import (
 	"errors"
 	"testing"
 
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/adapters/bot/dto"
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/adapters/bot/handler"
-	repositorymock "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/repository/mock"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	testifymock "github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/adapters/bot/dto"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/adapters/bot/handler"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/command/mock"
+	repositorymock "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/repository/mock"
 )
 
 func TestCancelCommandHandler_Handle(t *testing.T) {
+	t.Parallel()
+
 	sendErr := errors.New("send error")
 
 	tests := []struct {

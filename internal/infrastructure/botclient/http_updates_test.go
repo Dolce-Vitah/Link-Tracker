@@ -2,14 +2,13 @@ package botclient
 
 import (
 	"context"
-	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
 
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/api"
 	"github.com/stretchr/testify/require"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/api"
 )
 
 func TestHTTPUpdatesClient_SendUpdate_StatusMapping(t *testing.T) {
@@ -35,7 +34,7 @@ func TestHTTPUpdatesClient_SendUpdate_StatusMapping(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 				w.WriteHeader(tt.status)
 			}))
 			t.Cleanup(server.Close)
@@ -48,7 +47,7 @@ func TestHTTPUpdatesClient_SendUpdate_StatusMapping(t *testing.T) {
 				return
 			}
 			require.Error(t, err)
-			require.True(t, errors.Is(err, tt.expectedErr))
+			require.ErrorIs(t, err, tt.expectedErr)
 		})
 	}
 }

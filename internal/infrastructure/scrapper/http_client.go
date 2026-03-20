@@ -75,15 +75,19 @@ func (c *HTTPClient) ListLinks(ctx context.Context, chatID int64) (api.ListLinks
 	if err != nil {
 		return api.ListLinksResponse{}, fmt.Errorf("do list links request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
-	if err := mapHTTPError(resp); err != nil {
-		return api.ListLinksResponse{}, err
+	mapErr := mapHTTPError(resp)
+	if mapErr != nil {
+		return api.ListLinksResponse{}, mapErr
 	}
 
 	var out api.ListLinksResponse
-	if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
-		return api.ListLinksResponse{}, fmt.Errorf("decode list links response: %w", err)
+	decodeErr := json.NewDecoder(resp.Body).Decode(&out)
+	if decodeErr != nil {
+		return api.ListLinksResponse{}, fmt.Errorf("decode list links response: %w", decodeErr)
 	}
 
 	return out, nil
@@ -108,7 +112,9 @@ func (c *HTTPClient) handleNoBody(req *http.Request) error {
 	if err != nil {
 		return fmt.Errorf("do request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	return mapHTTPError(resp)
 }
@@ -118,15 +124,19 @@ func (c *HTTPClient) handleLinkResponse(req *http.Request) (api.LinkResponse, er
 	if err != nil {
 		return api.LinkResponse{}, fmt.Errorf("do request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
-	if err := mapHTTPError(resp); err != nil {
-		return api.LinkResponse{}, err
+	mapErr := mapHTTPError(resp)
+	if mapErr != nil {
+		return api.LinkResponse{}, mapErr
 	}
 
 	var out api.LinkResponse
-	if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
-		return api.LinkResponse{}, fmt.Errorf("decode link response: %w", err)
+	decodeErr := json.NewDecoder(resp.Body).Decode(&out)
+	if decodeErr != nil {
+		return api.LinkResponse{}, fmt.Errorf("decode link response: %w", decodeErr)
 	}
 
 	return out, nil
@@ -137,7 +147,7 @@ func mapHTTPError(resp *http.Response) error {
 		return nil
 	}
 
-	var apiErr api.ApiErrorResponse
+	var apiErr api.ErrorResponse
 	body, _ := io.ReadAll(resp.Body)
 	if len(body) > 0 {
 		_ = json.Unmarshal(body, &apiErr)

@@ -6,17 +6,16 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/go-co-op/gocron"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/scrapper"
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/repository"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/infrastructure/botclient"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/infrastructure/config"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/infrastructure/external"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/infrastructure/grpcscrapper"
 	httpscrapper "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/infrastructure/scrapper"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/repository"
 	"google.golang.org/grpc"
 )
 
@@ -64,12 +63,12 @@ func (a *App) Run() {
 	defer cancel()
 
 	go a.runScheduledChecks(ctx)
-	go a.runGRPCServer()
+	go a.runGRPCServer(ctx)
 
 	slog.Info("Scrapper HTTP server is up", slog.String("address", a.config.ScrapperHTTPAddress))
 	if err := http.ListenAndServe(a.config.ScrapperHTTPAddress, a.httpServer.Handler()); err != nil {
 		slog.Error("Scrapper HTTP server failed", slog.String("error", err.Error()))
-		os.Exit(1)
+		return
 	}
 }
 
@@ -87,8 +86,9 @@ func (a *App) runScheduledChecks(ctx context.Context) {
 	cron.Stop()
 }
 
-func (a *App) runGRPCServer() {
-	listener, err := net.Listen("tcp", a.config.ScrapperGRPCAddress)
+func (a *App) runGRPCServer(ctx context.Context) {
+	listenConfig := net.ListenConfig{}
+	listener, err := listenConfig.Listen(ctx, "tcp", a.config.ScrapperGRPCAddress)
 	if err != nil {
 		slog.Error("Failed to listen grpc",
 			slog.String("address", a.config.ScrapperGRPCAddress),
@@ -101,7 +101,7 @@ func (a *App) runGRPCServer() {
 	grpcscrapper.Register(grpcServer, a.service)
 
 	slog.Info("Scrapper gRPC server is up", slog.String("address", a.config.ScrapperGRPCAddress))
-	if err := grpcServer.Serve(listener); err != nil {
-		slog.Error("Scrapper gRPC server failed", slog.String("error", err.Error()))
+	if serveErr := grpcServer.Serve(listener); serveErr != nil {
+		slog.Error("Scrapper gRPC server failed", slog.String("error", serveErr.Error()))
 	}
 }

@@ -60,14 +60,17 @@ func (c *ListCommandHandler) Handle(ctx context.Context, request dto.CommandRequ
 	if len(filtered) == 0 {
 		msg := tgbotapi.NewMessage(request.ChatID, "Список отслеживаемых ссылок пуст.")
 		_, sendErr := c.bot.Send(msg)
-		return sendErr
+		if sendErr != nil {
+			return fmt.Errorf("send empty list response: %w", sendErr)
+		}
+		return nil
 	}
 
 	listText := "Ваши отслеживаемые ссылки:\n" + strings.Join(filtered, "\n")
 	msg := tgbotapi.NewMessage(request.ChatID, listText)
 	_, sendErr := c.bot.Send(msg)
 	if sendErr != nil {
-		return sendErr
+		return fmt.Errorf("send list response: %w", sendErr)
 	}
 
 	c.logger.Info("List command processed", slog.Int64("chat_id", request.ChatID), slog.Int("count", len(filtered)))

@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/repository"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/infrastructure/grpcscrapper"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/repository"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/api"
 	"google.golang.org/grpc"
 )
@@ -32,11 +32,13 @@ func TestGRPCClient_AddAndListLinks(t *testing.T) {
 	defer client.Close()
 
 	ctx := context.Background()
-	if err := client.RegisterChat(ctx, 1); err != nil {
-		t.Fatalf("register chat: %v", err)
+	registerErr := client.RegisterChat(ctx, 1)
+	if registerErr != nil {
+		t.Fatalf("register chat: %v", registerErr)
 	}
-	if _, err := client.AddLink(ctx, 1, api.AddLinkRequest{Link: "https://github.com/user/repo"}); err != nil {
-		t.Fatalf("add link: %v", err)
+	_, addErr := client.AddLink(ctx, 1, api.AddLinkRequest{Link: "https://github.com/user/repo"})
+	if addErr != nil {
+		t.Fatalf("add link: %v", addErr)
 	}
 	resp, err := client.ListLinks(ctx, 1)
 	if err != nil {

@@ -3,6 +3,7 @@ package external
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -50,9 +51,11 @@ type githubRepoResponse struct {
 }
 
 func (c *HTTPClient) githubLastUpdated(ctx context.Context, u *url.URL) (time.Time, error) {
+	const requiredGitHubPathParts = 2
+
 	parts := strings.Split(strings.Trim(u.Path, "/"), "/")
-	if len(parts) < 2 {
-		return time.Time{}, fmt.Errorf("invalid github repository url")
+	if len(parts) < requiredGitHubPathParts {
+		return time.Time{}, errors.New("invalid github repository url")
 	}
 	reqURL := fmt.Sprintf("%s/repos/%s/%s", strings.TrimRight(c.githubBaseURL, "/"), parts[0], parts[1])
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, reqURL, nil)
@@ -65,18 +68,21 @@ func (c *HTTPClient) githubLastUpdated(ctx context.Context, u *url.URL) (time.Ti
 	if err != nil {
 		return time.Time{}, fmt.Errorf("do github request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		return time.Time{}, fmt.Errorf("github non-2xx status: %d", resp.StatusCode)
 	}
 
 	var payload githubRepoResponse
-	if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
-		return time.Time{}, fmt.Errorf("decode github response: %w", err)
+	decodeErr := json.NewDecoder(resp.Body).Decode(&payload)
+	if decodeErr != nil {
+		return time.Time{}, fmt.Errorf("decode github response: %w", decodeErr)
 	}
 	if payload.UpdatedAt.IsZero() {
-		return time.Time{}, fmt.Errorf("github response missing updated_at")
+		return time.Time{}, errors.New("github response missing updated_at")
 	}
 	return payload.UpdatedAt, nil
 }
@@ -88,9 +94,11 @@ type stackOverflowResponse struct {
 }
 
 func (c *HTTPClient) stackOverflowLastUpdated(ctx context.Context, u *url.URL) (time.Time, error) {
+	const requiredStackPathParts = 2
+
 	parts := strings.Split(strings.Trim(u.Path, "/"), "/")
-	if len(parts) < 2 || parts[0] != "questions" {
-		return time.Time{}, fmt.Errorf("invalid stackoverflow question url")
+	if len(parts) < requiredStackPathParts || parts[0] != "questions" {
+		return time.Time{}, errors.New("invalid stackoverflow question url")
 	}
 	questionID, err := strconv.ParseInt(parts[1], 10, 64)
 	if err != nil {
@@ -107,18 +115,21 @@ func (c *HTTPClient) stackOverflowLastUpdated(ctx context.Context, u *url.URL) (
 	if err != nil {
 		return time.Time{}, fmt.Errorf("do stackoverflow request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		return time.Time{}, fmt.Errorf("stackoverflow non-2xx status: %d", resp.StatusCode)
 	}
 
 	var payload stackOverflowResponse
-	if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
-		return time.Time{}, fmt.Errorf("decode stackoverflow response: %w", err)
+	decodeErr := json.NewDecoder(resp.Body).Decode(&payload)
+	if decodeErr != nil {
+		return time.Time{}, fmt.Errorf("decode stackoverflow response: %w", decodeErr)
 	}
 	if len(payload.Items) == 0 || payload.Items[0].LastActivityDate == 0 {
-		return time.Time{}, fmt.Errorf("stackoverflow response missing last_activity_date")
+		return time.Time{}, errors.New("stackoverflow response missing last_activity_date")
 	}
 	return time.Unix(payload.Items[0].LastActivityDate, 0).UTC(), nil
 }

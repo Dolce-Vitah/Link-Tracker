@@ -1,6 +1,6 @@
 package api
 
-type ApiErrorResponse struct {
+type ErrorResponse struct {
 	Description      string   `json:"description"`
 	Code             string   `json:"code"`
 	ExceptionName    string   `json:"exceptionName,omitempty"`
