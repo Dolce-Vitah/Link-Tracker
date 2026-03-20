@@ -29,12 +29,10 @@ func NewScheduler(store *Service, externalClient external.LastUpdatedClient, upd
 func (s *Scheduler) ProcessOnce(ctx context.Context) {
 	links := s.store.SnapshotLinks()
 	for _, link := range links {
+		logger := slog.With("url", link.Response.URL)
 		lastUpdated, err := s.external.GetLastUpdated(ctx, link.Response.URL)
 		if err != nil {
-			slog.Warn("Failed to fetch last updated from external source",
-				slog.String("url", link.Response.URL),
-				slog.String("error", err.Error()),
-			)
+			logger.Warn("Failed to fetch last updated from external source", slog.String("error", err.Error()))
 			continue
 		}
 		if !link.LastUpdated.IsZero() && !lastUpdated.After(link.LastUpdated) {
@@ -53,10 +51,7 @@ func (s *Scheduler) ProcessOnce(ctx context.Context) {
 			TgChatIDs:   chatIDs,
 		}
 		if err := s.botUpdates.SendUpdate(ctx, update); err != nil {
-			slog.Warn("Failed to send update to bot",
-				slog.String("url", link.Response.URL),
-				slog.String("error", err.Error()),
-			)
+			logger.Warn("Failed to send update to bot", slog.String("error", err.Error()))
 			continue
 		}
 		s.store.UpdateLastUpdated(link.Response.URL, lastUpdated)
