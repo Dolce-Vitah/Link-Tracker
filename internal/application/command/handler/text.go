@@ -51,7 +51,12 @@ func (c *textCommandHandler) Description() string {
 	return c.description
 }
 
-func (c *textCommandHandler) Handle(_ context.Context, _ string, chatID int64) error {
+func (c *textCommandHandler) Handle(_ context.Context, update *tgbotapi.Update) error {
+	if update == nil || update.Message == nil || update.Message.Chat == nil {
+		return fmt.Errorf("%s: invalid update", c.errorPrefix)
+	}
+
+	chatID := update.Message.Chat.ID
 	msg := tgbotapi.NewMessage(chatID, c.response)
 	_, err := c.bot.Send(msg)
 	if err != nil {

@@ -5,8 +5,8 @@ import (
 	"errors"
 	"testing"
 
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/stretchr/testify/assert"
-	testifymock "github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/command"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/command/mock"
@@ -15,27 +15,23 @@ import (
 func TestDispatcher_Dispatch(t *testing.T) {
 	t.Parallel()
 
-	type mockBehavior func(cmd *mock.Command)
+	type mockBehavior func(cmd *mock.Command, update *tgbotapi.Update)
 	handleErr := errors.New("handle error")
 
 	tests := []struct {
 		name         string
 		commandName  string
-		text         string
-		chatID       int64
-		inputCmdName string
+		update       *tgbotapi.Update
 		mockBehavior mockBehavior
 		checkError   func(t *testing.T, err error)
 	}{
 		{
-			name:         "known command success",
-			commandName:  "start",
-			text:         "/start",
-			chatID:       12345,
-			inputCmdName: "start",
-			mockBehavior: func(cmd *mock.Command) {
+			name:        "known command success",
+			commandName: "start",
+			update:      newCommandUpdate("start"),
+			mockBehavior: func(cmd *mock.Command, update *tgbotapi.Update) {
 				cmd.EXPECT().Name().Return("start")
-				cmd.EXPECT().Handle(testifymock.Anything, "/start", int64(12345)).Return(nil)
+				cmd.EXPECT().Handle(context.Background(), update).Return(nil)
 			},
 			checkError: func(t *testing.T, err error) {
 				t.Helper()
@@ -43,14 +39,12 @@ func TestDispatcher_Dispatch(t *testing.T) {
 			},
 		},
 		{
-			name:         "known command error",
-			commandName:  "start",
-			text:         "/start",
-			chatID:       12345,
-			inputCmdName: "start",
-			mockBehavior: func(cmd *mock.Command) {
+			name:        "known command error",
+			commandName: "start",
+			update:      newCommandUpdate("start"),
+			mockBehavior: func(cmd *mock.Command, update *tgbotapi.Update) {
 				cmd.EXPECT().Name().Return("start")
-				cmd.EXPECT().Handle(testifymock.Anything, "/start", int64(12345)).Return(handleErr)
+				cmd.EXPECT().Handle(context.Background(), update).Return(handleErr)
 			},
 			checkError: func(t *testing.T, err error) {
 				t.Helper()
@@ -58,12 +52,10 @@ func TestDispatcher_Dispatch(t *testing.T) {
 			},
 		},
 		{
-			name:         "unknown command",
-			commandName:  "",
-			text:         "/unknown",
-			chatID:       12345,
-			inputCmdName: "unknown",
-			mockBehavior: func(_ *mock.Command) {
+			name:        "unknown command",
+			commandName: "",
+			update:      newCommandUpdate("unknown"),
+			mockBehavior: func(_ *mock.Command, _ *tgbotapi.Update) {
 			},
 			checkError: func(t *testing.T, err error) {
 				t.Helper()
@@ -80,13 +72,27 @@ func TestDispatcher_Dispatch(t *testing.T) {
 
 			if tt.commandName != "" {
 				mockCmd := mock.NewCommand(t)
-				tt.mockBehavior(mockCmd)
+				tt.mockBehavior(mockCmd, tt.update)
 				dispatcher.Register(mockCmd)
 			}
 
-			err := dispatcher.Dispatch(context.Background(), tt.text, tt.chatID, tt.inputCmdName)
+			err := dispatcher.Dispatch(context.Background(), tt.update)
 			tt.checkError(t, err)
 		})
+	}
+}
+
+func newCommandUpdate(commandName string) *tgbotapi.Update {
+	commandText := "/" + commandName
+
+	return &tgbotapi.Update{
+		Message: &tgbotapi.Message{
+			Text: commandText,
+			Chat: &tgbotapi.Chat{ID: 12345},
+			Entities: []tgbotapi.MessageEntity{
+				{Type: "bot_command", Offset: 0, Length: len(commandText)},
+			},
+		},
 	}
 }
 

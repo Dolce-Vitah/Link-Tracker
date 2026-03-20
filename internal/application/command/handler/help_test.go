@@ -31,15 +31,13 @@ func TestHelpCommandHandler_Handle(t *testing.T) {
 
 	tests := []struct {
 		name         string
-		text         string
-		chatID       int64
+		update       *tgbotapi.Update
 		mockBehavior mockBehavior
 		checkError   func(t *testing.T, err error)
 	}{
 		{
 			name:   "success",
-			text:   "/help",
-			chatID: 12345,
+			update: newCommandUpdate("help"),
 			mockBehavior: func(sender *mock.Sender) {
 				sender.EXPECT().Send(testifymock.MatchedBy(func(msg tgbotapi.MessageConfig) bool {
 					return msg.ChatID == 12345 && msg.Text != ""
@@ -52,8 +50,7 @@ func TestHelpCommandHandler_Handle(t *testing.T) {
 		},
 		{
 			name:   "send error",
-			text:   "/help",
-			chatID: 12345,
+			update: newCommandUpdate("help"),
 			mockBehavior: func(sender *mock.Sender) {
 				sender.EXPECT().Send(testifymock.Anything).Return(tgbotapi.Message{}, sendErr)
 			},
@@ -74,8 +71,22 @@ func TestHelpCommandHandler_Handle(t *testing.T) {
 			logger := slog.Default()
 			cmd := handler.NewHelpCommandHandler(logger, mockSender)
 
-			err := cmd.Handle(context.Background(), tt.text, tt.chatID)
+			err := cmd.Handle(context.Background(), tt.update)
 			tt.checkError(t, err)
 		})
+	}
+}
+
+func newCommandUpdate(commandName string) *tgbotapi.Update {
+	commandText := "/" + commandName
+
+	return &tgbotapi.Update{
+		Message: &tgbotapi.Message{
+			Text: commandText,
+			Chat: &tgbotapi.Chat{ID: 12345},
+			Entities: []tgbotapi.MessageEntity{
+				{Type: "bot_command", Offset: 0, Length: len(commandText)},
+			},
+		},
 	}
 }

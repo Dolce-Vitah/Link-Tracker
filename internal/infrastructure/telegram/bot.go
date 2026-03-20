@@ -77,9 +77,8 @@ func (b *Bot) handleUpdate(ctx context.Context, update *tgbotapi.Update, sender 
 
 	cmdName := update.Message.Command()
 	chatID := update.Message.Chat.ID
-	text := update.Message.Text
 
-	err := b.dispatcher.Dispatch(ctx, text, chatID, cmdName)
+	err := b.dispatcher.Dispatch(ctx, update)
 	if err == nil {
 		return
 	}
