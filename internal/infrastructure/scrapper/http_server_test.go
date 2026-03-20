@@ -7,11 +7,11 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/scrapper"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/repository"
 )
 
 func TestHTTPServer_ChatAndLinksLifecycle(t *testing.T) {
-	server := NewHTTPServer(scrapper.NewService())
+	server := NewHTTPServer(repository.NewService())
 	handler := server.Handler()
 
 	req := httptest.NewRequest(http.MethodPost, "/tg-chat/1", nil)
@@ -65,7 +65,7 @@ func TestHTTPServer_ChatAndLinksLifecycle(t *testing.T) {
 }
 
 func TestHTTPServer_DeleteFromUnknownChatDoesNotAffectExistingLinks(t *testing.T) {
-	server := NewHTTPServer(scrapper.NewService())
+	server := NewHTTPServer(repository.NewService())
 	handler := server.Handler()
 
 	registerReq := httptest.NewRequest(http.MethodPost, "/tg-chat/1", nil)
@@ -112,7 +112,7 @@ func TestHTTPServer_DeleteFromUnknownChatDoesNotAffectExistingLinks(t *testing.T
 }
 
 func TestHTTPServer_AddLinkUnknownChat(t *testing.T) {
-	server := NewHTTPServer(scrapper.NewService())
+	server := NewHTTPServer(repository.NewService())
 	handler := server.Handler()
 
 	req := httptest.NewRequest(http.MethodPost, "/links", bytes.NewBufferString(`{"link":"https://github.com/user/repo"}`))
@@ -126,7 +126,7 @@ func TestHTTPServer_AddLinkUnknownChat(t *testing.T) {
 }
 
 func TestHTTPServer_AddLinkAfterChatDeletion(t *testing.T) {
-	server := NewHTTPServer(scrapper.NewService())
+	server := NewHTTPServer(repository.NewService())
 	handler := server.Handler()
 
 	createReq := httptest.NewRequest(http.MethodPost, "/tg-chat/1", nil)
@@ -154,7 +154,7 @@ func TestHTTPServer_AddLinkAfterChatDeletion(t *testing.T) {
 }
 
 func TestHTTPServer_DeleteNonExistentChat(t *testing.T) {
-	server := NewHTTPServer(scrapper.NewService())
+	server := NewHTTPServer(repository.NewService())
 	handler := server.Handler()
 
 	req := httptest.NewRequest(http.MethodDelete, "/tg-chat/1", nil)
@@ -167,7 +167,7 @@ func TestHTTPServer_DeleteNonExistentChat(t *testing.T) {
 }
 
 func TestHTTPServer_RegisterExistingChatReturnsConflict(t *testing.T) {
-	server := NewHTTPServer(scrapper.NewService())
+	server := NewHTTPServer(repository.NewService())
 	handler := server.Handler()
 
 	first := httptest.NewRequest(http.MethodPost, "/tg-chat/1", nil)
@@ -186,7 +186,7 @@ func TestHTTPServer_RegisterExistingChatReturnsConflict(t *testing.T) {
 }
 
 func TestHTTPServer_AddDuplicateLinkReturnsConflict(t *testing.T) {
-	server := NewHTTPServer(scrapper.NewService())
+	server := NewHTTPServer(repository.NewService())
 	handler := server.Handler()
 
 	register := httptest.NewRequest(http.MethodPost, "/tg-chat/1", nil)

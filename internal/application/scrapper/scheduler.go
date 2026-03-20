@@ -5,19 +5,20 @@ import (
 	"log/slog"
 	"time"
 
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/repository"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/infrastructure/botclient"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/infrastructure/external"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/api"
 )
 
 type Scheduler struct {
-	store      *Service
+	store      *repository.Service
 	external   external.LastUpdatedClient
 	botUpdates botclient.UpdatesSender
 	interval   time.Duration
 }
 
-func NewScheduler(store *Service, externalClient external.LastUpdatedClient, updatesClient botclient.UpdatesSender, interval time.Duration) *Scheduler {
+func NewScheduler(store *repository.Service, externalClient external.LastUpdatedClient, updatesClient botclient.UpdatesSender, interval time.Duration) *Scheduler {
 	return &Scheduler{
 		store:      store,
 		external:   externalClient,

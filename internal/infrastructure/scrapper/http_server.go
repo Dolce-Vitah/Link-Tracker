@@ -9,15 +9,15 @@ import (
 	"strconv"
 	"strings"
 
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/scrapper"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/repository"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/api"
 )
 
 type HTTPServer struct {
-	service *scrapper.Service
+	service *repository.Service
 }
 
-func NewHTTPServer(service *scrapper.Service) *HTTPServer {
+func NewHTTPServer(service *repository.Service) *HTTPServer {
 	return &HTTPServer{service: service}
 }
 
@@ -40,7 +40,7 @@ func (s *HTTPServer) handleChat(w http.ResponseWriter, r *http.Request) {
 	case http.MethodPost:
 		err = s.service.RegisterChat(chatID)
 		if err != nil {
-			if errors.Is(err, scrapper.ErrChatExists) {
+			if errors.Is(err, repository.ErrChatExists) {
 				writeError(w, http.StatusConflict, "chat already exists")
 				return
 			}
@@ -51,7 +51,7 @@ func (s *HTTPServer) handleChat(w http.ResponseWriter, r *http.Request) {
 	case http.MethodDelete:
 		err = s.service.DeleteChat(chatID)
 		if err != nil {
-			if errors.Is(err, scrapper.ErrChatNotFound) {
+			if errors.Is(err, repository.ErrChatNotFound) {
 				writeError(w, http.StatusNotFound, "chat does not exist")
 				return
 			}
@@ -75,7 +75,7 @@ func (s *HTTPServer) handleLinks(w http.ResponseWriter, r *http.Request) {
 	case http.MethodGet:
 		resp, err := s.service.ListLinks(chatID)
 		if err != nil {
-			if errors.Is(err, scrapper.ErrChatNotFound) {
+			if errors.Is(err, repository.ErrChatNotFound) {
 				writeError(w, http.StatusNotFound, "chat does not exist")
 				return
 			}
@@ -92,9 +92,9 @@ func (s *HTTPServer) handleLinks(w http.ResponseWriter, r *http.Request) {
 		resp, err := s.service.AddLink(chatID, req)
 		if err != nil {
 			switch {
-			case errors.Is(err, scrapper.ErrChatNotFound):
+			case errors.Is(err, repository.ErrChatNotFound):
 				writeError(w, http.StatusNotFound, "chat does not exist")
-			case errors.Is(err, scrapper.ErrLinkExists):
+			case errors.Is(err, repository.ErrLinkExists):
 				writeError(w, http.StatusConflict, "link already tracked")
 			default:
 				writeError(w, http.StatusBadRequest, err.Error())
@@ -110,7 +110,7 @@ func (s *HTTPServer) handleLinks(w http.ResponseWriter, r *http.Request) {
 		}
 		resp, err := s.service.RemoveLink(chatID, req)
 		if err != nil {
-			if errors.Is(err, scrapper.ErrChatNotFound) || errors.Is(err, scrapper.ErrLinkNotFound) {
+			if errors.Is(err, repository.ErrChatNotFound) || errors.Is(err, repository.ErrLinkNotFound) {
 				writeError(w, http.StatusNotFound, "chat does not exist or link not found")
 				return
 			}
