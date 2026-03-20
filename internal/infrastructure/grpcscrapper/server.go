@@ -5,10 +5,9 @@ import (
 	"errors"
 	"fmt"
 
-	appscrapper "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/scrapper"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/scrapper"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/encoding"
 	"google.golang.org/grpc/status"
 )
 
@@ -23,11 +22,11 @@ type ScrapperServiceServer interface {
 }
 
 type Server struct {
-	service *appscrapper.Service
+	service *scrapper.Service
 }
 
-func Register(server *grpc.Server, service *appscrapper.Service) {
-	encoding.RegisterCodec(jsonCodec{})
+func Register(server *grpc.Server, service *scrapper.Service) {
+	RegisterJSONCodec()
 	s := &Server{service: service}
 	server.RegisterService(&grpc.ServiceDesc{
 		ServiceName: serviceName,
@@ -104,11 +103,11 @@ func (s *Server) listLinksHandler(_ any, ctx context.Context, dec func(any) erro
 
 func mapError(err error) error {
 	switch {
-	case errors.Is(err, appscrapper.ErrChatExists), errors.Is(err, appscrapper.ErrLinkExists):
+	case errors.Is(err, scrapper.ErrChatExists), errors.Is(err, scrapper.ErrLinkExists):
 		return status.Error(codes.AlreadyExists, err.Error())
-	case errors.Is(err, appscrapper.ErrChatNotFound), errors.Is(err, appscrapper.ErrLinkNotFound):
+	case errors.Is(err, scrapper.ErrChatNotFound), errors.Is(err, scrapper.ErrLinkNotFound):
 		return status.Error(codes.NotFound, err.Error())
-	case errors.Is(err, appscrapper.ErrInvalidLink):
+	case errors.Is(err, scrapper.ErrInvalidLink):
 		return status.Error(codes.InvalidArgument, err.Error())
 	default:
 		return status.Error(codes.Internal, fmt.Sprintf("internal server error: %s", err.Error()))

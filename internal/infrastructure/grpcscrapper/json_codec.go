@@ -1,17 +1,30 @@
 package grpcscrapper
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"sync"
 
-type jsonCodec struct{}
+	"google.golang.org/grpc/encoding"
+)
 
-func (jsonCodec) Marshal(v any) ([]byte, error) {
+type JSONCodec struct{}
+
+func (JSONCodec) Marshal(v any) ([]byte, error) {
 	return json.Marshal(v)
 }
 
-func (jsonCodec) Unmarshal(data []byte, v any) error {
+func (JSONCodec) Unmarshal(data []byte, v any) error {
 	return json.Unmarshal(data, v)
 }
 
-func (jsonCodec) Name() string {
+func (JSONCodec) Name() string {
 	return "json"
+}
+
+var registerCodecOnce sync.Once
+
+func RegisterJSONCodec() {
+	registerCodecOnce.Do(func() {
+		encoding.RegisterCodec(JSONCodec{})
+	})
 }

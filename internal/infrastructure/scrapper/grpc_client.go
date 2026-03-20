@@ -2,7 +2,6 @@ package scrapper
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"time"
 
@@ -12,7 +11,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/grpc/encoding"
 	"google.golang.org/grpc/status"
 )
 
@@ -22,11 +20,16 @@ type GRPCClient struct {
 }
 
 func NewGRPCClient(target string, timeout time.Duration) (*GRPCClient, error) {
-	encoding.RegisterCodec(grpcscrapperJSONCodec{})
+	grpcscrapper.RegisterJSONCodec()
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
-	conn, err := grpc.DialContext(ctx, target, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithDefaultCallOptions(grpc.ForceCodec(grpcscrapperJSONCodec{})))
+	conn, err := grpc.DialContext(
+		ctx,
+		target,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithDefaultCallOptions(grpc.ForceCodec(grpcscrapper.JSONCodec{})),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("dial scrapper grpc target: %w", err)
 	}
@@ -103,18 +106,4 @@ func mapGRPCError(err error) error {
 	default:
 		return err
 	}
-}
-
-type grpcscrapperJSONCodec struct{}
-
-func (grpcscrapperJSONCodec) Marshal(v any) ([]byte, error) {
-	return json.Marshal(v)
-}
-
-func (grpcscrapperJSONCodec) Unmarshal(data []byte, v any) error {
-	return json.Unmarshal(data, v)
-}
-
-func (grpcscrapperJSONCodec) Name() string {
-	return "json"
 }
