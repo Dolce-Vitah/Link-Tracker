@@ -2,76 +2,181 @@ package scrapper
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
+	botclientmock "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/infrastructure/botclient/mock"
+	externalmock "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/infrastructure/external/mock"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/api"
+	testifymock "github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
-type fakeExternalClient struct {
-	lastUpdated time.Time
-	err         error
-}
+func TestScheduler_ProcessOnce_Flow(t *testing.T) {
+	t.Parallel()
 
-func (f *fakeExternalClient) GetLastUpdated(ctx context.Context, rawURL string) (time.Time, error) {
-	return f.lastUpdated, f.err
-}
+	const (
+		urlMain = "https://github.com/user/repo"
+		urlA    = "https://github.com/user/a"
+		urlB    = "https://github.com/user/b"
+	)
 
-type fakeUpdatesSender struct {
-	updates []api.LinkUpdate
-	err     error
-}
+	baseTime := time.Date(2026, time.March, 19, 12, 0, 0, 0, time.UTC)
 
-func (f *fakeUpdatesSender) SendUpdate(ctx context.Context, update api.LinkUpdate) error {
-	f.updates = append(f.updates, update)
-	return f.err
-}
-
-func TestScheduler_SendsUpdateOnlyToSubscribedChats(t *testing.T) {
-	service := NewService()
-	if err := service.RegisterChat(1); err != nil {
-		t.Fatalf("register chat 1: %v", err)
+	tests := []struct {
+		name                 string
+		setup                func(t *testing.T, service *Service, external *externalmock.MockLastUpdatedClient, updates *botclientmock.MockUpdatesSender, sent *[]api.LinkUpdate, now time.Time)
+		expectedUpdatesCount int
+		expectedRecipients   map[string][]int64
+		expectedLastUpdated  map[string]time.Time
+	}{
+		{
+			name: "send update only to subscribed chats",
+			setup: func(t *testing.T, service *Service, external *externalmock.MockLastUpdatedClient, updates *botclientmock.MockUpdatesSender, sent *[]api.LinkUpdate, now time.Time) {
+				registerChats(t, service, 1, 2, 999)
+				addLink(t, service, 1, urlMain)
+				addLink(t, service, 2, urlMain)
+				external.On("GetLastUpdated", testifymock.Anything, urlMain).Return(now.Add(10*time.Minute), nil).Once()
+				expectSendUpdate(updates, sent, urlMain, nil)
+			},
+			expectedUpdatesCount: 1,
+			expectedRecipients: map[string][]int64{
+				urlMain: {1, 2},
+			},
+			expectedLastUpdated: map[string]time.Time{
+				urlMain: baseTime.Add(10 * time.Minute),
+			},
+		},
+		{
+			name: "skip when external source returns error",
+			setup: func(t *testing.T, service *Service, external *externalmock.MockLastUpdatedClient, updates *botclientmock.MockUpdatesSender, sent *[]api.LinkUpdate, now time.Time) {
+				registerChats(t, service, 10)
+				addLink(t, service, 10, urlMain)
+				external.On("GetLastUpdated", testifymock.Anything, urlMain).Return(time.Time{}, errors.New("external failure")).Once()
+			},
+			expectedUpdatesCount: 0,
+			expectedRecipients:   map[string][]int64{},
+			expectedLastUpdated: map[string]time.Time{
+				urlMain: {},
+			},
+		},
+		{
+			name: "skip when last updated is not newer",
+			setup: func(t *testing.T, service *Service, external *externalmock.MockLastUpdatedClient, updates *botclientmock.MockUpdatesSender, sent *[]api.LinkUpdate, now time.Time) {
+				registerChats(t, service, 20)
+				addLink(t, service, 20, urlMain)
+				service.UpdateLastUpdated(urlMain, now.Add(30*time.Minute))
+				external.On("GetLastUpdated", testifymock.Anything, urlMain).Return(now.Add(5*time.Minute), nil).Once()
+			},
+			expectedUpdatesCount: 0,
+			expectedRecipients:   map[string][]int64{},
+			expectedLastUpdated: map[string]time.Time{
+				urlMain: baseTime.Add(30 * time.Minute),
+			},
+		},
+		{
+			name: "do not update timestamp when sending update fails",
+			setup: func(t *testing.T, service *Service, external *externalmock.MockLastUpdatedClient, updates *botclientmock.MockUpdatesSender, sent *[]api.LinkUpdate, now time.Time) {
+				registerChats(t, service, 30)
+				addLink(t, service, 30, urlMain)
+				external.On("GetLastUpdated", testifymock.Anything, urlMain).Return(now.Add(15*time.Minute), nil).Once()
+				expectSendUpdate(updates, sent, urlMain, errors.New("send failure"))
+			},
+			expectedUpdatesCount: 1,
+			expectedRecipients: map[string][]int64{
+				urlMain: {30},
+			},
+			expectedLastUpdated: map[string]time.Time{
+				urlMain: {},
+			},
+		},
+		{
+			name: "process multiple links independently",
+			setup: func(t *testing.T, service *Service, external *externalmock.MockLastUpdatedClient, updates *botclientmock.MockUpdatesSender, sent *[]api.LinkUpdate, now time.Time) {
+				registerChats(t, service, 1, 2)
+				addLink(t, service, 1, urlA)
+				addLink(t, service, 2, urlB)
+				external.On("GetLastUpdated", testifymock.Anything, urlA).Return(now.Add(1*time.Minute), nil).Once()
+				external.On("GetLastUpdated", testifymock.Anything, urlB).Return(time.Time{}, errors.New("external failure")).Once()
+				expectSendUpdate(updates, sent, urlA, nil)
+			},
+			expectedUpdatesCount: 1,
+			expectedRecipients: map[string][]int64{
+				urlA: {1},
+			},
+			expectedLastUpdated: map[string]time.Time{
+				urlA: baseTime.Add(1 * time.Minute),
+				urlB: {},
+			},
+		},
 	}
-	if err := service.RegisterChat(2); err != nil {
-		t.Fatalf("register chat 2: %v", err)
-	}
-	if err := service.RegisterChat(999); err != nil {
-		t.Fatalf("register chat 999: %v", err)
-	}
 
-	if _, err := service.AddLink(1, api.AddLinkRequest{Link: "https://github.com/user/repo"}); err != nil {
-		t.Fatalf("add link for chat 1: %v", err)
-	}
-	if _, err := service.AddLink(2, api.AddLinkRequest{Link: "https://github.com/user/repo"}); err != nil {
-		t.Fatalf("add link for chat 2: %v", err)
-	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 
-	external := &fakeExternalClient{lastUpdated: time.Now().Add(10 * time.Minute)}
-	updates := &fakeUpdatesSender{}
-	scheduler := NewScheduler(service, external, updates, time.Second)
+			service := NewService()
+			external := externalmock.NewMockLastUpdatedClient(t)
+			updates := botclientmock.NewMockUpdatesSender(t)
+			sentUpdates := make([]api.LinkUpdate, 0)
+			tt.setup(t, service, external, updates, &sentUpdates, baseTime)
 
-	scheduler.ProcessOnce(context.Background())
+			scheduler := NewScheduler(service, external, updates, time.Second)
+			scheduler.ProcessOnce(context.Background())
 
-	if len(updates.updates) != 1 {
-		t.Fatalf("expected exactly one update, got %d", len(updates.updates))
-	}
-	got := updates.updates[0]
-	if len(got.TgChatIDs) != 2 {
-		t.Fatalf("expected update for 2 subscribed chats, got %d", len(got.TgChatIDs))
-	}
+			require.Len(t, sentUpdates, tt.expectedUpdatesCount)
 
-	hasChat := func(id int64) bool {
-		for _, chatID := range got.TgChatIDs {
-			if chatID == id {
-				return true
+			updatesByURL := make(map[string]api.LinkUpdate, len(sentUpdates))
+			for _, update := range sentUpdates {
+				updatesByURL[update.URL] = update
 			}
+
+			for expectedURL, expectedChatIDs := range tt.expectedRecipients {
+				update, ok := updatesByURL[expectedURL]
+				require.True(t, ok, "expected update for URL %s", expectedURL)
+				require.ElementsMatch(t, expectedChatIDs, update.TgChatIDs)
+			}
+
+			for expectedURL, expectedTime := range tt.expectedLastUpdated {
+				actualTime := getLastUpdatedFromSnapshot(t, service, expectedURL)
+				require.Equal(t, expectedTime, actualTime)
+			}
+		})
+	}
+}
+
+func expectSendUpdate(updates *botclientmock.MockUpdatesSender, sent *[]api.LinkUpdate, rawURL string, returnErr error) {
+	updates.
+		On("SendUpdate", testifymock.Anything, testifymock.MatchedBy(func(update api.LinkUpdate) bool {
+			return update.URL == rawURL
+		})).
+		Run(func(args testifymock.Arguments) {
+			*sent = append(*sent, args[1].(api.LinkUpdate))
+		}).
+		Return(returnErr).
+		Once()
+}
+
+func registerChats(t *testing.T, service *Service, chatIDs ...int64) {
+	t.Helper()
+	for _, chatID := range chatIDs {
+		require.NoError(t, service.RegisterChat(chatID))
+	}
+}
+
+func addLink(t *testing.T, service *Service, chatID int64, rawURL string) {
+	t.Helper()
+	_, err := service.AddLink(chatID, api.AddLinkRequest{Link: rawURL})
+	require.NoError(t, err)
+}
+
+func getLastUpdatedFromSnapshot(t *testing.T, service *Service, rawURL string) time.Time {
+	t.Helper()
+	for _, tracked := range service.SnapshotLinks() {
+		if tracked.Response.URL == rawURL {
+			return tracked.LastUpdated
 		}
-		return false
 	}
-	if !hasChat(1) || !hasChat(2) {
-		t.Fatalf("expected chat IDs 1 and 2 in update, got %+v", got.TgChatIDs)
-	}
-	if hasChat(999) {
-		t.Fatalf("unexpected chat ID 999 in update recipients")
-	}
+	return time.Time{}
 }

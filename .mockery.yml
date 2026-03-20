@@ -30,3 +30,17 @@ packages:
       pkgname: mock
     interfaces:
       Service:
+  gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/infrastructure/external:
+    config:
+      dir: '{{.InterfaceDir}}/mock'
+      filename: '{{.InterfaceName}}.go'
+      pkgname: mock
+    interfaces:
+      LastUpdatedClient:
+  gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/infrastructure/botclient:
+    config:
+      dir: '{{.InterfaceDir}}/mock'
+      filename: '{{.InterfaceName}}.go'
+      pkgname: mock
+    interfaces:
+      UpdatesSender:
