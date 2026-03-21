@@ -98,7 +98,8 @@ func (a *App) runGRPCServer(ctx context.Context) {
 	}
 
 	grpcServer := grpc.NewServer()
-	grpcserver.Register(grpcServer, a.service)
+	grpcAppServer := grpcserver.NewServer(a.service)
+	grpcAppServer.Register(grpcServer)
 
 	slog.Info("Scrapper gRPC server is up", slog.String("address", a.config.ScrapperGRPCAddress))
 	if serveErr := grpcServer.Serve(listener); serveErr != nil {
