@@ -2,16 +2,9 @@ package external
 
 import (
 	"context"
-	"encoding/json"
-	"errors"
 	"fmt"
-	"net/http"
 	"net/url"
-	"strconv"
-	"strings"
 	"time"
-
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/scrapper/adapters/dto"
 )
 
 type LastUpdatedClient interface {
@@ -19,9 +12,8 @@ type LastUpdatedClient interface {
 }
 
 type HTTPClient struct {
-	httpClient    *http.Client
-	githubBaseURL string
-	stackBaseURL  string
+	githubClient        *GitHubClient
+	stackOverflowClient *StackOverflowClient
 }
 
 const (
@@ -33,9 +25,8 @@ const (
 
 func NewHTTPClient(timeout time.Duration) *HTTPClient {
 	return &HTTPClient{
-		httpClient:    &http.Client{Timeout: timeout},
-		githubBaseURL: "https://api.github.com",
-		stackBaseURL:  "https://api.stackexchange.com/2.3",
+		githubClient:        NewGitHubClient(timeout),
+		stackOverflowClient: NewStackOverflowClient(timeout),
 	}
 }
 
@@ -47,130 +38,10 @@ func (c *HTTPClient) GetLastUpdated(ctx context.Context, rawURL string) (time.Ti
 
 	switch {
 	case isGitHubHost(u.Host):
-		return c.githubLastUpdated(ctx, u)
+		return c.githubClient.getLastUpdatedFromURL(ctx, u)
 	case isStackOverflowHost(u.Host):
-		return c.stackOverflowLastUpdated(ctx, u)
+		return c.stackOverflowClient.getLastUpdatedFromURL(ctx, u)
 	default:
 		return time.Time{}, fmt.Errorf("unsupported host: %s", u.Host)
 	}
-}
-
-func (c *HTTPClient) githubLastUpdated(ctx context.Context, u *url.URL) (time.Time, error) {
-	owner, repo, err := parseGitHubRepoPath(u.Path)
-	if err != nil {
-		return time.Time{}, errors.New("invalid github repository url")
-	}
-	reqURL := fmt.Sprintf("%s/repos/%s/%s", strings.TrimRight(c.githubBaseURL, "/"), owner, repo)
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, reqURL, nil)
-	if err != nil {
-		return time.Time{}, fmt.Errorf("build github request: %w", err)
-	}
-	req.Header.Set("Accept", "application/vnd.github+json")
-
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return time.Time{}, fmt.Errorf("do github request: %w", err)
-	}
-	defer func() {
-		_ = resp.Body.Close()
-	}()
-
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return time.Time{}, fmt.Errorf("github non-2xx status: %d", resp.StatusCode)
-	}
-
-	var payload dto.GitHubRepoResponse
-	decodeErr := json.NewDecoder(resp.Body).Decode(&payload)
-	if decodeErr != nil {
-		return time.Time{}, fmt.Errorf("decode github response: %w", decodeErr)
-	}
-	if payload.UpdatedAt.IsZero() {
-		return time.Time{}, errors.New("github response missing updated_at")
-	}
-	return payload.UpdatedAt, nil
-}
-
-func (c *HTTPClient) stackOverflowLastUpdated(ctx context.Context, u *url.URL) (time.Time, error) {
-	questionID, err := parseStackOverflowQuestionPath(u.Path)
-	if err != nil {
-		return time.Time{}, errors.New("invalid stackoverflow question url")
-	}
-
-	reqURL := fmt.Sprintf("%s/questions/%d?site=stackoverflow", strings.TrimRight(c.stackBaseURL, "/"), questionID)
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, reqURL, nil)
-	if err != nil {
-		return time.Time{}, fmt.Errorf("build stackoverflow request: %w", err)
-	}
-
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return time.Time{}, fmt.Errorf("do stackoverflow request: %w", err)
-	}
-	defer func() {
-		_ = resp.Body.Close()
-	}()
-
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return time.Time{}, fmt.Errorf("stackoverflow non-2xx status: %d", resp.StatusCode)
-	}
-
-	var payload dto.StackOverflowResponse
-	decodeErr := json.NewDecoder(resp.Body).Decode(&payload)
-	if decodeErr != nil {
-		return time.Time{}, fmt.Errorf("decode stackoverflow response: %w", decodeErr)
-	}
-	if len(payload.Items) == 0 || payload.Items[0].LastActivityDate == 0 {
-		return time.Time{}, errors.New("stackoverflow response missing last_activity_date")
-	}
-	return time.Unix(payload.Items[0].LastActivityDate, 0).UTC(), nil
-}
-
-func isGitHubHost(host string) bool {
-	switch strings.ToLower(host) {
-	case githubHost, githubWWWHost:
-		return true
-	default:
-		return false
-	}
-}
-
-func isStackOverflowHost(host string) bool {
-	switch strings.ToLower(host) {
-	case stackOverflowHost, stackOverflowWHost:
-		return true
-	default:
-		return false
-	}
-}
-
-func parseGitHubRepoPath(rawPath string) (string, string, error) {
-	const requiredGitHubPathParts = 2
-
-	parts := strings.Split(strings.Trim(rawPath, "/"), "/")
-	if len(parts) != requiredGitHubPathParts {
-		return "", "", errors.New("invalid github repository path")
-	}
-	owner := strings.TrimSpace(parts[0])
-	repo := strings.TrimSpace(parts[1])
-	if owner == "" || repo == "" {
-		return "", "", errors.New("empty github owner or repo")
-	}
-	if strings.HasSuffix(repo, ".git") {
-		return "", "", errors.New("git suffix is not allowed")
-	}
-	return owner, repo, nil
-}
-
-func parseStackOverflowQuestionPath(rawPath string) (int64, error) {
-	const requiredStackPathParts = 2
-
-	parts := strings.Split(strings.Trim(rawPath, "/"), "/")
-	if len(parts) != requiredStackPathParts || parts[0] != "questions" {
-		return 0, errors.New("invalid stackoverflow question path")
-	}
-	questionID, err := strconv.ParseInt(parts[1], 10, 64)
-	if err != nil || questionID <= 0 {
-		return 0, errors.New("invalid stackoverflow question id")
-	}
-	return questionID, nil
 }
