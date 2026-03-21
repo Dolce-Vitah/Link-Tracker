@@ -20,11 +20,11 @@ import (
 )
 
 type App struct {
-	config     *config.Config
-	service    *repository.Service
-	httpServer *httpserver.Server
-	scheduler  *scheduler.Scheduler
-	interval   time.Duration
+	config      *config.Config
+	service     *repository.Service
+	httpHandler *httpserver.Handler
+	scheduler   *scheduler.Scheduler
+	interval    time.Duration
 }
 
 func (a *App) New() error {
@@ -44,14 +44,14 @@ func (a *App) New() error {
 	}
 
 	service := repository.NewService()
-	httpServer := httpserver.New(service)
+	httpHandler := httpserver.NewHandler(service)
 	externalClient := external.NewHTTPClient(timeout)
 	updatesClient := botclient.NewHTTPUpdatesClient(cfg.BotBaseURL, timeout)
 	scheduler := scheduler.New(service, externalClient, updatesClient, interval)
 
 	a.config = cfg
 	a.service = service
-	a.httpServer = httpServer
+	a.httpHandler = httpHandler
 	a.scheduler = scheduler
 	a.interval = interval
 
@@ -66,7 +66,7 @@ func (a *App) Run() {
 	go a.runGRPCServer(ctx)
 
 	slog.Info("Scrapper HTTP server is up", slog.String("address", a.config.ScrapperHTTPAddress))
-	if err := http.ListenAndServe(a.config.ScrapperHTTPAddress, a.httpServer.Handler()); err != nil {
+	if err := http.ListenAndServe(a.config.ScrapperHTTPAddress, a.httpHandler.Handler()); err != nil {
 		slog.Error("Scrapper HTTP server failed", slog.String("error", err.Error()))
 		return
 	}

@@ -12,22 +12,26 @@ import (
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/scrapper/repository"
 )
 
-type Server struct {
+type Handler struct {
 	service *repository.Service
 }
 
-func New(service *repository.Service) *Server {
-	return &Server{service: service}
+func NewHandler(service *repository.Service) *Handler {
+	return &Handler{service: service}
 }
 
-func (s *Server) Handler() http.Handler {
+func New(service *repository.Service) *Handler {
+	return NewHandler(service)
+}
+
+func (h *Handler) Handler() http.Handler {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/tg-chat/", s.handleChat)
-	mux.HandleFunc("/links", s.handleLinks)
+	mux.HandleFunc("/tg-chat/", h.handleChat)
+	mux.HandleFunc("/links", h.handleLinks)
 	return mux
 }
 
-func (s *Server) handleChat(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) handleChat(w http.ResponseWriter, r *http.Request) {
 	idStr := strings.TrimPrefix(r.URL.Path, "/tg-chat/")
 	chatID, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
@@ -37,16 +41,16 @@ func (s *Server) handleChat(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case http.MethodPost:
-		s.handleRegisterChat(w, chatID)
+		h.handleRegisterChat(w, chatID)
 	case http.MethodDelete:
-		s.handleDeleteChat(w, chatID)
+		h.handleDeleteChat(w, chatID)
 	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
 }
 
-func (s *Server) handleRegisterChat(w http.ResponseWriter, chatID int64) {
-	err := s.service.RegisterChat(chatID)
+func (h *Handler) handleRegisterChat(w http.ResponseWriter, chatID int64) {
+	err := h.service.RegisterChat(chatID)
 	if err != nil {
 		if errors.Is(err, repository.ErrChatExists) {
 			writeError(w, http.StatusConflict, "chat already exists")
@@ -58,8 +62,8 @@ func (s *Server) handleRegisterChat(w http.ResponseWriter, chatID int64) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func (s *Server) handleDeleteChat(w http.ResponseWriter, chatID int64) {
-	err := s.service.DeleteChat(chatID)
+func (h *Handler) handleDeleteChat(w http.ResponseWriter, chatID int64) {
+	err := h.service.DeleteChat(chatID)
 	if err != nil {
 		if errors.Is(err, repository.ErrChatNotFound) {
 			writeError(w, http.StatusNotFound, "chat does not exist")
@@ -71,7 +75,7 @@ func (s *Server) handleDeleteChat(w http.ResponseWriter, chatID int64) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func (s *Server) handleLinks(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) handleLinks(w http.ResponseWriter, r *http.Request) {
 	chatID, err := parseChatIDHeader(r)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, err.Error())
@@ -80,18 +84,18 @@ func (s *Server) handleLinks(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case http.MethodGet:
-		s.handleListLinks(w, chatID)
+		h.handleListLinks(w, chatID)
 	case http.MethodPost:
-		s.handleAddLink(w, r, chatID)
+		h.handleAddLink(w, r, chatID)
 	case http.MethodDelete:
-		s.handleRemoveLink(w, r, chatID)
+		h.handleRemoveLink(w, r, chatID)
 	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
 }
 
-func (s *Server) handleListLinks(w http.ResponseWriter, chatID int64) {
-	resp, listErr := s.service.ListLinks(chatID)
+func (h *Handler) handleListLinks(w http.ResponseWriter, chatID int64) {
+	resp, listErr := h.service.ListLinks(chatID)
 	if listErr != nil {
 		if errors.Is(listErr, repository.ErrChatNotFound) {
 			writeError(w, http.StatusNotFound, "chat does not exist")
@@ -103,7 +107,7 @@ func (s *Server) handleListLinks(w http.ResponseWriter, chatID int64) {
 	writeJSON(w, http.StatusOK, resp)
 }
 
-func (s *Server) handleAddLink(w http.ResponseWriter, r *http.Request, chatID int64) {
+func (h *Handler) handleAddLink(w http.ResponseWriter, r *http.Request, chatID int64) {
 	var req api.AddLinkRequest
 	decodeErr := json.NewDecoder(r.Body).Decode(&req)
 	if decodeErr != nil {
@@ -111,7 +115,7 @@ func (s *Server) handleAddLink(w http.ResponseWriter, r *http.Request, chatID in
 		return
 	}
 
-	resp, addErr := s.service.AddLink(chatID, req)
+	resp, addErr := h.service.AddLink(chatID, req)
 	if addErr != nil {
 		switch {
 		case errors.Is(addErr, repository.ErrChatNotFound):
@@ -126,7 +130,7 @@ func (s *Server) handleAddLink(w http.ResponseWriter, r *http.Request, chatID in
 	writeJSON(w, http.StatusOK, resp)
 }
 
-func (s *Server) handleRemoveLink(w http.ResponseWriter, r *http.Request, chatID int64) {
+func (h *Handler) handleRemoveLink(w http.ResponseWriter, r *http.Request, chatID int64) {
 	var req api.RemoveLinkRequest
 	decodeErr := json.NewDecoder(r.Body).Decode(&req)
 	if decodeErr != nil {
@@ -134,7 +138,7 @@ func (s *Server) handleRemoveLink(w http.ResponseWriter, r *http.Request, chatID
 		return
 	}
 
-	resp, removeErr := s.service.RemoveLink(chatID, req)
+	resp, removeErr := h.service.RemoveLink(chatID, req)
 	if removeErr != nil {
 		if errors.Is(removeErr, repository.ErrChatNotFound) || errors.Is(removeErr, repository.ErrLinkNotFound) {
 			writeError(w, http.StatusNotFound, "chat does not exist or link not found")
