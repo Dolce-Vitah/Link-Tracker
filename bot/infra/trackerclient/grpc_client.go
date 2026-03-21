@@ -16,8 +16,17 @@ import (
 )
 
 type GRPCClient struct {
-	conn   *grpc.ClientConn
+	conn   grpcInvoker
+	closer grpcCloser
 	target string
+}
+
+type grpcInvoker interface {
+	Invoke(ctx context.Context, method string, args any, reply any, opts ...grpc.CallOption) error
+}
+
+type grpcCloser interface {
+	Close() error
 }
 
 func NewGRPCClient(target string, _ time.Duration) (*GRPCClient, error) {
@@ -31,7 +40,7 @@ func NewGRPCClient(target string, _ time.Duration) (*GRPCClient, error) {
 		return nil, fmt.Errorf("dial scrapper grpc target: %w", err)
 	}
 	conn.Connect()
-	return &GRPCClient{conn: conn, target: target}, nil
+	return &GRPCClient{conn: conn, closer: conn, target: target}, nil
 }
 
 func (c *GRPCClient) RegisterChat(ctx context.Context, chatID int64) error {
@@ -74,7 +83,10 @@ func (c *GRPCClient) ListLinks(ctx context.Context, chatID int64) (api.ListLinks
 }
 
 func (c *GRPCClient) Close() error {
-	if err := c.conn.Close(); err != nil {
+	if c.closer == nil {
+		return nil
+	}
+	if err := c.closer.Close(); err != nil {
 		return fmt.Errorf("close grpc client connection: %w", err)
 	}
 	return nil
