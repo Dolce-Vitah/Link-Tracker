@@ -1,4 +1,4 @@
-package grpcserver
+package dto
 
 import "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/api"
 

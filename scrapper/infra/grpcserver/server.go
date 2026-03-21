@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/scrapper/adapters/dto"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/scrapper/repository"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -43,33 +44,33 @@ func Register(server *grpc.Server, service *repository.Service) {
 	}, s)
 }
 
-//nolint:revive 
+//nolint:revive // gRPC handler signature follows grpc.MethodDesc handler contract.
 func (s *Server) registerChatHandler(_ any, _ context.Context, dec func(any) error, _ grpc.UnaryServerInterceptor) (any, error) {
-	var req RegisterChatRequest
+	var req dto.RegisterChatRequest
 	if err := dec(&req); err != nil {
 		return nil, fmt.Errorf("decode register chat request: %w", status.Error(codes.InvalidArgument, err.Error()))
 	}
 	if err := s.service.RegisterChat(req.ChatID); err != nil {
 		return nil, mapError(err)
 	}
-	return RegisterChatResponse{}, nil
+	return dto.RegisterChatResponse{}, nil
 }
 
-//nolint:revive
+//nolint:revive // gRPC handler signature follows grpc.MethodDesc handler contract.
 func (s *Server) deleteChatHandler(_ any, _ context.Context, dec func(any) error, _ grpc.UnaryServerInterceptor) (any, error) {
-	var req DeleteChatRequest
+	var req dto.DeleteChatRequest
 	if err := dec(&req); err != nil {
 		return nil, fmt.Errorf("decode delete chat request: %w", status.Error(codes.InvalidArgument, err.Error()))
 	}
 	if err := s.service.DeleteChat(req.ChatID); err != nil {
 		return nil, mapError(err)
 	}
-	return DeleteChatResponse{}, nil
+	return dto.DeleteChatResponse{}, nil
 }
 
-//nolint:revive 
+//nolint:revive // gRPC handler signature follows grpc.MethodDesc handler contract.
 func (s *Server) addLinkHandler(_ any, _ context.Context, dec func(any) error, _ grpc.UnaryServerInterceptor) (any, error) {
-	var req AddLinkGRPCRequest
+	var req dto.AddLinkGRPCRequest
 	if err := dec(&req); err != nil {
 		return nil, fmt.Errorf("decode add link request: %w", status.Error(codes.InvalidArgument, err.Error()))
 	}
@@ -77,12 +78,12 @@ func (s *Server) addLinkHandler(_ any, _ context.Context, dec func(any) error, _
 	if err != nil {
 		return nil, mapError(err)
 	}
-	return AddLinkGRPCResponse{Link: link}, nil
+	return dto.AddLinkGRPCResponse{Link: link}, nil
 }
 
-//nolint:revive
+//nolint:revive // gRPC handler signature follows grpc.MethodDesc handler contract.
 func (s *Server) removeLinkHandler(_ any, _ context.Context, dec func(any) error, _ grpc.UnaryServerInterceptor) (any, error) {
-	var req RemoveLinkGRPCRequest
+	var req dto.RemoveLinkGRPCRequest
 	if err := dec(&req); err != nil {
 		return nil, fmt.Errorf("decode remove link request: %w", status.Error(codes.InvalidArgument, err.Error()))
 	}
@@ -90,12 +91,12 @@ func (s *Server) removeLinkHandler(_ any, _ context.Context, dec func(any) error
 	if err != nil {
 		return nil, mapError(err)
 	}
-	return RemoveLinkGRPCResponse{Link: link}, nil
+	return dto.RemoveLinkGRPCResponse{Link: link}, nil
 }
 
-//nolint:revive 
+//nolint:revive // gRPC handler signature follows grpc.MethodDesc handler contract.
 func (s *Server) listLinksHandler(_ any, _ context.Context, dec func(any) error, _ grpc.UnaryServerInterceptor) (any, error) {
-	var req ListLinksRequest
+	var req dto.ListLinksRequest
 	if err := dec(&req); err != nil {
 		return nil, fmt.Errorf("decode list links request: %w", status.Error(codes.InvalidArgument, err.Error()))
 	}
@@ -103,7 +104,7 @@ func (s *Server) listLinksHandler(_ any, _ context.Context, dec func(any) error,
 	if err != nil {
 		return nil, mapError(err)
 	}
-	return ListLinksResponse{Body: resp}, nil
+	return dto.ListLinksResponse{Body: resp}, nil
 }
 
 func mapError(err error) error {

@@ -7,6 +7,7 @@ import (
 
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/domain/tracker"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/api"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/scrapper/adapters/dto"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/scrapper/infra/grpcserver"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -34,20 +35,20 @@ func NewGRPCClient(target string, _ time.Duration) (*GRPCClient, error) {
 }
 
 func (c *GRPCClient) RegisterChat(ctx context.Context, chatID int64) error {
-	var response grpcserver.RegisterChatResponse
-	err := c.conn.Invoke(ctx, "/scrapper.ScrapperService/RegisterChat", grpcserver.RegisterChatRequest{ChatID: chatID}, &response)
+	var response dto.RegisterChatResponse
+	err := c.conn.Invoke(ctx, "/scrapper.ScrapperService/RegisterChat", dto.RegisterChatRequest{ChatID: chatID}, &response)
 	return mapGRPCError(err)
 }
 
 func (c *GRPCClient) DeleteChat(ctx context.Context, chatID int64) error {
-	var response grpcserver.DeleteChatResponse
-	err := c.conn.Invoke(ctx, "/scrapper.ScrapperService/DeleteChat", grpcserver.DeleteChatRequest{ChatID: chatID}, &response)
+	var response dto.DeleteChatResponse
+	err := c.conn.Invoke(ctx, "/scrapper.ScrapperService/DeleteChat", dto.DeleteChatRequest{ChatID: chatID}, &response)
 	return mapGRPCError(err)
 }
 
 func (c *GRPCClient) AddLink(ctx context.Context, chatID int64, request api.AddLinkRequest) (api.LinkResponse, error) {
-	var response grpcserver.AddLinkGRPCResponse
-	err := c.conn.Invoke(ctx, "/scrapper.ScrapperService/AddLink", grpcserver.AddLinkGRPCRequest{ChatID: chatID, Body: request}, &response)
+	var response dto.AddLinkGRPCResponse
+	err := c.conn.Invoke(ctx, "/scrapper.ScrapperService/AddLink", dto.AddLinkGRPCRequest{ChatID: chatID, Body: request}, &response)
 	if err != nil {
 		return api.LinkResponse{}, mapGRPCError(err)
 	}
@@ -55,8 +56,8 @@ func (c *GRPCClient) AddLink(ctx context.Context, chatID int64, request api.AddL
 }
 
 func (c *GRPCClient) RemoveLink(ctx context.Context, chatID int64, request api.RemoveLinkRequest) (api.LinkResponse, error) {
-	var response grpcserver.RemoveLinkGRPCResponse
-	err := c.conn.Invoke(ctx, "/scrapper.ScrapperService/RemoveLink", grpcserver.RemoveLinkGRPCRequest{ChatID: chatID, Body: request}, &response)
+	var response dto.RemoveLinkGRPCResponse
+	err := c.conn.Invoke(ctx, "/scrapper.ScrapperService/RemoveLink", dto.RemoveLinkGRPCRequest{ChatID: chatID, Body: request}, &response)
 	if err != nil {
 		return api.LinkResponse{}, mapGRPCError(err)
 	}
@@ -64,8 +65,8 @@ func (c *GRPCClient) RemoveLink(ctx context.Context, chatID int64, request api.R
 }
 
 func (c *GRPCClient) ListLinks(ctx context.Context, chatID int64) (api.ListLinksResponse, error) {
-	var response grpcserver.ListLinksResponse
-	err := c.conn.Invoke(ctx, "/scrapper.ScrapperService/ListLinks", grpcserver.ListLinksRequest{ChatID: chatID}, &response)
+	var response dto.ListLinksResponse
+	err := c.conn.Invoke(ctx, "/scrapper.ScrapperService/ListLinks", dto.ListLinksRequest{ChatID: chatID}, &response)
 	if err != nil {
 		return api.ListLinksResponse{}, mapGRPCError(err)
 	}

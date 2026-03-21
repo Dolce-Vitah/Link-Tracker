@@ -9,6 +9,7 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	testifymock "github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/dto"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/handler"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/domain/command/mock"
@@ -24,7 +25,7 @@ func TestStartCommandHandler_NameAndDescription(t *testing.T) {
 	require.NotEmpty(t, cmd.Description())
 }
 
-func TestStartCommandHandler_Handle(t *testing.T) {	
+func TestStartCommandHandler_Handle(t *testing.T) {
 	t.Parallel()
 
 	sendErr := errors.New("send error")

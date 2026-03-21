@@ -10,6 +10,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/scrapper/adapters/dto"
 )
 
 type LastUpdatedClient interface {
@@ -46,10 +48,6 @@ func (c *HTTPClient) GetLastUpdated(ctx context.Context, rawURL string) (time.Ti
 	}
 }
 
-type githubRepoResponse struct {
-	UpdatedAt time.Time `json:"updated_at"`
-}
-
 func (c *HTTPClient) githubLastUpdated(ctx context.Context, u *url.URL) (time.Time, error) {
 	const requiredGitHubPathParts = 2
 
@@ -76,7 +74,7 @@ func (c *HTTPClient) githubLastUpdated(ctx context.Context, u *url.URL) (time.Ti
 		return time.Time{}, fmt.Errorf("github non-2xx status: %d", resp.StatusCode)
 	}
 
-	var payload githubRepoResponse
+	var payload dto.GitHubRepoResponse
 	decodeErr := json.NewDecoder(resp.Body).Decode(&payload)
 	if decodeErr != nil {
 		return time.Time{}, fmt.Errorf("decode github response: %w", decodeErr)
@@ -85,12 +83,6 @@ func (c *HTTPClient) githubLastUpdated(ctx context.Context, u *url.URL) (time.Ti
 		return time.Time{}, errors.New("github response missing updated_at")
 	}
 	return payload.UpdatedAt, nil
-}
-
-type stackOverflowResponse struct {
-	Items []struct {
-		LastActivityDate int64 `json:"last_activity_date"`
-	} `json:"items"`
 }
 
 func (c *HTTPClient) stackOverflowLastUpdated(ctx context.Context, u *url.URL) (time.Time, error) {
@@ -123,7 +115,7 @@ func (c *HTTPClient) stackOverflowLastUpdated(ctx context.Context, u *url.URL) (
 		return time.Time{}, fmt.Errorf("stackoverflow non-2xx status: %d", resp.StatusCode)
 	}
 
-	var payload stackOverflowResponse
+	var payload dto.StackOverflowResponse
 	decodeErr := json.NewDecoder(resp.Body).Decode(&payload)
 	if decodeErr != nil {
 		return time.Time{}, fmt.Errorf("decode stackoverflow response: %w", decodeErr)
