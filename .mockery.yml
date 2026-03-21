@@ -16,28 +16,28 @@ packages:
   gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker:
     config:
       all: true
-  gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/repository:
+  gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/repository:
     config:
       dir: '{{.InterfaceDir}}/mock'
       filename: '{{.InterfaceName}}.go'
       pkgname: mock
     interfaces:
       SessionRepository:
-  gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/application/tracker:
+  gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/domain/tracker:
     config:
       dir: '{{.InterfaceDir}}/mock'
       filename: '{{.InterfaceName}}.go'
       pkgname: mock
     interfaces:
       Service:
-  gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/infrastructure/external:
+  gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/scrapper/infra/external:
     config:
       dir: '{{.InterfaceDir}}/mock'
       filename: '{{.InterfaceName}}.go'
       pkgname: mock
     interfaces:
       LastUpdatedClient:
-  gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/internal/infrastructure/botclient:
+  gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/scrapper/infra/botclient:
     config:
       dir: '{{.InterfaceDir}}/mock'
       filename: '{{.InterfaceName}}.go'

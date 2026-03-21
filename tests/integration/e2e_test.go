@@ -21,7 +21,6 @@ import (
 func TestBotAndScrapperContainersStart(t *testing.T) {
 	ctx := context.Background()
 
-	// 1. Создаем локальный Mock-сервер для эмуляции API Telegram
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		if strings.Contains(r.URL.Path, "/getMe") {
@@ -36,9 +35,7 @@ func TestBotAndScrapperContainersStart(t *testing.T) {
 	})
 
 	mockTg := httptest.NewUnstartedServer(handler)
-	
-	// Важно: заставляем мок-сервер слушать на всех интерфейсах (0.0.0.0),
-	// чтобы Docker-контейнер мог получить к нему доступ через ��еть
+
 	l, err := net.Listen("tcp", "0.0.0.0:0")
 	if err != nil {
 		t.Fatalf("failed to listen on 0.0.0.0: %v", err)
@@ -47,16 +44,13 @@ func TestBotAndScrapperContainersStart(t *testing.T) {
 	mockTg.Start()
 	defer mockTg.Close()
 
-	// Извлекаем порт мок-сервера
 	_, port, err := net.SplitHostPort(l.Addr().String())
 	if err != nil {
 		t.Fatalf("failed to parse port: %v", err)
 	}
 
-	// Формируем URL. "host.docker.internal" мы прокинем в контейнер ниже.
 	tgAPIEndpoint := fmt.Sprintf("http://host.docker.internal:%s/bot%%s/%%s", port)
 
-	// 2. Создаем временный файл конфигурации
 	tempDir := t.TempDir()
 	testConfigPath := filepath.Join(tempDir, "config.json")
 	testConfigContent := fmt.Sprintf(`{
@@ -72,12 +66,11 @@ func TestBotAndScrapperContainersStart(t *testing.T) {
 		"scheduler_interval": "30s",
 		"external_http_timeout": "5s"
 	}`, tgAPIEndpoint)
-	
+
 	if err := os.WriteFile(testConfigPath, []byte(testConfigContent), 0644); err != nil {
 		t.Fatalf("failed to write test config: %v", err)
 	}
 
-	// 3. Запускаем Scrapper
 	scrapperReq := testcontainers.ContainerRequest{
 		FromDockerfile: testcontainers.FromDockerfile{
 			Context:    "../../",
@@ -102,14 +95,12 @@ func TestBotAndScrapperContainersStart(t *testing.T) {
 	}
 	defer scrapperC.Terminate(ctx)
 
-	// 4. Запускаем Bot
 	botReq := testcontainers.ContainerRequest{
 		FromDockerfile: testcontainers.FromDockerfile{
 			Context:    "../../",
 			Dockerfile: "Dockerfile.bot",
 		},
 		ExposedPorts: []string{"8081/tcp"},
-		// Прокидываем хост внутрь контейнера (универсальный кроссплатформенный способ)
 		ExtraHosts: []string{"host.docker.internal:host-gateway"},
 		Files: []testcontainers.ContainerFile{
 			{
@@ -134,7 +125,6 @@ func TestBotAndScrapperContainersStart(t *testing.T) {
 	}
 	defer botC.Terminate(ctx)
 
-	// 5. Тестируем взаимодействие
 	host, err := botC.Host(ctx)
 	if err != nil {
 		t.Fatalf("bot host: %v", err)
@@ -150,7 +140,7 @@ func TestBotAndScrapperContainersStart(t *testing.T) {
 		t.Fatalf("post /updates to bot: %v", err)
 	}
 	defer resp.Body.Close()
-	
+
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("expected 200 from bot /updates, got %d", resp.StatusCode)
 	}

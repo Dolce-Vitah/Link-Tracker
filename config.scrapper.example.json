@@ -1,0 +1,7 @@
+{
+  "bot_base_url": "http://localhost:8081",
+  "scrapper_http_address": ":8080",
+  "scrapper_grpc_address": ":8090",
+  "scheduler_interval": "30s",
+  "external_http_timeout": "5s"
+}

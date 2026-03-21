@@ -1,0 +1,78 @@
+package telegram
+
+import (
+	"context"
+	"log/slog"
+	"testing"
+
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	testifymock "github.com/stretchr/testify/mock"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/handler"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/domain/command"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/domain/command/mock"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/repository"
+)
+
+func TestBot_HandleUpdate(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name           string
+		command        string
+		expectedAnswer string
+	}{
+		{
+			name:           "Positive scenario: /start",
+			command:        "start",
+			expectedAnswer: "Добро пожаловать! Используйте /help, чтобы узнать о доступных командах.",
+		},
+		{
+			name:           "Positive scenario: /help",
+			command:        "help",
+			expectedAnswer: "Доступные команды:\n/start - Начало работы с ботом\n/help - Показать этот список команд\n/track - Добавить ссылку на отслеживание\n/untrack <url> - Убрать ссылку из отслеживания\n/list [tag] - Показать отслеживаемые ссылки\n/cancel - Отменить текущий диалог",
+		},
+		{
+			name:           "Negative scenario: unknown command",
+			command:        "abracadabra",
+			expectedAnswer: "Неизвестная команда. Воспользуйтесь /help, чтобы посмотреть список доступных команд.",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			mockSender := mock.NewSender(t)	
+			update := &tgbotapi.Update{
+				Message: &tgbotapi.Message{
+					Text: "/" + tc.command,
+					Chat: &tgbotapi.Chat{ID: 12345},
+					From: &tgbotapi.User{
+						ID:       98765,
+						UserName: "test_user",
+					},
+					Entities: []tgbotapi.MessageEntity{
+						{Type: "bot_command", Offset: 0, Length: len("/" + tc.command)},
+					},
+				},
+			}
+
+			mockSender.EXPECT().
+				Send(testifymock.MatchedBy(func(msg tgbotapi.MessageConfig) bool {
+					return msg.Text == tc.expectedAnswer
+				})).
+				Return(tgbotapi.Message{}, nil).
+				Once()
+
+			bot := &Bot{
+				dispatcher: command.NewDispatcher(),
+				logger:     slog.Default(),
+				sessions:   repository.NewInMemorySessionRepository(),
+			}
+			bot.RegisterCommand(handler.NewStartCommandHandler(nil, nil, mockSender))
+			bot.RegisterCommand(handler.NewHelpCommandHandler(nil, mockSender))
+
+			bot.handleUpdate(context.Background(), update, mockSender)
+		})
+	}
+}

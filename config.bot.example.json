@@ -1,0 +1,9 @@
+{
+  "telegram_token": "PUT_YOUR_TOKEN_HERE",
+  "telegram_api_url": "",
+  "bot_http_address": ":8081",
+  "scrapper_base_url": "http://localhost:8080",
+  "scrapper_grpc_target": "localhost:8090",
+  "transport_mode": "http",
+  "external_http_timeout": "5s"
+}
