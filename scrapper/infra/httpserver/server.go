@@ -13,14 +13,14 @@ import (
 )
 
 type Handler struct {
-	service *repository.Service
+	service repository.TrackingService
 }
 
-func NewHandler(service *repository.Service) *Handler {
+func NewHandler(service repository.TrackingService) *Handler {
 	return &Handler{service: service}
 }
 
-func New(service *repository.Service) *Handler {
+func New(service repository.TrackingService) *Handler {
 	return NewHandler(service)
 }
 

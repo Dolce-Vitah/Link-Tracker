@@ -2,29 +2,36 @@ package app
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"log/slog"
 	"net"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/go-co-op/gocron"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/scrapper/domain/scheduler"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/scrapper/infra/botclient"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/scrapper/infra/config"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/scrapper/infra/db"
+	dbmigrations "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/scrapper/infra/db/migrations"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/scrapper/infra/external"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/scrapper/infra/grpcserver"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/scrapper/infra/httpserver"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/scrapper/repository"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/scrapper/repository/ormrepo"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/scrapper/repository/sqlrepo"
 	"google.golang.org/grpc"
 )
 
 type App struct {
 	config      *config.Config
-	service     *repository.Service
+	service     repository.Service
 	httpHandler *httpserver.Handler
 	scheduler   *scheduler.Scheduler
 	interval    time.Duration
+	sqlDB       *sql.DB
 }
 
 func (a *App) New() error {
@@ -43,7 +50,26 @@ func (a *App) New() error {
 		return fmt.Errorf("parse scheduler interval: %w", err)
 	}
 
-	service := repository.NewService()
+	connMaxLifetime, lifeErr := time.ParseDuration(cfg.DBConnMaxLifetime)
+	if lifeErr != nil {
+		return fmt.Errorf("parse db conn max lifetime: %w", lifeErr)
+	}
+	dbOpts := db.Options{
+		DSN:             cfg.DBDsn,
+		MaxOpenConns:    cfg.DBMaxOpenConns,
+		MaxIdleConns:    cfg.DBMaxIdleConns,
+		ConnMaxLifetime: connMaxLifetime,
+	}
+	service, sqlDB, serviceErr := createRepositoryByAccessType(cfg.AccessType, dbOpts)
+	if serviceErr != nil {
+		return serviceErr
+	}
+	if cfg.AutoMigrate {
+		if migrationErr := dbmigrations.Run(sqlDB, "migrations"); migrationErr != nil {
+			return fmt.Errorf("run migrations: %w", migrationErr)
+		}
+	}
+
 	httpHandler := httpserver.NewHandler(service)
 	externalClient := external.NewHTTPClient(timeout)
 	updatesClient := botclient.NewHTTPUpdatesClient(cfg.BotBaseURL, timeout)
@@ -54,6 +80,7 @@ func (a *App) New() error {
 	a.httpHandler = httpHandler
 	a.scheduler = scheduler
 	a.interval = interval
+	a.sqlDB = sqlDB
 
 	return nil
 }
@@ -61,6 +88,11 @@ func (a *App) New() error {
 func (a *App) Run() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+	defer func() {
+		if a.sqlDB != nil {
+			_ = a.sqlDB.Close()
+		}
+	}()
 
 	go a.runScheduledChecks(ctx)
 	go a.runGRPCServer(ctx)
@@ -69,6 +101,25 @@ func (a *App) Run() {
 	if err := http.ListenAndServe(a.config.ScrapperHTTPAddress, a.httpHandler.Handler()); err != nil {
 		slog.Error("Scrapper HTTP server failed", slog.String("error", err.Error()))
 		return
+	}
+}
+
+func createRepositoryByAccessType(accessType string, opts db.Options) (repository.Service, *sql.DB, error) {
+	switch {
+	case strings.EqualFold(accessType, "orm"):
+		gormDB, sqlDB, err := db.OpenGORM(opts)
+		if err != nil {
+			return nil, nil, fmt.Errorf("open orm db: %w", err)
+		}
+		return ormrepo.New(gormDB), sqlDB, nil
+	case strings.EqualFold(accessType, "sql"):
+		sqlDB, err := db.OpenSQL(opts)
+		if err != nil {
+			return nil, nil, fmt.Errorf("open sql db: %w", err)
+		}
+		return sqlrepo.New(sqlDB), sqlDB, nil
+	default:
+		return nil, nil, fmt.Errorf("unsupported access_type %q; expected SQL or ORM", accessType)
 	}
 }
 

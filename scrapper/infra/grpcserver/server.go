@@ -21,7 +21,7 @@ type Server struct {
 	handlers *Handlers
 }
 
-func NewServer(service *repository.Service) *Server {
+func NewServer(service repository.TrackingService) *Server {
 	return &Server{
 		handlers: NewHandlers(service),
 	}
@@ -44,6 +44,6 @@ func (s *Server) Register(server *grpc.Server) {
 	}, s.handlers)
 }
 
-func Register(server *grpc.Server, service *repository.Service) {
+func Register(server *grpc.Server, service repository.TrackingService) {
 	NewServer(service).Register(server)
 }

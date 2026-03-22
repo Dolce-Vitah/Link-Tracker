@@ -8,6 +8,7 @@ RUN go build -o /out/scrapper ./cmd/scrapper
 FROM gcr.io/distroless/base-debian12
 WORKDIR /app
 COPY --from=build /out/scrapper /app/scrapper
+COPY --from=build /app/migrations /app/migrations
 COPY config.json /app/config.json
 EXPOSE 8080 8090
 ENTRYPOINT ["/app/scrapper"]

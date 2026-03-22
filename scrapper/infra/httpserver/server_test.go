@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/api"
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/scrapper/repository"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/scrapper/repository/repositorytest"
 )
 
 type requestSpec struct {
@@ -19,7 +19,7 @@ type requestSpec struct {
 }
 
 func newTestHandler() http.Handler {
-	return New(repository.NewService()).Handler()
+	return New(repositorytest.NewStore()).Handler()
 }
 
 func performRequest(t *testing.T, h http.Handler, req requestSpec) *httptest.ResponseRecorder {

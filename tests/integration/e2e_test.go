@@ -19,6 +19,8 @@ import (
 )
 
 func TestBotAndScrapperContainersStart(t *testing.T) {
+	requireTestcontainers(t)
+
 	ctx := context.Background()
 
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -51,6 +53,31 @@ func TestBotAndScrapperContainersStart(t *testing.T) {
 
 	tgAPIEndpoint := fmt.Sprintf("http://host.docker.internal:%s/bot%%s/%%s", port)
 
+	postgresReq := testcontainers.ContainerRequest{
+		Image:        "postgres:17-alpine",
+		ExposedPorts: []string{"5432/tcp"},
+		Env: map[string]string{
+			"POSTGRES_DB":       "link_tracker",
+			"POSTGRES_USER":     "postgres",
+			"POSTGRES_PASSWORD": "postgres",
+		},
+		WaitingFor: wait.ForListeningPort("5432/tcp").WithStartupTimeout(60 * time.Second),
+	}
+	postgresC, pgErr := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
+		ContainerRequest: postgresReq,
+		Started:          true,
+	})
+	if pgErr != nil {
+		t.Fatalf("start postgres container: %v", pgErr)
+	}
+	defer postgresC.Terminate(ctx)
+
+	pgPort, mappedErr := postgresC.MappedPort(ctx, "5432/tcp")
+	if mappedErr != nil {
+		t.Fatalf("map postgres port: %v", mappedErr)
+	}
+	dbDSN := fmt.Sprintf("postgres://postgres:postgres@host.docker.internal:%s/link_tracker?sslmode=disable", pgPort.Port())
+
 	tempDir := t.TempDir()
 	testConfigPath := filepath.Join(tempDir, "config.json")
 	testConfigContent := fmt.Sprintf(`{
@@ -64,8 +91,14 @@ func TestBotAndScrapperContainersStart(t *testing.T) {
 		"scrapper_grpc_target": "localhost:8090",
 		"transport_mode": "http",
 		"scheduler_interval": "30s",
-		"external_http_timeout": "5s"
-	}`, tgAPIEndpoint)
+		"external_http_timeout": "5s",
+		"access_type": "SQL",
+		"db_dsn": "%s",
+		"db_max_open_conns": 10,
+		"db_max_idle_conns": 5,
+		"db_conn_max_lifetime": "30m",
+		"auto_migrate": true
+	}`, tgAPIEndpoint, dbDSN)
 
 	if err := os.WriteFile(testConfigPath, []byte(testConfigContent), 0644); err != nil {
 		t.Fatalf("failed to write test config: %v", err)
@@ -77,6 +110,7 @@ func TestBotAndScrapperContainersStart(t *testing.T) {
 			Dockerfile: "Dockerfile.scrapper",
 		},
 		ExposedPorts: []string{"8080/tcp", "8090/tcp"},
+		ExtraHosts:   []string{"host.docker.internal:host-gateway"},
 		Files: []testcontainers.ContainerFile{
 			{
 				HostFilePath:      testConfigPath,
@@ -101,7 +135,7 @@ func TestBotAndScrapperContainersStart(t *testing.T) {
 			Dockerfile: "Dockerfile.bot",
 		},
 		ExposedPorts: []string{"8081/tcp"},
-		ExtraHosts: []string{"host.docker.internal:host-gateway"},
+		ExtraHosts:   []string{"host.docker.internal:host-gateway"},
 		Files: []testcontainers.ContainerFile{
 			{
 				HostFilePath:      testConfigPath,

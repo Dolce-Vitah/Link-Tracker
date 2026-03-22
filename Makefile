@@ -11,6 +11,8 @@ help:
 	@printf "  \033[36mmake run-scrapper\033[0m  - Run the scrapper module locally\n"
 	@printf "  \033[36mmake run-agent\033[0m     - Run the agent module locally\n"
 	@printf "  \033[36mmake run-report\033[0m    - Run the report module locally\n"
+	@printf "  \033[36mmake db-up\033[0m         - Start local PostgreSQL via docker compose\n"
+	@printf "  \033[36mmake db-down\033[0m       - Stop local PostgreSQL via docker compose\n"
 	@printf "  \033[36mmake tidy\033[0m          - Download and clean dependencies\n"
 	@printf "  \033[36mmake mocks\033[0m         - Generate mocks from .mockery.yaml\n"
 	@printf "  \033[36mmake build\033[0m         - Build all modules ($(MODULES))\n"
@@ -34,6 +36,14 @@ run-agent:
 .PHONY: run-report
 run-report:
 	go run ./cmd/report
+
+.PHONY: db-up
+db-up:
+	docker compose up -d postgres
+
+.PHONY: db-down
+db-down:
+	docker compose down
 
 # Загрузка и очистка зависимостей (go.mod / go.sum)
 .PHONY: tidy

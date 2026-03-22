@@ -3,5 +3,11 @@
   "scrapper_http_address": ":8080",
   "scrapper_grpc_address": ":8090",
   "scheduler_interval": "30s",
-  "external_http_timeout": "5s"
+  "external_http_timeout": "5s",
+  "access_type": "SQL",
+  "db_dsn": "postgres://postgres:postgres@localhost:5432/link_tracker?sslmode=disable",
+  "db_max_open_conns": 10,
+  "db_max_idle_conns": 5,
+  "db_conn_max_lifetime": "30m",
+  "auto_migrate": true
 }
