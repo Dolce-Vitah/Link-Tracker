@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	_ "github.com/jackc/pgx/v5/stdlib" // Registers pgx driver for database/sql.
+	_ "github.com/jackc/pgx/v5/stdlib" 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )

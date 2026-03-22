@@ -9,7 +9,6 @@ import (
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/scrapper/repository"
 )
 
-// CreateRepositoryForTests exposes repository factory in integration tests.
 func CreateRepositoryForTests(accessType string, opts db.Options) (repository.Service, *sql.DB, error) {
 	return createRepositoryByAccessType(accessType, opts)
 }
