@@ -34,15 +34,16 @@ func (b *Bot) handleLinkUpdateHTTP(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	var update api.LinkUpdate
-	err := json.NewDecoder(r.Body).Decode(&update)
-	if err != nil {
+	decodeErr := json.NewDecoder(r.Body).Decode(&update)
+	if decodeErr != nil {
 		writeAPIError(w, http.StatusBadRequest, "invalid request schema")
 
 		return
 	}
 
-	if update.URL == "" || len(update.TgChatIDs) == 0 {
-		writeAPIError(w, http.StatusBadRequest, "url and tgChatIds are required")
+	validateErr := update.Validate()
+	if validateErr != nil {
+		writeAPIError(w, http.StatusBadRequest, validateErr.Error())
 
 		return
 	}

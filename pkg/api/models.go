@@ -1,5 +1,12 @@
 package api
 
+import (
+	"errors"
+	"strings"
+)
+
+var ErrInvalidLinkUpdate = errors.New("url and tgChatIds are required")
+
 type ErrorResponse struct {
 	Description      string   `json:"description"`
 	Code             string   `json:"code"`
@@ -13,6 +20,14 @@ type LinkUpdate struct {
 	URL         string  `json:"url"`
 	Description string  `json:"description"`
 	TgChatIDs   []int64 `json:"tgChatIds"`
+}
+
+func (u LinkUpdate) Validate() error {
+	if strings.TrimSpace(u.URL) == "" || len(u.TgChatIDs) == 0 {
+		return ErrInvalidLinkUpdate
+	}
+
+	return nil
 }
 
 type LinkResponse struct {
