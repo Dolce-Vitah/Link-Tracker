@@ -129,6 +129,7 @@ func (c *HTTPClient) handleNoBody(req *http.Request) error {
 	defer func() {
 		_ = resp.Body.Close()
 	}()
+
 	return mapHTTPError(resp)
 }
 
@@ -141,12 +142,15 @@ func (c *HTTPClient) handleLinkResponse(req *http.Request) (trackerapi.LinkRespo
 	defer func() {
 		_ = resp.Body.Close()
 	}()
+
 	mapErr := mapHTTPError(resp)
 	if mapErr != nil {
 
 		return trackerapi.LinkResponse{}, mapErr
 	}
+
 	var out trackerapi.LinkResponse
+
 	decodeErr := json.NewDecoder(resp.Body).Decode(&out)
 	if decodeErr != nil {
 
@@ -161,8 +165,11 @@ func mapHTTPError(resp *http.Response) error {
 
 		return nil
 	}
+
 	var apiErr trackerapi.ErrorResponse
+
 	_ = json.NewDecoder(resp.Body).Decode(&apiErr)
+
 	switch resp.StatusCode {
 	case http.StatusBadRequest:
 

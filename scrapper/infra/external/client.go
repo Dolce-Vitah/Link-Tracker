@@ -33,6 +33,7 @@ func NewHTTPClient(timeout time.Duration) *HTTPClient {
 func (c *HTTPClient) GetLastUpdated(ctx context.Context, rawURL string) (time.Time, error) {
 	u, err := url.Parse(rawURL)
 	if err != nil {
+
 		return time.Time{}, fmt.Errorf("parse url: %w", err)
 	}
 

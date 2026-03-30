@@ -90,5 +90,6 @@ func (a *App) Run() {
 			slog.Error("Bot HTTP server failed", slog.String("error", err.Error()))
 		}
 	}()
+
 	a.bot.Start()
 }

@@ -66,6 +66,7 @@ func (h *Handler) handleRegisterChat(w http.ResponseWriter, chatID int64) {
 
 		return
 	}
+
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -81,6 +82,7 @@ func (h *Handler) handleDeleteChat(w http.ResponseWriter, chatID int64) {
 
 		return
 	}
+
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -116,6 +118,7 @@ func (h *Handler) handleListLinks(w http.ResponseWriter, chatID int64) {
 
 		return
 	}
+
 	writeJSON(w, http.StatusOK, resp)
 }
 
@@ -141,6 +144,7 @@ func (h *Handler) handleAddLink(w http.ResponseWriter, r *http.Request, chatID i
 
 		return
 	}
+
 	writeJSON(w, http.StatusOK, resp)
 }
 
@@ -164,6 +168,7 @@ func (h *Handler) handleRemoveLink(w http.ResponseWriter, r *http.Request, chatI
 
 		return
 	}
+
 	writeJSON(w, http.StatusOK, resp)
 }
 

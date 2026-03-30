@@ -42,21 +42,27 @@ func NewHTTPUpdatesClient(baseURL string, timeout time.Duration) *HTTPUpdatesCli
 
 func (c *HTTPUpdatesClient) SendUpdate(ctx context.Context, update trackerapi.LinkUpdate) error {
 	if err := update.Validate(); err != nil {
+
 		return fmt.Errorf("validate link update: %w", err)
 	}
 
 	body, err := json.Marshal(update)
 	if err != nil {
+
 		return fmt.Errorf("marshal link update: %w", err)
 	}
+
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.baseURL+"/updates", bytes.NewReader(body))
 	if err != nil {
+
 		return fmt.Errorf("build update request: %w", err)
 	}
+
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := c.client.Do(req)
 	if err != nil {
+
 		return fmt.Errorf("send update request: %w", err)
 	}
 	defer func() {
@@ -64,8 +70,10 @@ func (c *HTTPUpdatesClient) SendUpdate(ctx context.Context, update trackerapi.Li
 	}()
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+
 		return mapStatusError(resp.StatusCode)
 	}
+
 	return nil
 }
 
@@ -87,11 +95,14 @@ func mapStatusError(status int) error {
 		return ErrTooManyRequests
 	default:
 		if status >= 400 && status < 500 {
+
 			return ErrClient
 		}
 		if status >= serverErrorMinStatus {
+
 			return ErrInternal
 		}
+
 		return fmt.Errorf("unexpected status code: %d", status)
 	}
 }

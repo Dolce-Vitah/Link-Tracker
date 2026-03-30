@@ -45,6 +45,7 @@ func NewService() *Service {
 func (s *Service) RegisterChat(chatID int64) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
 	if _, ok := s.chats[chatID]; ok {
 
 		return ErrChatExists
@@ -57,11 +58,13 @@ func (s *Service) RegisterChat(chatID int64) error {
 func (s *Service) DeleteChat(chatID int64) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
 	if _, ok := s.chats[chatID]; !ok {
 
 		return ErrChatNotFound
 	}
 	delete(s.chats, chatID)
+
 	if linkURLs, ok := s.linksByChat[chatID]; ok {
 		for linkURL := range linkURLs {
 			tracked := s.linksByURL[linkURL]
@@ -84,7 +87,9 @@ func (s *Service) AddLink(chatID int64, request trackerapi.AddLinkRequest) (trac
 
 		return trackerapi.LinkResponse{}, ErrChatNotFound
 	}
+
 	link := strings.TrimSpace(request.Link)
+
 	if !isValidLink(link) {
 
 		return trackerapi.LinkResponse{}, ErrInvalidLink
@@ -93,6 +98,7 @@ func (s *Service) AddLink(chatID int64, request trackerapi.AddLinkRequest) (trac
 	if _, ok := s.linksByChat[chatID]; !ok {
 		s.linksByChat[chatID] = make(map[string]struct{})
 	}
+
 	if _, exists := s.linksByChat[chatID][link]; exists {
 
 		return trackerapi.LinkResponse{}, ErrLinkExists
@@ -112,6 +118,7 @@ func (s *Service) AddLink(chatID int64, request trackerapi.AddLinkRequest) (trac
 		s.linksByURL[link] = tracked
 		s.nextID++
 	}
+
 	tracked.ChatIDs[chatID] = struct{}{}
 	s.linksByChat[chatID][link] = struct{}{}
 
@@ -126,7 +133,9 @@ func (s *Service) RemoveLink(chatID int64, request trackerapi.RemoveLinkRequest)
 
 		return trackerapi.LinkResponse{}, ErrChatNotFound
 	}
+
 	link := strings.TrimSpace(request.Link)
+
 	if link == "" {
 
 		return trackerapi.LinkResponse{}, ErrInvalidLink
@@ -143,6 +152,7 @@ func (s *Service) RemoveLink(chatID int64, request trackerapi.RemoveLinkRequest)
 	}
 
 	delete(chatLinks, link)
+
 	tracked := s.linksByURL[link]
 	delete(tracked.ChatIDs, chatID)
 	if len(tracked.ChatIDs) == 0 {
@@ -164,6 +174,7 @@ func (s *Service) ListLinks(chatID int64) (trackerapi.ListLinksResponse, error) 
 	out := trackerapi.ListLinksResponse{
 		Links: make([]trackerapi.LinkResponse, 0),
 	}
+
 	for linkURL := range s.linksByChat[chatID] {
 		out.Links = append(out.Links, s.linksByURL[linkURL].Response)
 	}

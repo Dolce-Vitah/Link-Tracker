@@ -47,16 +47,19 @@ func (a *App) New() error {
 	}
 
 	service := repository.NewService()
+
 	httpHandler := httpserver.NewHandler(service)
+
 	externalClient := external.NewHTTPClient(timeout)
+
 	updatesClient := botclient.NewHTTPUpdatesClient(cfg.BotBaseURL, timeout)
 
-	scheduler := scheduler.New(service, externalClient, updatesClient, interval)
+	sched := scheduler.New(service, externalClient, updatesClient, interval)
 
 	a.config = cfg
 	a.service = service
 	a.httpHandler = httpHandler
-	a.scheduler = scheduler
+	a.scheduler = sched
 	a.interval = interval
 
 	return nil
@@ -71,6 +74,7 @@ func (a *App) Run() {
 	go a.runGRPCServer(ctx)
 
 	slog.Info("Scrapper HTTP server is up", slog.String("address", a.config.ScrapperHTTPAddress))
+
 	if err := http.ListenAndServe(a.config.ScrapperHTTPAddress, a.httpHandler.Handler()); err != nil {
 		slog.Error("Scrapper HTTP server failed", slog.String("error", err.Error()))
 
@@ -114,6 +118,7 @@ func (a *App) runGRPCServer(ctx context.Context) {
 	grpcAppServer.Register(grpcServer)
 
 	slog.Info("Scrapper gRPC server is up", slog.String("address", a.config.ScrapperGRPCAddress))
+
 	if serveErr := grpcServer.Serve(listener); serveErr != nil {
 		slog.Error("Scrapper gRPC server failed", slog.String("error", serveErr.Error()))
 	}
