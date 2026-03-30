@@ -29,7 +29,7 @@ packages:
       filename: '{{.InterfaceName}}.go'
       pkgname: mock
     interfaces:
-      Service:
+      Client:
   gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/scrapper/infra/external:
     config:
       dir: '{{.InterfaceDir}}/mock'

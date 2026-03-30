@@ -29,10 +29,10 @@ type Handler struct {
 	bot       command.Sender
 	startText string
 	helpText  string
-	tracker   tracker.Service
+	tracker   tracker.Client
 }
 
-func NewChatHandler(trackerService tracker.Service, bot command.Sender, logger *slog.Logger) *Handler {
+func NewChatHandler(trackerService tracker.Client, bot command.Sender, logger *slog.Logger) *Handler {
 	if logger == nil {
 		logger = slog.Default()
 	}

@@ -16,14 +16,14 @@ import (
 )
 
 type DialogHandler struct {
-	trackerService tracker.Service
+	trackerService tracker.Client
 	sessions       repository.SessionRepository
 	bot            command.Sender
 	logger         *slog.Logger
 }
 
 func NewDialogHandler(
-	trackerService tracker.Service,
+	trackerService tracker.Client,
 	sessions repository.SessionRepository,
 	bot command.Sender,
 	logger *slog.Logger,

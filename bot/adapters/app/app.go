@@ -16,7 +16,7 @@ import (
 type App struct {
 	bot        *telegram.Bot
 	config     *config.Config
-	trackerSvc tracker.Service
+	trackerSvc tracker.Client
 }
 
 func (a *App) New() error {
@@ -38,7 +38,7 @@ func (a *App) New() error {
 		return fmt.Errorf("parse external http timeout: %w", err)
 	}
 
-	var trackerService tracker.Service
+	var trackerService tracker.Client
 	if cfg.TransportMode == config.TransportModeGRPC {
 		grpcClient, grpcErr := trackerclient.NewGRPCClient(cfg.ScrapperGRPCTarget, timeout)
 		if grpcErr != nil {

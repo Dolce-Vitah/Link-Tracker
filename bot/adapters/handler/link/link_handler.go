@@ -18,14 +18,14 @@ import (
 
 type Handler struct {
 	sessions repository.SessionRepository
-	tracker  tracker.Service
+	tracker  tracker.Client
 	logger   *slog.Logger
 	bot      command.Sender
 }
 
 func NewLinkHandler(
 	sessions repository.SessionRepository,
-	trackerService tracker.Service,
+	trackerService tracker.Client,
 	bot command.Sender,
 	logger *slog.Logger,
 ) *Handler {
@@ -81,7 +81,7 @@ func (h *Handler) Read(ctx context.Context, request dto.CommandRequest) error {
 
 		return fmt.Errorf("list tracked links: %w", err)
 	}
-	
+
 	linkList := listLinksResponse.Links
 	filterTag := extractCommandArgs(request.Text)
 	filtered := make([]string, 0, len(linkList))

@@ -15,7 +15,7 @@ type Bot struct {
 	dispatcher  *command.Dispatcher
 	logger      *slog.Logger
 	sessions    repository.SessionRepository
-	tracker     tracker.Service
+	tracker     tracker.Client
 	sendMessage func(c tgbotapi.Chattable) (tgbotapi.Message, error)
 }
 
@@ -59,6 +59,6 @@ func (b *Bot) Sessions() repository.SessionRepository {
 	return b.sessions
 }
 
-func (b *Bot) SetTrackerService(service tracker.Service) {
+func (b *Bot) SetTrackerService(service tracker.Client) {
 	b.tracker = service
 }

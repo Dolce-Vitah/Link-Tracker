@@ -13,7 +13,7 @@ var (
 	ErrBadRequest    = errors.New("bad request")
 )
 
-type Service interface {
+type Client interface {
 	RegisterChat(ctx context.Context, chatID int64) error
 	DeleteChat(ctx context.Context, chatID int64) error
 	AddLink(ctx context.Context, chatID int64, request api.AddLinkRequest) (api.LinkResponse, error)

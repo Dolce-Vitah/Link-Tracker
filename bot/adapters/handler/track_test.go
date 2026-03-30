@@ -25,13 +25,13 @@ func TestTrackCommand_Handle(t *testing.T) {
 	tests := []struct {
 		name       string
 		request    dto.CommandRequest
-		setupMocks func(trackerMock *trackermock.MockService, sessions *repositorymock.MockSessionRepository, sender *mock.Sender)
+		setupMocks func(trackerMock *trackermock.MockClient, sessions *repositorymock.MockSessionRepository, sender *mock.Sender)
 		assertErr  func(t *testing.T, err error)
 	}{
 		{
 			name:    "success",
 			request: dto.CommandRequest{Text: "/track", ChatID: 1},
-			setupMocks: func(trackerMock *trackermock.MockService, sessions *repositorymock.MockSessionRepository, sender *mock.Sender) {
+			setupMocks: func(trackerMock *trackermock.MockClient, sessions *repositorymock.MockSessionRepository, sender *mock.Sender) {
 				trackerMock.EXPECT().RegisterChat(testifymock.Anything, int64(1)).Return(nil).Once()
 
 				sessions.EXPECT().Set(int64(1), repository.Session{State: repository.StateAwaitingURL}).Once()
@@ -45,7 +45,7 @@ func TestTrackCommand_Handle(t *testing.T) {
 		{
 			name:    "register error",
 			request: dto.CommandRequest{Text: "/track", ChatID: 1},
-			setupMocks: func(trackerMock *trackermock.MockService, _ *repositorymock.MockSessionRepository, _ *mock.Sender) {
+			setupMocks: func(trackerMock *trackermock.MockClient, _ *repositorymock.MockSessionRepository, _ *mock.Sender) {
 				trackerMock.EXPECT().RegisterChat(testifymock.Anything, int64(1)).Return(registerErr).Once()
 			},
 			assertErr: func(t *testing.T, err error) { require.Error(t, err) },
@@ -53,7 +53,7 @@ func TestTrackCommand_Handle(t *testing.T) {
 		{
 			name:    "send error",
 			request: dto.CommandRequest{Text: "/track", ChatID: 1},
-			setupMocks: func(trackerMock *trackermock.MockService, sessions *repositorymock.MockSessionRepository, sender *mock.Sender) {
+			setupMocks: func(trackerMock *trackermock.MockClient, sessions *repositorymock.MockSessionRepository, sender *mock.Sender) {
 				trackerMock.EXPECT().RegisterChat(testifymock.Anything, int64(1)).Return(nil).Once()
 
 				sessions.EXPECT().Set(int64(1), repository.Session{State: repository.StateAwaitingURL}).Once()
@@ -70,7 +70,7 @@ func TestTrackCommand_Handle(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			trackerMock := trackermock.NewMockService(t)
+			trackerMock := trackermock.NewMockClient(t)
 			sessions := repositorymock.NewMockSessionRepository(t)
 			sender := mock.NewSender(t)
 

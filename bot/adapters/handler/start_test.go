@@ -26,7 +26,7 @@ func TestStartCommandHandler_Handle(t *testing.T) {
 		name          string
 		request       dto.CommandRequest
 		withTracker   bool
-		setupTracker  func(m *trackermock.MockService)
+		setupTracker  func(m *trackermock.MockClient)
 		setupSender   func(m *mock.Sender)
 		assertErrFunc func(t *testing.T, err error)
 	}{
@@ -34,7 +34,7 @@ func TestStartCommandHandler_Handle(t *testing.T) {
 			name:        "success",
 			request:     dto.CommandRequest{Text: "/start", ChatID: 12345},
 			withTracker: true,
-			setupTracker: func(m *trackermock.MockService) {
+			setupTracker: func(m *trackermock.MockClient) {
 				m.EXPECT().RegisterChat(testifymock.Anything, int64(12345)).Return(nil).Once()
 			},
 			setupSender: func(m *mock.Sender) {
@@ -52,7 +52,7 @@ func TestStartCommandHandler_Handle(t *testing.T) {
 			name:        "register already exists is ignored",
 			request:     dto.CommandRequest{Text: "/start", ChatID: 12345},
 			withTracker: true,
-			setupTracker: func(m *trackermock.MockService) {
+			setupTracker: func(m *trackermock.MockClient) {
 				m.EXPECT().RegisterChat(testifymock.Anything, int64(12345)).
 					Return(errors.New("already exists")).Once()
 			},
@@ -71,7 +71,7 @@ func TestStartCommandHandler_Handle(t *testing.T) {
 			name:        "register error",
 			request:     dto.CommandRequest{Text: "/start", ChatID: 12345},
 			withTracker: true,
-			setupTracker: func(m *trackermock.MockService) {
+			setupTracker: func(m *trackermock.MockClient) {
 				m.EXPECT().RegisterChat(testifymock.Anything, int64(12345)).Return(registerErr).Once()
 			},
 			setupSender: nil,
@@ -87,7 +87,7 @@ func TestStartCommandHandler_Handle(t *testing.T) {
 			name:        "send error",
 			request:     dto.CommandRequest{Text: "/start", ChatID: 12345},
 			withTracker: true,
-			setupTracker: func(m *trackermock.MockService) {
+			setupTracker: func(m *trackermock.MockClient) {
 				m.EXPECT().RegisterChat(testifymock.Anything, int64(12345)).Return(nil).Once()
 			},
 			setupSender: func(m *mock.Sender) {
@@ -122,9 +122,9 @@ func TestStartCommandHandler_Handle(t *testing.T) {
 				tt.setupSender(mockSender)
 			}
 
-			var trackerSvc *trackermock.MockService
+			var trackerSvc *trackermock.MockClient
 			if tt.withTracker {
-				trackerSvc = trackermock.NewMockService(t)
+				trackerSvc = trackermock.NewMockClient(t)
 				if tt.setupTracker != nil {
 					tt.setupTracker(trackerSvc)
 				}

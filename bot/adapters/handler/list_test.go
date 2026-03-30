@@ -25,13 +25,13 @@ func TestListCommand_Handle(t *testing.T) {
 	tests := []struct {
 		name       string
 		request    dto.CommandRequest
-		setupMocks func(tracker *trackermock.MockService, sender *mock.Sender)
+		setupMocks func(tracker *trackermock.MockClient, sender *mock.Sender)
 		assertErr  func(t *testing.T, err error)
 	}{
 		{
 			name:    "empty list",
 			request: dto.CommandRequest{Text: "/list", ChatID: 7},
-			setupMocks: func(tracker *trackermock.MockService, sender *mock.Sender) {
+			setupMocks: func(tracker *trackermock.MockClient, sender *mock.Sender) {
 				tracker.EXPECT().RegisterChat(testifymock.Anything, int64(7)).Return(nil).Once()
 
 				tracker.EXPECT().ListLinks(testifymock.Anything, int64(7)).
@@ -49,7 +49,7 @@ func TestListCommand_Handle(t *testing.T) {
 		{
 			name:    "filter by tag",
 			request: dto.CommandRequest{Text: "/list work", ChatID: 10},
-			setupMocks: func(tracker *trackermock.MockService, sender *mock.Sender) {
+			setupMocks: func(tracker *trackermock.MockClient, sender *mock.Sender) {
 				tracker.EXPECT().RegisterChat(testifymock.Anything, int64(10)).Return(nil).Once()
 
 				tracker.EXPECT().ListLinks(testifymock.Anything, int64(10)).
@@ -70,7 +70,7 @@ func TestListCommand_Handle(t *testing.T) {
 		{
 			name:    "register error",
 			request: dto.CommandRequest{Text: "/list", ChatID: 10},
-			setupMocks: func(tracker *trackermock.MockService, _ *mock.Sender) {
+			setupMocks: func(tracker *trackermock.MockClient, _ *mock.Sender) {
 				tracker.EXPECT().RegisterChat(testifymock.Anything, int64(10)).Return(registerErr).Once()
 			},
 			assertErr: func(t *testing.T, err error) { require.Error(t, err) },
@@ -78,7 +78,7 @@ func TestListCommand_Handle(t *testing.T) {
 		{
 			name:    "list error",
 			request: dto.CommandRequest{Text: "/list", ChatID: 10},
-			setupMocks: func(tracker *trackermock.MockService, _ *mock.Sender) {
+			setupMocks: func(tracker *trackermock.MockClient, _ *mock.Sender) {
 				tracker.EXPECT().RegisterChat(testifymock.Anything, int64(10)).Return(nil).Once()
 
 				tracker.EXPECT().ListLinks(testifymock.Anything, int64(10)).Return(api.ListLinksResponse{}, listErr).Once()
@@ -88,7 +88,7 @@ func TestListCommand_Handle(t *testing.T) {
 		{
 			name:    "send error",
 			request: dto.CommandRequest{Text: "/list", ChatID: 10},
-			setupMocks: func(tracker *trackermock.MockService, sender *mock.Sender) {
+			setupMocks: func(tracker *trackermock.MockClient, sender *mock.Sender) {
 				tracker.EXPECT().RegisterChat(testifymock.Anything, int64(10)).Return(nil).Once()
 
 				tracker.EXPECT().ListLinks(testifymock.Anything, int64(10)).
@@ -106,7 +106,7 @@ func TestListCommand_Handle(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			tracker := trackermock.NewMockService(t)
+			tracker := trackermock.NewMockClient(t)
 			sender := mock.NewSender(t)
 
 			tt.setupMocks(tracker, sender)
