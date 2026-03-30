@@ -47,13 +47,15 @@ func (a *App) New() error {
 	}
 	bot.SetTrackerService(trackerService)
 	sessions := bot.Sessions()
+	chatHandler := chat.NewChatHandler(trackerService, slog.Default(), bot.Client())
+	linkHandler := link.NewLinkHandler(sessions, trackerService, slog.Default(), bot.Client())
 
-	bot.RegisterCommand(chat.NewStartCommandHandler(trackerService, slog.Default(), bot.Client()))
-	bot.RegisterCommand(chat.NewHelpCommandHandler(slog.Default(), bot.Client()))
-	bot.RegisterCommand(link.NewTrackCommandHandler(sessions, trackerService, slog.Default(), bot.Client()))
-	bot.RegisterCommand(link.NewUntrackCommandHandler(trackerService, slog.Default(), bot.Client()))
-	bot.RegisterCommand(link.NewListCommandHandler(trackerService, slog.Default(), bot.Client()))
-	bot.RegisterCommand(link.NewCancelCommandHandler(sessions, slog.Default(), bot.Client()))
+	bot.RegisterCommand(chat.NewStartCommand(chatHandler))
+	bot.RegisterCommand(chat.NewHelpCommand(chatHandler))
+	bot.RegisterCommand(link.NewTrackCommand(linkHandler))
+	bot.RegisterCommand(link.NewUntrackCommand(linkHandler))
+	bot.RegisterCommand(link.NewListCommand(linkHandler))
+	bot.RegisterCommand(link.NewCancelCommand(linkHandler))
 
 	setCommandsErr := bot.SetMyCommands()
 	if setCommandsErr != nil {

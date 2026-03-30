@@ -181,7 +181,7 @@ func TestTrackDialogHandler_Handle(t *testing.T) {
 			sender := mock.NewSender(t)
 			tt.setupMocks(tracker, sessions, sender)
 
-			dialogHandler := link.NewTrackDialogHandler(tracker, sessions, sender, nil)
+			dialogHandler := link.NewDialogHandler(tracker, sessions, sender, nil)
 			err := dialogHandler.Handle(context.Background(), tt.request)
 			tt.assertErr(t, err)
 		})

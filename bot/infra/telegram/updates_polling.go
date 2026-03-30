@@ -31,7 +31,7 @@ func (b *Bot) handleUpdate(ctx context.Context, update *tgbotapi.Update, sender 
 	text := update.Message.Text
 
 	if b.tracker != nil {
-		dialogHandler := link.NewTrackDialogHandler(b.tracker, b.sessions, sender, b.logger)
+		dialogHandler := link.NewDialogHandler(b.tracker, b.sessions, sender, b.logger)
 		if err := dialogHandler.Handle(ctx, dto.DialogRequest{Update: update}); err != nil {
 			slog.Error("Failed to process track dialog step", slog.String("error", err.Error()))
 			return

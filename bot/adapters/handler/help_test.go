@@ -70,7 +70,8 @@ func TestHelpCommandHandler_Handle(t *testing.T) {
 			tt.mockBehavior(mockSender)
 
 			logger := slog.Default()
-			cmd := chat.NewHelpCommandHandler(logger, mockSender)
+			chatHandler := chat.NewChatHandler(nil, logger, mockSender)
+			cmd := chat.NewHelpCommand(chatHandler)
 
 			err := cmd.Handle(context.Background(), tt.request)
 			tt.checkError(t, err)

@@ -70,8 +70,9 @@ func TestBot_HandleUpdate(t *testing.T) {
 				logger:     slog.Default(),
 				sessions:   repository.NewInMemorySessionRepository(),
 			}
-			bot.RegisterCommand(chat.NewStartCommandHandler(nil, nil, mockSender))
-			bot.RegisterCommand(chat.NewHelpCommandHandler(nil, mockSender))
+			chatHandler := chat.NewChatHandler(nil, nil, mockSender)
+			bot.RegisterCommand(chat.NewStartCommand(chatHandler))
+			bot.RegisterCommand(chat.NewHelpCommand(chatHandler))
 
 			bot.handleUpdate(context.Background(), update, mockSender)
 		})

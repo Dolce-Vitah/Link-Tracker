@@ -98,7 +98,8 @@ func TestUntrackCommand_Handle(t *testing.T) {
 			sender := mock.NewSender(t)
 			tt.setupMocks(trackerMock, sender)
 
-			cmd := link.NewUntrackCommandHandler(trackerMock, nil, sender)
+			linkHandler := link.NewLinkHandler(nil, trackerMock, nil, sender)
+			cmd := link.NewUntrackCommand(linkHandler)
 			err := cmd.Handle(context.Background(), tt.request)
 			tt.assertErr(t, err)
 		})

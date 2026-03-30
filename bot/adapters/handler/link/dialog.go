@@ -15,24 +15,24 @@ import (
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/api"
 )
 
-type TrackDialogHandler struct {
+type DialogHandler struct {
 	trackerService tracker.Service
 	sessions       repository.SessionRepository
 	bot            command.Sender
 	logger         *slog.Logger
 }
 
-func NewTrackDialogHandler(
+func NewDialogHandler(
 	trackerService tracker.Service,
 	sessions repository.SessionRepository,
 	bot command.Sender,
 	logger *slog.Logger,
-) *TrackDialogHandler {
+) *DialogHandler {
 	if logger == nil {
 		logger = slog.Default()
 	}
 
-	return &TrackDialogHandler{
+	return &DialogHandler{
 		trackerService: trackerService,
 		sessions:       sessions,
 		bot:            bot,
@@ -40,7 +40,7 @@ func NewTrackDialogHandler(
 	}
 }
 
-func (h *TrackDialogHandler) Handle(ctx context.Context, request dto.DialogRequest) error {
+func (h *DialogHandler) Handle(ctx context.Context, request dto.DialogRequest) error {
 	if err := request.Validate(); err != nil {
 		return nil
 	}
@@ -72,7 +72,7 @@ func (h *TrackDialogHandler) Handle(ctx context.Context, request dto.DialogReque
 	}
 }
 
-func (h *TrackDialogHandler) handleCommandDuringDialog(chatID int64, cmdName string) error {
+func (h *DialogHandler) handleCommandDuringDialog(chatID int64, cmdName string) error {
 	if cmdName == "cancel" {
 		return nil
 	}
@@ -89,7 +89,7 @@ func (h *TrackDialogHandler) handleCommandDuringDialog(chatID int64, cmdName str
 	return nil
 }
 
-func (h *TrackDialogHandler) handleAwaitingURL(chatID int64, text string) error {
+func (h *DialogHandler) handleAwaitingURL(chatID int64, text string) error {
 	if !isValidURL(text) {
 		return h.sendPlainMessage(chatID, "Ссылка некорректна. Введите ссылку в формате https://example.com/path")
 	}
@@ -102,7 +102,7 @@ func (h *TrackDialogHandler) handleAwaitingURL(chatID int64, text string) error 
 	return h.sendPlainMessage(chatID, "Введите теги через запятую (например: работа,документация) или '-' если без тегов.")
 }
 
-func (h *TrackDialogHandler) handleAwaitingTags(ctx context.Context, chatID int64, pendingURL string, rawTags string) error {
+func (h *DialogHandler) handleAwaitingTags(ctx context.Context, chatID int64, pendingURL string, rawTags string) error {
 	tags := parseTags(rawTags)
 	cleanURL := textOrPendingURL(pendingURL)
 
@@ -133,7 +133,7 @@ func (h *TrackDialogHandler) handleAwaitingTags(ctx context.Context, chatID int6
 	return nil
 }
 
-func (h *TrackDialogHandler) sendPlainMessage(chatID int64, text string) error {
+func (h *DialogHandler) sendPlainMessage(chatID int64, text string) error {
 	msg := tgbotapi.NewMessage(chatID, text)
 	_, err := h.bot.Send(msg)
 	if err != nil {

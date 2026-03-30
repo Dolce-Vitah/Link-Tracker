@@ -120,7 +120,8 @@ func TestStartCommandHandler_Handle(t *testing.T) {
 			}
 
 			logger := slog.Default()
-			cmd := chat.NewStartCommandHandler(trackerSvc, logger, mockSender)
+			chatHandler := chat.NewChatHandler(trackerSvc, logger, mockSender)
+			cmd := chat.NewStartCommand(chatHandler)
 			err := cmd.Handle(context.Background(), tt.request)
 			tt.assertErrFunc(t, err)
 		})
