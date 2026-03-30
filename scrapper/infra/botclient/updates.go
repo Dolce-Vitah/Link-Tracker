@@ -69,16 +69,16 @@ func (c *HTTPUpdatesClient) SendUpdate(ctx context.Context, update trackerapi.Li
 		_ = resp.Body.Close()
 	}()
 
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-
-		return mapStatusError(resp.StatusCode)
-	}
-
-	return nil
+	return mapStatusError(resp.StatusCode)
 }
 
 func mapStatusError(status int) error {
 	const serverErrorMinStatus = 500
+
+	if status >= http.StatusOK && status < 300 {
+
+		return nil
+	}
 
 	switch status {
 	case http.StatusBadRequest:
