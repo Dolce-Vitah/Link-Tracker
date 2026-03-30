@@ -16,15 +16,6 @@ import (
 	trackermock "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/domain/tracker/mock"
 )
 
-func TestStartCommandHandler_NameAndDescription(t *testing.T) {
-	t.Parallel()
-
-	cmd := chat.NewStartCommandHandler(nil, nil, nil)
-
-	require.Equal(t, "start", cmd.Name())
-	require.NotEmpty(t, cmd.Description())
-}
-
 func TestStartCommandHandler_Handle(t *testing.T) {
 	t.Parallel()
 

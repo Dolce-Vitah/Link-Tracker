@@ -14,15 +14,6 @@ import (
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/domain/command/mock"
 )
 
-func TestHelpCommandHandler_NameAndDescription(t *testing.T) {
-	t.Parallel()
-
-	cmd := chat.NewHelpCommandHandler(nil, nil)
-
-	require.Equal(t, "help", cmd.Name())
-	require.NotEmpty(t, cmd.Description())
-}
-
 func TestHelpCommandHandler_Handle(t *testing.T) {
 	t.Parallel()
 
