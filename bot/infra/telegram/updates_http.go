@@ -9,7 +9,8 @@ import (
 	"strings"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/api"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/handler/common"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/handler/linkdto"
 )
 
 func (b *Bot) StartHTTPServer(address string) error {
@@ -33,7 +34,7 @@ func (b *Bot) handleLinkUpdateHTTP(w http.ResponseWriter, r *http.Request) {
 		_ = r.Body.Close()
 	}()
 
-	var update api.LinkUpdate
+	var update linkdto.LinkUpdate
 
 	decodeErr := json.NewDecoder(r.Body).Decode(&update)
 	if decodeErr != nil {
@@ -75,7 +76,7 @@ func writeAPIError(w http.ResponseWriter, status int, description string) {
 
 	w.WriteHeader(status)
 
-	_ = json.NewEncoder(w).Encode(api.ErrorResponse{
+	_ = json.NewEncoder(w).Encode(common.ErrorResponse{
 		Description: description,
 		Code:        strconv.Itoa(status),
 	})

@@ -11,9 +11,9 @@ import (
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/gateway/repository"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/handler/common"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/handler/dto"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/handler/linkdto"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/domain/command"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/domain/tracker"
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/api"
 )
 
 type Handler struct {
@@ -166,7 +166,7 @@ func (h *Handler) Delete(ctx context.Context, request dto.CommandRequest) error 
 		return fmt.Errorf("register chat before untrack: %w", err)
 	}
 
-	_, err := h.tracker.RemoveLink(ctx, request.ChatID, api.RemoveLinkRequest{Link: args})
+	_, err := h.tracker.RemoveLink(ctx, request.ChatID, linkdto.RemoveLinkRequest{Link: args})
 
 	if err != nil {
 		if strings.Contains(err.Error(), tracker.ErrNotFound.Error()) {

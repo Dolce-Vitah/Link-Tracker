@@ -1,53 +1,16 @@
 package api
 
 import (
-	"errors"
-	"strings"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/handler/common"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/handler/linkdto"
 )
 
-var ErrInvalidLinkUpdate = errors.New("url and tgChatIds are required")
+type ErrorResponse = common.ErrorResponse
 
-type ErrorResponse struct {
-	Description      string   `json:"description"`
-	Code             string   `json:"code"`
-	ExceptionName    string   `json:"exceptionName,omitempty"`
-	ExceptionMessage string   `json:"exceptionMessage,omitempty"`
-	Stacktrace       []string `json:"stacktrace,omitempty"`
-}
+type LinkUpdate = linkdto.LinkUpdate
+type LinkResponse = linkdto.LinkResponse
+type AddLinkRequest = linkdto.AddLinkRequest
+type RemoveLinkRequest = linkdto.RemoveLinkRequest
+type ListLinksResponse = linkdto.ListLinksResponse
 
-type LinkUpdate struct {
-	ID          int64   `json:"id"`
-	URL         string  `json:"url"`
-	Description string  `json:"description"`
-	TgChatIDs   []int64 `json:"tgChatIds"`
-}
-
-func (u LinkUpdate) Validate() error {
-	if strings.TrimSpace(u.URL) == "" || len(u.TgChatIDs) == 0 {
-		return ErrInvalidLinkUpdate
-	}
-
-	return nil
-}
-
-type LinkResponse struct {
-	ID      int64    `json:"id"`
-	URL     string   `json:"url"`
-	Tags    []string `json:"tags,omitempty"`
-	Filters []string `json:"filters,omitempty"`
-}
-
-type AddLinkRequest struct {
-	Link    string   `json:"link"`
-	Tags    []string `json:"tags,omitempty"`
-	Filters []string `json:"filters,omitempty"`
-}
-
-type RemoveLinkRequest struct {
-	Link string `json:"link"`
-}
-
-type ListLinksResponse struct {
-	Links []LinkResponse `json:"links"`
-	Size  int32          `json:"size"`
-}
+var ErrInvalidLinkUpdate = linkdto.ErrInvalidLinkUpdate
