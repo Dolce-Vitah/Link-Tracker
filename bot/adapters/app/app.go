@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"time"
 
+	trackergateway "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/gateway/client/tracker"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/handler/chat"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/handler/link"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/domain/tracker"
@@ -47,7 +48,7 @@ func (a *App) New() error {
 		}
 		trackerService = grpcClient
 	} else {
-		trackerService = trackerclient.NewHTTPClient(cfg.ScrapperBaseURL, timeout)
+		trackerService = trackergateway.NewHTTPClient(cfg.ScrapperBaseURL, timeout)
 	}
 	bot.SetTrackerService(trackerService)
 	sessions := bot.Sessions()
