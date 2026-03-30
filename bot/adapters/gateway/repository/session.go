@@ -35,6 +35,7 @@ func NewInMemorySessionRepository() *InMemorySessionRepository {
 func (r *InMemorySessionRepository) Get(chatID int64) (Session, bool) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
+
 	session, ok := r.sessions[chatID]
 
 	return session, ok
@@ -43,11 +44,13 @@ func (r *InMemorySessionRepository) Get(chatID int64) (Session, bool) {
 func (r *InMemorySessionRepository) Set(chatID int64, session Session) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
+
 	r.sessions[chatID] = session
 }
 
 func (r *InMemorySessionRepository) Clear(chatID int64) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
+
 	delete(r.sessions, chatID)
 }

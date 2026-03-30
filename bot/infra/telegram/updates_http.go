@@ -34,6 +34,7 @@ func (b *Bot) handleLinkUpdateHTTP(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	var update api.LinkUpdate
+
 	decodeErr := json.NewDecoder(r.Body).Decode(&update)
 	if decodeErr != nil {
 		writeAPIError(w, http.StatusBadRequest, "invalid request schema")
@@ -42,6 +43,7 @@ func (b *Bot) handleLinkUpdateHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	validateErr := update.Validate()
+
 	if validateErr != nil {
 		writeAPIError(w, http.StatusBadRequest, validateErr.Error())
 
@@ -53,7 +55,9 @@ func (b *Bot) handleLinkUpdateHTTP(w http.ResponseWriter, r *http.Request) {
 		if strings.TrimSpace(update.Description) != "" {
 			text = update.Description
 		}
+
 		msg := tgbotapi.NewMessage(chatID, text)
+
 		if _, sendErr := b.sendMessage(msg); sendErr != nil {
 			slog.Error("Failed to send update message",
 				slog.String("error", sendErr.Error()),

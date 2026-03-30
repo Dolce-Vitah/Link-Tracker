@@ -14,6 +14,7 @@ import (
 func (b *Bot) Start() {
 	updateConfig := tgbotapi.NewUpdate(0)
 	updateConfig.Timeout = 60
+
 	updates := b.api.GetUpdatesChan(updateConfig)
 
 	for update := range updates {
@@ -62,6 +63,7 @@ func (b *Bot) handleUpdate(ctx context.Context, update *tgbotapi.Update, sender 
 		if update.Message.From != nil {
 			username = update.Message.From.UserName
 		}
+
 		msg := tgbotapi.NewMessage(chatID, "Неизвестная команда. Воспользуйтесь /help, чтобы посмотреть список доступных команд.")
 		_, sendErr := sender.Send(msg)
 		if sendErr != nil {
