@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/handler/common"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/handler/handlerapi"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/handler/linkdto"
 )
 
@@ -76,7 +76,7 @@ func writeAPIError(w http.ResponseWriter, status int, description string) {
 
 	w.WriteHeader(status)
 
-	_ = json.NewEncoder(w).Encode(common.ErrorResponse{
+	_ = json.NewEncoder(w).Encode(handlerapi.ErrorResponse{
 		Description: description,
 		Code:        strconv.Itoa(status),
 	})

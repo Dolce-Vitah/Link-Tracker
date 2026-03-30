@@ -7,8 +7,8 @@ import (
 	"strings"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/handler/common"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/handler/dto"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/handler/handlerapi"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/domain/command"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/domain/tracker"
 )
@@ -90,10 +90,10 @@ func (h *Handler) Read(_ context.Context, request dto.CommandRequest) error {
 
 func NewStartCommand(handler *Handler) command.Command {
 
-	return common.NewCommand("start", "Начать работу с ботом", handler.Create)
+	return handlerapi.NewCommand("start", "Начать работу с ботом", handler.Create)
 }
 
 func NewHelpCommand(handler *Handler) command.Command {
 
-	return common.NewCommand("help", "Вывести список доступных команд", handler.Read)
+	return handlerapi.NewCommand("help", "Вывести список доступных команд", handler.Read)
 }

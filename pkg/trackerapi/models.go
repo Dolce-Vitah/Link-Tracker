@@ -1,13 +1,13 @@
 package trackerapi
 
 import (
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/handler/common"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/handler/handlerapi"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/handler/linkdto"
 )
 
 var ErrInvalidLinkUpdate = linkdto.ErrInvalidLinkUpdate
 
-type ErrorResponse = common.ErrorResponse
+type ErrorResponse = handlerapi.ErrorResponse
 
 type LinkUpdate = linkdto.LinkUpdate
 type LinkResponse = linkdto.LinkResponse

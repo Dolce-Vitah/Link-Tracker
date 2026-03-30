@@ -9,8 +9,8 @@ import (
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/gateway/repository"
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/handler/common"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/handler/dto"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/handler/handlerapi"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/handler/linkdto"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/domain/command"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/domain/tracker"
@@ -218,20 +218,20 @@ func isValidUntrackURL(value string) bool {
 
 func NewTrackCommand(handler *Handler) command.Command {
 
-	return common.NewCommand("track", "Начать отслеживание ссылки", handler.Create)
+	return handlerapi.NewCommand("track", "Начать отслеживание ссылки", handler.Create)
 }
 
 func NewListCommand(handler *Handler) command.Command {
 
-	return common.NewCommand("list", "Показать отслеживаемые ссылки", handler.Read)
+	return handlerapi.NewCommand("list", "Показать отслеживаемые ссылки", handler.Read)
 }
 
 func NewCancelCommand(handler *Handler) command.Command {
 
-	return common.NewCommand("cancel", "Отменить текущий диалог", handler.Update)
+	return handlerapi.NewCommand("cancel", "Отменить текущий диалог", handler.Update)
 }
 
 func NewUntrackCommand(handler *Handler) command.Command {
 
-	return common.NewCommand("untrack", "Прекратить отслеживание ссылки", handler.Delete)
+	return handlerapi.NewCommand("untrack", "Прекратить отслеживание ссылки", handler.Delete)
 }

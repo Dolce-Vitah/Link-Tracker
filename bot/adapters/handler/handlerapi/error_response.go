@@ -1,4 +1,4 @@
-package common
+package handlerapi
 
 type ErrorResponse struct {
 	Description      string   `json:"description"`
