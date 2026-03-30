@@ -6,7 +6,7 @@ package mock
 
 import (
 	mock "github.com/stretchr/testify/mock"
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/repository"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/gateway/repository"
 )
 
 // NewMockSessionRepository creates a new instance of MockSessionRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.

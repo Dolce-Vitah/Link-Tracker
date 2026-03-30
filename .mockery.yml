@@ -16,7 +16,7 @@ packages:
   gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker:
     config:
       all: true
-  gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/repository:
+  gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/gateway/repository:
     config:
       dir: '{{.InterfaceDir}}/mock'
       filename: '{{.InterfaceName}}.go'
