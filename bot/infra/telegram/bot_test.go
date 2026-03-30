@@ -8,7 +8,7 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	testifymock "github.com/stretchr/testify/mock"
 
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/handler"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/handler/chat"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/domain/command"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/domain/command/mock"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/repository"
@@ -70,8 +70,8 @@ func TestBot_HandleUpdate(t *testing.T) {
 				logger:     slog.Default(),
 				sessions:   repository.NewInMemorySessionRepository(),
 			}
-			bot.RegisterCommand(handler.NewStartCommandHandler(nil, nil, mockSender))
-			bot.RegisterCommand(handler.NewHelpCommandHandler(nil, mockSender))
+			bot.RegisterCommand(chat.NewStartCommandHandler(nil, nil, mockSender))
+			bot.RegisterCommand(chat.NewHelpCommandHandler(nil, mockSender))
 
 			bot.handleUpdate(context.Background(), update, mockSender)
 		})

@@ -6,8 +6,8 @@ import (
 	"log/slog"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/handler"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/handler/dto"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/handler/link"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/domain/command"
 )
 
@@ -31,7 +31,7 @@ func (b *Bot) handleUpdate(ctx context.Context, update *tgbotapi.Update, sender 
 	text := update.Message.Text
 
 	if b.tracker != nil {
-		dialogHandler := handler.NewTrackDialogHandler(b.tracker, b.sessions, sender, b.logger)
+		dialogHandler := link.NewTrackDialogHandler(b.tracker, b.sessions, sender, b.logger)
 		if err := dialogHandler.Handle(ctx, dto.DialogRequest{Update: update}); err != nil {
 			slog.Error("Failed to process track dialog step", slog.String("error", err.Error()))
 			return

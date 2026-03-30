@@ -10,7 +10,7 @@ import (
 	testifymock "github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/handler"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/handler/chat"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/handler/dto"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/domain/command/mock"
 	trackermock "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/domain/tracker/mock"
@@ -19,7 +19,7 @@ import (
 func TestStartCommandHandler_NameAndDescription(t *testing.T) {
 	t.Parallel()
 
-	cmd := handler.NewStartCommandHandler(nil, nil, nil)
+	cmd := chat.NewStartCommandHandler(nil, nil, nil)
 
 	require.Equal(t, "start", cmd.Name())
 	require.NotEmpty(t, cmd.Description())
@@ -129,7 +129,7 @@ func TestStartCommandHandler_Handle(t *testing.T) {
 			}
 
 			logger := slog.Default()
-			cmd := handler.NewStartCommandHandler(trackerSvc, logger, mockSender)
+			cmd := chat.NewStartCommandHandler(trackerSvc, logger, mockSender)
 			err := cmd.Handle(context.Background(), tt.request)
 			tt.assertErrFunc(t, err)
 		})

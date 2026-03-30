@@ -8,8 +8,8 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	testifymock "github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/handler"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/handler/dto"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/handler/link"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/domain/command/mock"
 	trackermock "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/domain/tracker/mock"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/repository"
@@ -181,7 +181,7 @@ func TestTrackDialogHandler_Handle(t *testing.T) {
 			sender := mock.NewSender(t)
 			tt.setupMocks(tracker, sessions, sender)
 
-			dialogHandler := handler.NewTrackDialogHandler(tracker, sessions, sender, nil)
+			dialogHandler := link.NewTrackDialogHandler(tracker, sessions, sender, nil)
 			err := dialogHandler.Handle(context.Background(), tt.request)
 			tt.assertErr(t, err)
 		})

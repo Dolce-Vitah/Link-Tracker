@@ -5,7 +5,8 @@ import (
 	"log/slog"
 	"time"
 
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/handler"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/handler/chat"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/handler/link"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/domain/tracker"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/infra/config"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/infra/telegram"
@@ -47,12 +48,12 @@ func (a *App) New() error {
 	bot.SetTrackerService(trackerService)
 	sessions := bot.Sessions()
 
-	bot.RegisterCommand(handler.NewStartCommandHandler(trackerService, slog.Default(), bot.Client()))
-	bot.RegisterCommand(handler.NewHelpCommandHandler(slog.Default(), bot.Client()))
-	bot.RegisterCommand(handler.NewTrackCommandHandler(sessions, trackerService, slog.Default(), bot.Client()))
-	bot.RegisterCommand(handler.NewUntrackCommandHandler(trackerService, slog.Default(), bot.Client()))
-	bot.RegisterCommand(handler.NewListCommandHandler(trackerService, slog.Default(), bot.Client()))
-	bot.RegisterCommand(handler.NewCancelCommandHandler(sessions, slog.Default(), bot.Client()))
+	bot.RegisterCommand(chat.NewStartCommandHandler(trackerService, slog.Default(), bot.Client()))
+	bot.RegisterCommand(chat.NewHelpCommandHandler(slog.Default(), bot.Client()))
+	bot.RegisterCommand(link.NewTrackCommandHandler(sessions, trackerService, slog.Default(), bot.Client()))
+	bot.RegisterCommand(link.NewUntrackCommandHandler(trackerService, slog.Default(), bot.Client()))
+	bot.RegisterCommand(link.NewListCommandHandler(trackerService, slog.Default(), bot.Client()))
+	bot.RegisterCommand(link.NewCancelCommandHandler(sessions, slog.Default(), bot.Client()))
 
 	setCommandsErr := bot.SetMyCommands()
 	if setCommandsErr != nil {

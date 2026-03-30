@@ -9,7 +9,7 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	testifymock "github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/handler"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/handler/chat"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/handler/dto"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/domain/command/mock"
 )
@@ -17,7 +17,7 @@ import (
 func TestHelpCommandHandler_NameAndDescription(t *testing.T) {
 	t.Parallel()
 
-	cmd := handler.NewHelpCommandHandler(nil, nil)
+	cmd := chat.NewHelpCommandHandler(nil, nil)
 
 	require.Equal(t, "help", cmd.Name())
 	require.NotEmpty(t, cmd.Description())
@@ -79,7 +79,7 @@ func TestHelpCommandHandler_Handle(t *testing.T) {
 			tt.mockBehavior(mockSender)
 
 			logger := slog.Default()
-			cmd := handler.NewHelpCommandHandler(logger, mockSender)
+			cmd := chat.NewHelpCommandHandler(logger, mockSender)
 
 			err := cmd.Handle(context.Background(), tt.request)
 			tt.checkError(t, err)
