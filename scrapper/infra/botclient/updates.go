@@ -41,6 +41,10 @@ func NewHTTPUpdatesClient(baseURL string, timeout time.Duration) *HTTPUpdatesCli
 }
 
 func (c *HTTPUpdatesClient) SendUpdate(ctx context.Context, update api.LinkUpdate) error {
+	if err := update.Validate(); err != nil {
+		return fmt.Errorf("validate link update: %w", err)
+	}
+
 	body, err := json.Marshal(update)
 	if err != nil {
 		return fmt.Errorf("marshal link update: %w", err)

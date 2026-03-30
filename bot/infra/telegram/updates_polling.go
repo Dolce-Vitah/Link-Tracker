@@ -31,13 +31,11 @@ func (b *Bot) handleUpdate(ctx context.Context, update *tgbotapi.Update, sender 
 	cmdName := update.Message.Command()
 	text := update.Message.Text
 
-	if b.tracker != nil {
-		dialogHandler := link.NewDialogHandler(b.tracker, b.sessions, sender, b.logger)
-		if err := dialogHandler.Handle(ctx, dto.DialogRequest{Update: update}); err != nil {
-			slog.Error("Failed to process track dialog step", slog.String("error", err.Error()))
+	dialogHandler := link.NewDialogHandler(b.tracker, b.sessions, sender, b.logger)
+	if err := dialogHandler.Handle(ctx, dto.DialogRequest{Update: update}); err != nil {
+		slog.Error("Failed to process track dialog step", slog.String("error", err.Error()))
 
-			return
-		}
+		return
 	}
 
 	if !update.Message.IsCommand() {

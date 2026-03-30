@@ -27,12 +27,6 @@ func (a *App) New() error {
 		return fmt.Errorf("load app config: %w", err)
 	}
 
-	bot, err := telegram.NewBot(cfg.TelegramToken, cfg.TelegramAPIURL, slog.Default())
-	if err != nil {
-
-		return fmt.Errorf("create telegram bot: %w", err)
-	}
-
 	timeout, err := time.ParseDuration(cfg.ExternalHTTPTimeout)
 	if err != nil {
 
@@ -50,7 +44,12 @@ func (a *App) New() error {
 	} else {
 		trackerService = trackergateway.NewHTTPClient(cfg.ScrapperBaseURL, timeout)
 	}
-	bot.SetTrackerService(trackerService)
+
+	bot, err := telegram.NewBot(cfg.TelegramToken, cfg.TelegramAPIURL, slog.Default(), trackerService)
+	if err != nil {
+
+		return fmt.Errorf("create telegram bot: %w", err)
+	}
 	sessions := bot.Sessions()
 	chatHandler := chat.NewChatHandler(trackerService, bot.Client(), slog.Default())
 	linkHandler := link.NewLinkHandler(sessions, trackerService, bot.Client(), slog.Default())

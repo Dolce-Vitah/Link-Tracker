@@ -1,6 +1,7 @@
 package telegram
 
 import (
+	"errors"
 	"fmt"
 	"log/slog"
 
@@ -19,7 +20,12 @@ type Bot struct {
 	sendMessage func(c tgbotapi.Chattable) (tgbotapi.Message, error)
 }
 
-func NewBot(token string, apiURL string, logger *slog.Logger) (*Bot, error) {
+func NewBot(token string, apiURL string, logger *slog.Logger, trk tracker.Client) (*Bot, error) {
+	if trk == nil {
+
+		return nil, errors.New("tracker client is required")
+	}
+
 	if logger == nil {
 		logger = slog.Default()
 	}
@@ -43,6 +49,7 @@ func NewBot(token string, apiURL string, logger *slog.Logger) (*Bot, error) {
 		dispatcher:  command.NewDispatcher(),
 		logger:      logger,
 		sessions:    repository.NewInMemorySessionRepository(),
+		tracker:     trk,
 		sendMessage: api.Send,
 	}, nil
 }
@@ -57,8 +64,4 @@ func (b *Bot) RegisterCommand(cmd command.Command) {
 
 func (b *Bot) Sessions() repository.SessionRepository {
 	return b.sessions
-}
-
-func (b *Bot) SetTrackerService(service tracker.Client) {
-	b.tracker = service
 }

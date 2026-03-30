@@ -40,7 +40,10 @@ func TestHTTPUpdatesClient_SendUpdate_StatusMapping(t *testing.T) {
 			t.Cleanup(server.Close)
 
 			client := NewHTTPUpdatesClient(server.URL, time.Second)
-			err := client.SendUpdate(context.Background(), api.LinkUpdate{URL: "https://example.com"})
+			err := client.SendUpdate(context.Background(), api.LinkUpdate{
+				URL:       "https://example.com",
+				TgChatIDs: []int64{1},
+			})
 
 			if tt.expectedErr == nil {
 				require.NoError(t, err)
@@ -52,4 +55,13 @@ func TestHTTPUpdatesClient_SendUpdate_StatusMapping(t *testing.T) {
 			require.ErrorIs(t, err, tt.expectedErr)
 		})
 	}
+}
+
+func TestHTTPUpdatesClient_SendUpdate_RejectsInvalidPayload(t *testing.T) {
+	t.Parallel()
+
+	client := NewHTTPUpdatesClient("http://unused.example", time.Second)
+	err := client.SendUpdate(context.Background(), api.LinkUpdate{URL: "https://example.com"})
+	require.Error(t, err)
+	require.ErrorIs(t, err, api.ErrInvalidLinkUpdate)
 }

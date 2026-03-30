@@ -11,6 +11,7 @@ import (
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/handler/chat"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/domain/command"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/domain/command/mock"
+	trackermock "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/domain/tracker/mock"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/repository"
 )
 
@@ -65,10 +66,12 @@ func TestBot_HandleUpdate(t *testing.T) {
 				Return(tgbotapi.Message{}, nil).
 				Once()
 
+			trackerMock := trackermock.NewMockClient(t)
 			bot := &Bot{
 				dispatcher: command.NewDispatcher(),
 				logger:     slog.Default(),
 				sessions:   repository.NewInMemorySessionRepository(),
+				tracker:    trackerMock,
 			}
 			chatHandler := chat.NewChatHandler(nil, mockSender, nil)
 			bot.RegisterCommand(chat.NewStartCommand(chatHandler))
