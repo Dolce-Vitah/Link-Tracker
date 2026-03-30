@@ -13,15 +13,6 @@ import (
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/trackerapi"
 )
 
-type UpdatesSender interface {
-	SendUpdate(ctx context.Context, update trackerapi.LinkUpdate) error
-}
-
-type HTTPUpdatesClient struct {
-	baseURL string
-	client  *http.Client
-}
-
 var (
 	ErrBadRequest      = errors.New("bad request")
 	ErrUnauthorized    = errors.New("unauthorized")
@@ -32,6 +23,15 @@ var (
 	ErrClient          = errors.New("client error")
 	ErrInternal        = errors.New("internal error")
 )
+
+type UpdatesSender interface {
+	SendUpdate(ctx context.Context, update trackerapi.LinkUpdate) error
+}
+
+type HTTPUpdatesClient struct {
+	baseURL string
+	client  *http.Client
+}
 
 func NewHTTPUpdatesClient(baseURL string, timeout time.Duration) *HTTPUpdatesClient {
 	return &HTTPUpdatesClient{

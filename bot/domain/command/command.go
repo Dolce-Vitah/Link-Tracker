@@ -9,6 +9,8 @@ import (
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/handler/dto"
 )
 
+var ErrUnknownCommand = errors.New("unknown command")
+
 type (
 	Sender interface {
 		Send(message tgbotapi.Chattable) (tgbotapi.Message, error)
@@ -28,8 +30,6 @@ type DialogHandler interface {
 type BotClient interface {
 	Send(tgbotapi.Chattable) (tgbotapi.Message, error)
 }
-
-var ErrUnknownCommand = errors.New("unknown command")
 
 type UnknownCommandError struct {
 	Command string
