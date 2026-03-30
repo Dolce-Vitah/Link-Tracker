@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"time"
 
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/api"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/trackerapi"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/scrapper/infra/botclient"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/scrapper/infra/external"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/scrapper/repository"
@@ -50,7 +50,7 @@ func (s *Scheduler) ProcessOnce(ctx context.Context) {
 			chatIDs = append(chatIDs, chatID)
 		}
 
-		update := api.LinkUpdate{
+		update := trackerapi.LinkUpdate{
 			ID:          link.Response.ID,
 			URL:         link.Response.URL,
 			Description: "Обнаружено новое обновление",

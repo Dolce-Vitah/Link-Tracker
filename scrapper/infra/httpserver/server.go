@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/api"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/trackerapi"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/scrapper/repository"
 )
 
@@ -120,7 +120,7 @@ func (h *Handler) handleListLinks(w http.ResponseWriter, chatID int64) {
 }
 
 func (h *Handler) handleAddLink(w http.ResponseWriter, r *http.Request, chatID int64) {
-	var req api.AddLinkRequest
+	var req trackerapi.AddLinkRequest
 	decodeErr := json.NewDecoder(r.Body).Decode(&req)
 	if decodeErr != nil {
 		writeError(w, http.StatusBadRequest, "invalid add link request")
@@ -145,7 +145,7 @@ func (h *Handler) handleAddLink(w http.ResponseWriter, r *http.Request, chatID i
 }
 
 func (h *Handler) handleRemoveLink(w http.ResponseWriter, r *http.Request, chatID int64) {
-	var req api.RemoveLinkRequest
+	var req trackerapi.RemoveLinkRequest
 	decodeErr := json.NewDecoder(r.Body).Decode(&req)
 	if decodeErr != nil {
 		writeError(w, http.StatusBadRequest, "invalid remove link request")
@@ -193,7 +193,7 @@ func writeJSON(w http.ResponseWriter, code int, payload any) {
 }
 
 func writeError(w http.ResponseWriter, code int, description string) {
-	writeJSON(w, code, api.ErrorResponse{
+	writeJSON(w, code, trackerapi.ErrorResponse{
 		Description: description,
 		Code:        strconv.Itoa(code),
 	})

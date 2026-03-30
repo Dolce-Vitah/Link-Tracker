@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/domain/tracker"
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/api"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/grpcapi/scrapperv1"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/trackerapi"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
@@ -61,7 +61,7 @@ func (c *GRPCClient) DeleteChat(ctx context.Context, chatID int64) error {
 	return mapGRPCError(err)
 }
 
-func (c *GRPCClient) AddLink(ctx context.Context, chatID int64, request api.AddLinkRequest) (api.LinkResponse, error) {
+func (c *GRPCClient) AddLink(ctx context.Context, chatID int64, request trackerapi.AddLinkRequest) (trackerapi.LinkResponse, error) {
 	response, err := c.client.AddLink(ctx, &scrapperv1.AddLinkRequest{
 		ChatId: chatID,
 		Body: &scrapperv1.AddLinkPayload{
@@ -72,13 +72,13 @@ func (c *GRPCClient) AddLink(ctx context.Context, chatID int64, request api.AddL
 	})
 	if err != nil {
 
-		return api.LinkResponse{}, mapGRPCError(err)
+		return trackerapi.LinkResponse{}, mapGRPCError(err)
 	}
 
 	return fromProtoLink(response.GetLink()), nil
 }
 
-func (c *GRPCClient) RemoveLink(ctx context.Context, chatID int64, request api.RemoveLinkRequest) (api.LinkResponse, error) {
+func (c *GRPCClient) RemoveLink(ctx context.Context, chatID int64, request trackerapi.RemoveLinkRequest) (trackerapi.LinkResponse, error) {
 	response, err := c.client.RemoveLink(ctx, &scrapperv1.RemoveLinkRequest{
 		ChatId: chatID,
 		Body: &scrapperv1.RemoveLinkPayload{
@@ -87,17 +87,17 @@ func (c *GRPCClient) RemoveLink(ctx context.Context, chatID int64, request api.R
 	})
 	if err != nil {
 
-		return api.LinkResponse{}, mapGRPCError(err)
+		return trackerapi.LinkResponse{}, mapGRPCError(err)
 	}
 
 	return fromProtoLink(response.GetLink()), nil
 }
 
-func (c *GRPCClient) ListLinks(ctx context.Context, chatID int64) (api.ListLinksResponse, error) {
+func (c *GRPCClient) ListLinks(ctx context.Context, chatID int64) (trackerapi.ListLinksResponse, error) {
 	response, err := c.client.ListLinks(ctx, &scrapperv1.ListLinksRequest{ChatId: chatID})
 	if err != nil {
 
-		return api.ListLinksResponse{}, mapGRPCError(err)
+		return trackerapi.ListLinksResponse{}, mapGRPCError(err)
 	}
 
 	return fromProtoListLinks(response), nil
@@ -156,13 +156,13 @@ func mapGRPCError(err error) error {
 	}
 }
 
-func fromProtoLink(link *scrapperv1.LinkResponse) api.LinkResponse {
+func fromProtoLink(link *scrapperv1.LinkResponse) trackerapi.LinkResponse {
 	if link == nil {
 
-		return api.LinkResponse{}
+		return trackerapi.LinkResponse{}
 	}
 
-	return api.LinkResponse{
+	return trackerapi.LinkResponse{
 		ID:      link.GetId(),
 		URL:     link.GetUrl(),
 		Tags:    link.GetTags(),
@@ -170,18 +170,18 @@ func fromProtoLink(link *scrapperv1.LinkResponse) api.LinkResponse {
 	}
 }
 
-func fromProtoListLinks(response *scrapperv1.ListLinksResponse) api.ListLinksResponse {
+func fromProtoListLinks(response *scrapperv1.ListLinksResponse) trackerapi.ListLinksResponse {
 	if response == nil {
 
-		return api.ListLinksResponse{}
+		return trackerapi.ListLinksResponse{}
 	}
 
-	links := make([]api.LinkResponse, 0, len(response.GetLinks()))
+	links := make([]trackerapi.LinkResponse, 0, len(response.GetLinks()))
 	for _, link := range response.GetLinks() {
 		links = append(links, fromProtoLink(link))
 	}
 
-	return api.ListLinksResponse{
+	return trackerapi.ListLinksResponse{
 		Links: links,
 		Size:  response.GetSize(),
 	}

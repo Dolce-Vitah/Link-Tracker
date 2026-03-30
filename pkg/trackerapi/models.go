@@ -1,4 +1,4 @@
-package api
+package trackerapi
 
 import (
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/handler/common"

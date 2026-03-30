@@ -12,7 +12,7 @@ import (
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/handler/link"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/domain/command/mock"
 	trackermock "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/domain/tracker/mock"
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/api"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/trackerapi"
 )
 
 func TestListCommand_Handle(t *testing.T) {
@@ -35,7 +35,7 @@ func TestListCommand_Handle(t *testing.T) {
 				tracker.EXPECT().RegisterChat(testifymock.Anything, int64(7)).Return(nil).Once()
 
 				tracker.EXPECT().ListLinks(testifymock.Anything, int64(7)).
-					Return(api.ListLinksResponse{Links: nil, Size: 0}, nil).Once()
+					Return(trackerapi.ListLinksResponse{Links: nil, Size: 0}, nil).Once()
 
 				sender.EXPECT().
 					Send(testifymock.MatchedBy(func(msg tgbotapi.MessageConfig) bool {
@@ -53,7 +53,7 @@ func TestListCommand_Handle(t *testing.T) {
 				tracker.EXPECT().RegisterChat(testifymock.Anything, int64(10)).Return(nil).Once()
 
 				tracker.EXPECT().ListLinks(testifymock.Anything, int64(10)).
-					Return(api.ListLinksResponse{Links: []api.LinkResponse{
+					Return(trackerapi.ListLinksResponse{Links: []trackerapi.LinkResponse{
 						{ID: 1, URL: "https://github.com/a/b", Tags: []string{"work"}},
 						{ID: 2, URL: "https://stackoverflow.com/questions/1/x", Tags: []string{"misc"}},
 					}, Size: 2}, nil).Once()
@@ -81,7 +81,7 @@ func TestListCommand_Handle(t *testing.T) {
 			setupMocks: func(tracker *trackermock.MockClient, _ *mock.Sender) {
 				tracker.EXPECT().RegisterChat(testifymock.Anything, int64(10)).Return(nil).Once()
 
-				tracker.EXPECT().ListLinks(testifymock.Anything, int64(10)).Return(api.ListLinksResponse{}, listErr).Once()
+				tracker.EXPECT().ListLinks(testifymock.Anything, int64(10)).Return(trackerapi.ListLinksResponse{}, listErr).Once()
 			},
 			assertErr: func(t *testing.T, err error) { require.ErrorIs(t, err, listErr) },
 		},
@@ -92,7 +92,7 @@ func TestListCommand_Handle(t *testing.T) {
 				tracker.EXPECT().RegisterChat(testifymock.Anything, int64(10)).Return(nil).Once()
 
 				tracker.EXPECT().ListLinks(testifymock.Anything, int64(10)).
-					Return(api.ListLinksResponse{Links: nil, Size: 0}, nil).Once()
+					Return(trackerapi.ListLinksResponse{Links: nil, Size: 0}, nil).Once()
 
 				sender.EXPECT().Send(testifymock.MatchedBy(func(msg tgbotapi.MessageConfig) bool {
 					return msg.ChatID == 10 && msg.Text != ""

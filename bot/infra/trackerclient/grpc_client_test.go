@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/domain/tracker"
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/api"
 	scrapperv1 "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/grpcapi/scrapperv1"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/trackerapi"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -159,14 +159,14 @@ func addLinkSuccessCase(t *testing.T) struct {
 			},
 		},
 		call: func(ctx context.Context, c *GRPCClient) (any, error) {
-			return c.AddLink(ctx, 1, api.AddLinkRequest{Link: "https://github.com/user/repo"})
+			return c.AddLink(ctx, 1, trackerapi.AddLinkRequest{Link: "https://github.com/user/repo"})
 		},
 		assert: func(t *testing.T, got any, err error) {
 			t.Helper()
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
-			link, ok := got.(api.LinkResponse)
+			link, ok := got.(trackerapi.LinkResponse)
 			if !ok {
 				t.Fatalf("unexpected result type: %T", got)
 			}
@@ -208,14 +208,14 @@ func removeLinkSuccessCase(t *testing.T) struct {
 			},
 		},
 		call: func(ctx context.Context, c *GRPCClient) (any, error) {
-			return c.RemoveLink(ctx, 1, api.RemoveLinkRequest{Link: "https://github.com/user/repo"})
+			return c.RemoveLink(ctx, 1, trackerapi.RemoveLinkRequest{Link: "https://github.com/user/repo"})
 		},
 		assert: func(t *testing.T, got any, err error) {
 			t.Helper()
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
-			link, ok := got.(api.LinkResponse)
+			link, ok := got.(trackerapi.LinkResponse)
 			if !ok {
 				t.Fatalf("unexpected result type: %T", got)
 			}
@@ -259,7 +259,7 @@ func listLinksSuccessCase(t *testing.T) struct {
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
-			resp, ok := got.(api.ListLinksResponse)
+			resp, ok := got.(trackerapi.ListLinksResponse)
 			if !ok {
 				t.Fatalf("unexpected result type: %T", got)
 			}

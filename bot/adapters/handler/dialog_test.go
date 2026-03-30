@@ -14,7 +14,7 @@ import (
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/handler/link"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/domain/command/mock"
 	trackermock "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/domain/tracker/mock"
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/api"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/trackerapi"
 )
 
 func TestTrackDialogHandler_Handle(t *testing.T) {
@@ -90,10 +90,10 @@ func TestTrackDialogHandler_Handle(t *testing.T) {
 					PendingURL: "https://github.com/user/repo",
 				}, true).Once()
 
-				tracker.EXPECT().AddLink(testifymock.Anything, int64(100), api.AddLinkRequest{
+				tracker.EXPECT().AddLink(testifymock.Anything, int64(100), trackerapi.AddLinkRequest{
 					Link: "https://github.com/user/repo",
 					Tags: []string{"work", "docs"},
-				}).Return(api.LinkResponse{}, nil).Once()
+				}).Return(trackerapi.LinkResponse{}, nil).Once()
 
 				sessions.EXPECT().Clear(int64(100)).Once()
 
@@ -114,10 +114,10 @@ func TestTrackDialogHandler_Handle(t *testing.T) {
 					PendingURL: "https://github.com/user/repo",
 				}, true).Once()
 
-				tracker.EXPECT().AddLink(testifymock.Anything, int64(103), api.AddLinkRequest{
+				tracker.EXPECT().AddLink(testifymock.Anything, int64(103), trackerapi.AddLinkRequest{
 					Link: "https://github.com/user/repo",
 					Tags: []string{"work"},
-				}).Return(api.LinkResponse{}, errors.New("already exists")).Once()
+				}).Return(trackerapi.LinkResponse{}, errors.New("already exists")).Once()
 
 				sessions.EXPECT().Clear(int64(103)).Once()
 
@@ -137,10 +137,10 @@ func TestTrackDialogHandler_Handle(t *testing.T) {
 					State:      repository.StateAwaitingTags,
 					PendingURL: "https://github.com/user/repo",
 				}, true).Once()
-				tracker.EXPECT().AddLink(testifymock.Anything, int64(104), api.AddLinkRequest{
+				tracker.EXPECT().AddLink(testifymock.Anything, int64(104), trackerapi.AddLinkRequest{
 					Link: "https://github.com/user/repo",
 					Tags: []string{"work"},
-				}).Return(api.LinkResponse{}, addErr).Once()
+				}).Return(trackerapi.LinkResponse{}, addErr).Once()
 			},
 			assertErr: func(t *testing.T, err error) { require.ErrorIs(t, err, addErr) },
 		},

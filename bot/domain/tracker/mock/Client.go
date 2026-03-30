@@ -8,7 +8,7 @@ import (
 	"context"
 
 	mock "github.com/stretchr/testify/mock"
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/api"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/trackerapi"
 )
 
 // NewMockClient creates a new instance of MockClient. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
@@ -39,24 +39,24 @@ func (_m *MockClient) EXPECT() *MockClient_Expecter {
 }
 
 // AddLink provides a mock function for the type MockClient
-func (_mock *MockClient) AddLink(ctx context.Context, chatID int64, request api.AddLinkRequest) (api.LinkResponse, error) {
+func (_mock *MockClient) AddLink(ctx context.Context, chatID int64, request trackerapi.AddLinkRequest) (trackerapi.LinkResponse, error) {
 	ret := _mock.Called(ctx, chatID, request)
 
 	if len(ret) == 0 {
 		panic("no return value specified for AddLink")
 	}
 
-	var r0 api.LinkResponse
+	var r0 trackerapi.LinkResponse
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, api.AddLinkRequest) (api.LinkResponse, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, trackerapi.AddLinkRequest) (trackerapi.LinkResponse, error)); ok {
 		return returnFunc(ctx, chatID, request)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, api.AddLinkRequest) api.LinkResponse); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, trackerapi.AddLinkRequest) trackerapi.LinkResponse); ok {
 		r0 = returnFunc(ctx, chatID, request)
 	} else {
-		r0 = ret.Get(0).(api.LinkResponse)
+		r0 = ret.Get(0).(trackerapi.LinkResponse)
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, int64, api.AddLinkRequest) error); ok {
+	if returnFunc, ok := ret.Get(1).(func(context.Context, int64, trackerapi.AddLinkRequest) error); ok {
 		r1 = returnFunc(ctx, chatID, request)
 	} else {
 		r1 = ret.Error(1)
@@ -72,12 +72,12 @@ type MockClient_AddLink_Call struct {
 // AddLink is a helper method to define mock.On call
 //   - ctx context.Context
 //   - chatID int64
-//   - request api.AddLinkRequest
+//   - request trackerapi.AddLinkRequest
 func (_e *MockClient_Expecter) AddLink(ctx interface{}, chatID interface{}, request interface{}) *MockClient_AddLink_Call {
 	return &MockClient_AddLink_Call{Call: _e.mock.On("AddLink", ctx, chatID, request)}
 }
 
-func (_c *MockClient_AddLink_Call) Run(run func(ctx context.Context, chatID int64, request api.AddLinkRequest)) *MockClient_AddLink_Call {
+func (_c *MockClient_AddLink_Call) Run(run func(ctx context.Context, chatID int64, request trackerapi.AddLinkRequest)) *MockClient_AddLink_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -87,9 +87,9 @@ func (_c *MockClient_AddLink_Call) Run(run func(ctx context.Context, chatID int6
 		if args[1] != nil {
 			arg1 = args[1].(int64)
 		}
-		var arg2 api.AddLinkRequest
+		var arg2 trackerapi.AddLinkRequest
 		if args[2] != nil {
-			arg2 = args[2].(api.AddLinkRequest)
+			arg2 = args[2].(trackerapi.AddLinkRequest)
 		}
 		run(
 			arg0,
@@ -100,12 +100,12 @@ func (_c *MockClient_AddLink_Call) Run(run func(ctx context.Context, chatID int6
 	return _c
 }
 
-func (_c *MockClient_AddLink_Call) Return(linkResponse api.LinkResponse, err error) *MockClient_AddLink_Call {
+func (_c *MockClient_AddLink_Call) Return(linkResponse trackerapi.LinkResponse, err error) *MockClient_AddLink_Call {
 	_c.Call.Return(linkResponse, err)
 	return _c
 }
 
-func (_c *MockClient_AddLink_Call) RunAndReturn(run func(ctx context.Context, chatID int64, request api.AddLinkRequest) (api.LinkResponse, error)) *MockClient_AddLink_Call {
+func (_c *MockClient_AddLink_Call) RunAndReturn(run func(ctx context.Context, chatID int64, request trackerapi.AddLinkRequest) (trackerapi.LinkResponse, error)) *MockClient_AddLink_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -168,22 +168,22 @@ func (_c *MockClient_DeleteChat_Call) RunAndReturn(run func(ctx context.Context,
 }
 
 // ListLinks provides a mock function for the type MockClient
-func (_mock *MockClient) ListLinks(ctx context.Context, chatID int64) (api.ListLinksResponse, error) {
+func (_mock *MockClient) ListLinks(ctx context.Context, chatID int64) (trackerapi.ListLinksResponse, error) {
 	ret := _mock.Called(ctx, chatID)
 
 	if len(ret) == 0 {
 		panic("no return value specified for ListLinks")
 	}
 
-	var r0 api.ListLinksResponse
+	var r0 trackerapi.ListLinksResponse
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, int64) (api.ListLinksResponse, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64) (trackerapi.ListLinksResponse, error)); ok {
 		return returnFunc(ctx, chatID)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, int64) api.ListLinksResponse); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64) trackerapi.ListLinksResponse); ok {
 		r0 = returnFunc(ctx, chatID)
 	} else {
-		r0 = ret.Get(0).(api.ListLinksResponse)
+		r0 = ret.Get(0).(trackerapi.ListLinksResponse)
 	}
 	if returnFunc, ok := ret.Get(1).(func(context.Context, int64) error); ok {
 		r1 = returnFunc(ctx, chatID)
@@ -223,12 +223,12 @@ func (_c *MockClient_ListLinks_Call) Run(run func(ctx context.Context, chatID in
 	return _c
 }
 
-func (_c *MockClient_ListLinks_Call) Return(listLinksResponse api.ListLinksResponse, err error) *MockClient_ListLinks_Call {
+func (_c *MockClient_ListLinks_Call) Return(listLinksResponse trackerapi.ListLinksResponse, err error) *MockClient_ListLinks_Call {
 	_c.Call.Return(listLinksResponse, err)
 	return _c
 }
 
-func (_c *MockClient_ListLinks_Call) RunAndReturn(run func(ctx context.Context, chatID int64) (api.ListLinksResponse, error)) *MockClient_ListLinks_Call {
+func (_c *MockClient_ListLinks_Call) RunAndReturn(run func(ctx context.Context, chatID int64) (trackerapi.ListLinksResponse, error)) *MockClient_ListLinks_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -291,24 +291,24 @@ func (_c *MockClient_RegisterChat_Call) RunAndReturn(run func(ctx context.Contex
 }
 
 // RemoveLink provides a mock function for the type MockClient
-func (_mock *MockClient) RemoveLink(ctx context.Context, chatID int64, request api.RemoveLinkRequest) (api.LinkResponse, error) {
+func (_mock *MockClient) RemoveLink(ctx context.Context, chatID int64, request trackerapi.RemoveLinkRequest) (trackerapi.LinkResponse, error) {
 	ret := _mock.Called(ctx, chatID, request)
 
 	if len(ret) == 0 {
 		panic("no return value specified for RemoveLink")
 	}
 
-	var r0 api.LinkResponse
+	var r0 trackerapi.LinkResponse
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, api.RemoveLinkRequest) (api.LinkResponse, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, trackerapi.RemoveLinkRequest) (trackerapi.LinkResponse, error)); ok {
 		return returnFunc(ctx, chatID, request)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, api.RemoveLinkRequest) api.LinkResponse); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, trackerapi.RemoveLinkRequest) trackerapi.LinkResponse); ok {
 		r0 = returnFunc(ctx, chatID, request)
 	} else {
-		r0 = ret.Get(0).(api.LinkResponse)
+		r0 = ret.Get(0).(trackerapi.LinkResponse)
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, int64, api.RemoveLinkRequest) error); ok {
+	if returnFunc, ok := ret.Get(1).(func(context.Context, int64, trackerapi.RemoveLinkRequest) error); ok {
 		r1 = returnFunc(ctx, chatID, request)
 	} else {
 		r1 = ret.Error(1)
@@ -324,12 +324,12 @@ type MockClient_RemoveLink_Call struct {
 // RemoveLink is a helper method to define mock.On call
 //   - ctx context.Context
 //   - chatID int64
-//   - request api.RemoveLinkRequest
+//   - request trackerapi.RemoveLinkRequest
 func (_e *MockClient_Expecter) RemoveLink(ctx interface{}, chatID interface{}, request interface{}) *MockClient_RemoveLink_Call {
 	return &MockClient_RemoveLink_Call{Call: _e.mock.On("RemoveLink", ctx, chatID, request)}
 }
 
-func (_c *MockClient_RemoveLink_Call) Run(run func(ctx context.Context, chatID int64, request api.RemoveLinkRequest)) *MockClient_RemoveLink_Call {
+func (_c *MockClient_RemoveLink_Call) Run(run func(ctx context.Context, chatID int64, request trackerapi.RemoveLinkRequest)) *MockClient_RemoveLink_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -339,9 +339,9 @@ func (_c *MockClient_RemoveLink_Call) Run(run func(ctx context.Context, chatID i
 		if args[1] != nil {
 			arg1 = args[1].(int64)
 		}
-		var arg2 api.RemoveLinkRequest
+		var arg2 trackerapi.RemoveLinkRequest
 		if args[2] != nil {
-			arg2 = args[2].(api.RemoveLinkRequest)
+			arg2 = args[2].(trackerapi.RemoveLinkRequest)
 		}
 		run(
 			arg0,
@@ -352,12 +352,12 @@ func (_c *MockClient_RemoveLink_Call) Run(run func(ctx context.Context, chatID i
 	return _c
 }
 
-func (_c *MockClient_RemoveLink_Call) Return(linkResponse api.LinkResponse, err error) *MockClient_RemoveLink_Call {
+func (_c *MockClient_RemoveLink_Call) Return(linkResponse trackerapi.LinkResponse, err error) *MockClient_RemoveLink_Call {
 	_c.Call.Return(linkResponse, err)
 	return _c
 }
 
-func (_c *MockClient_RemoveLink_Call) RunAndReturn(run func(ctx context.Context, chatID int64, request api.RemoveLinkRequest) (api.LinkResponse, error)) *MockClient_RemoveLink_Call {
+func (_c *MockClient_RemoveLink_Call) RunAndReturn(run func(ctx context.Context, chatID int64, request trackerapi.RemoveLinkRequest) (trackerapi.LinkResponse, error)) *MockClient_RemoveLink_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/api"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/trackerapi"
 )
 
 func TestHTTPUpdatesClient_SendUpdate_StatusMapping(t *testing.T) {
@@ -40,7 +40,7 @@ func TestHTTPUpdatesClient_SendUpdate_StatusMapping(t *testing.T) {
 			t.Cleanup(server.Close)
 
 			client := NewHTTPUpdatesClient(server.URL, time.Second)
-			err := client.SendUpdate(context.Background(), api.LinkUpdate{
+			err := client.SendUpdate(context.Background(), trackerapi.LinkUpdate{
 				URL:       "https://example.com",
 				TgChatIDs: []int64{1},
 			})
@@ -61,7 +61,7 @@ func TestHTTPUpdatesClient_SendUpdate_RejectsInvalidPayload(t *testing.T) {
 	t.Parallel()
 
 	client := NewHTTPUpdatesClient("http://unused.example", time.Second)
-	err := client.SendUpdate(context.Background(), api.LinkUpdate{URL: "https://example.com"})
+	err := client.SendUpdate(context.Background(), trackerapi.LinkUpdate{URL: "https://example.com"})
 	require.Error(t, err)
-	require.ErrorIs(t, err, api.ErrInvalidLinkUpdate)
+	require.ErrorIs(t, err, trackerapi.ErrInvalidLinkUpdate)
 }

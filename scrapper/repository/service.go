@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/api"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/trackerapi"
 )
 
 var (
@@ -20,7 +20,7 @@ var (
 )
 
 type TrackedLink struct {
-	Response    api.LinkResponse
+	Response    trackerapi.LinkResponse
 	ChatIDs     map[int64]struct{}
 	LastUpdated time.Time
 }
@@ -76,18 +76,18 @@ func (s *Service) DeleteChat(chatID int64) error {
 	return nil
 }
 
-func (s *Service) AddLink(chatID int64, request api.AddLinkRequest) (api.LinkResponse, error) {
+func (s *Service) AddLink(chatID int64, request trackerapi.AddLinkRequest) (trackerapi.LinkResponse, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	if _, ok := s.chats[chatID]; !ok {
 
-		return api.LinkResponse{}, ErrChatNotFound
+		return trackerapi.LinkResponse{}, ErrChatNotFound
 	}
 	link := strings.TrimSpace(request.Link)
 	if !isValidLink(link) {
 
-		return api.LinkResponse{}, ErrInvalidLink
+		return trackerapi.LinkResponse{}, ErrInvalidLink
 	}
 
 	if _, ok := s.linksByChat[chatID]; !ok {
@@ -95,13 +95,13 @@ func (s *Service) AddLink(chatID int64, request api.AddLinkRequest) (api.LinkRes
 	}
 	if _, exists := s.linksByChat[chatID][link]; exists {
 
-		return api.LinkResponse{}, ErrLinkExists
+		return trackerapi.LinkResponse{}, ErrLinkExists
 	}
 
 	tracked, exists := s.linksByURL[link]
 	if !exists {
 		tracked = &TrackedLink{
-			Response: api.LinkResponse{
+			Response: trackerapi.LinkResponse{
 				ID:      s.nextID,
 				URL:     link,
 				Tags:    deduplicate(request.Tags),
@@ -118,28 +118,28 @@ func (s *Service) AddLink(chatID int64, request api.AddLinkRequest) (api.LinkRes
 	return tracked.Response, nil
 }
 
-func (s *Service) RemoveLink(chatID int64, request api.RemoveLinkRequest) (api.LinkResponse, error) {
+func (s *Service) RemoveLink(chatID int64, request trackerapi.RemoveLinkRequest) (trackerapi.LinkResponse, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	if _, ok := s.chats[chatID]; !ok {
 
-		return api.LinkResponse{}, ErrChatNotFound
+		return trackerapi.LinkResponse{}, ErrChatNotFound
 	}
 	link := strings.TrimSpace(request.Link)
 	if link == "" {
 
-		return api.LinkResponse{}, ErrInvalidLink
+		return trackerapi.LinkResponse{}, ErrInvalidLink
 	}
 
 	chatLinks, ok := s.linksByChat[chatID]
 	if !ok {
 
-		return api.LinkResponse{}, ErrLinkNotFound
+		return trackerapi.LinkResponse{}, ErrLinkNotFound
 	}
 	if _, exists := chatLinks[link]; !exists {
 
-		return api.LinkResponse{}, ErrLinkNotFound
+		return trackerapi.LinkResponse{}, ErrLinkNotFound
 	}
 
 	delete(chatLinks, link)
@@ -152,17 +152,17 @@ func (s *Service) RemoveLink(chatID int64, request api.RemoveLinkRequest) (api.L
 	return tracked.Response, nil
 }
 
-func (s *Service) ListLinks(chatID int64) (api.ListLinksResponse, error) {
+func (s *Service) ListLinks(chatID int64) (trackerapi.ListLinksResponse, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
 	if _, ok := s.chats[chatID]; !ok {
 
-		return api.ListLinksResponse{}, ErrChatNotFound
+		return trackerapi.ListLinksResponse{}, ErrChatNotFound
 	}
 
-	out := api.ListLinksResponse{
-		Links: make([]api.LinkResponse, 0),
+	out := trackerapi.ListLinksResponse{
+		Links: make([]trackerapi.LinkResponse, 0),
 	}
 	for linkURL := range s.linksByChat[chatID] {
 		out.Links = append(out.Links, s.linksByURL[linkURL].Response)

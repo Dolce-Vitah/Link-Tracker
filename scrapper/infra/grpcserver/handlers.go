@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/api"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/grpcapi/scrapperv1"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/trackerapi"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/scrapper/repository"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -48,7 +48,7 @@ func (h *Handlers) AddLink(_ context.Context, req *scrapperv1.AddLinkRequest) (*
 	if req.GetBody() == nil {
 		return nil, fmt.Errorf("add link request body is nil: %w", status.Error(codes.InvalidArgument, "request body must not be nil"))
 	}
-	link, err := h.service.AddLink(req.GetChatId(), api.AddLinkRequest{
+	link, err := h.service.AddLink(req.GetChatId(), trackerapi.AddLinkRequest{
 		Link:    req.GetBody().GetLink(),
 		Tags:    req.GetBody().GetTags(),
 		Filters: req.GetBody().GetFilters(),
@@ -66,7 +66,7 @@ func (h *Handlers) RemoveLink(_ context.Context, req *scrapperv1.RemoveLinkReque
 	if req.GetBody() == nil {
 		return nil, fmt.Errorf("remove link request body is nil: %w", status.Error(codes.InvalidArgument, "request body must not be nil"))
 	}
-	link, err := h.service.RemoveLink(req.GetChatId(), api.RemoveLinkRequest{Link: req.GetBody().GetLink()})
+	link, err := h.service.RemoveLink(req.GetChatId(), trackerapi.RemoveLinkRequest{Link: req.GetBody().GetLink()})
 	if err != nil {
 		return nil, mapError(err)
 	}
@@ -84,7 +84,7 @@ func (h *Handlers) ListLinks(_ context.Context, req *scrapperv1.ListLinksRequest
 	return toProtoListLinksResponse(resp), nil
 }
 
-func toProtoLinkResponse(link api.LinkResponse) *scrapperv1.LinkResponse {
+func toProtoLinkResponse(link trackerapi.LinkResponse) *scrapperv1.LinkResponse {
 	return &scrapperv1.LinkResponse{
 		Id:      link.ID,
 		Url:     link.URL,
@@ -93,7 +93,7 @@ func toProtoLinkResponse(link api.LinkResponse) *scrapperv1.LinkResponse {
 	}
 }
 
-func toProtoListLinksResponse(response api.ListLinksResponse) *scrapperv1.ListLinksResponse {
+func toProtoListLinksResponse(response trackerapi.ListLinksResponse) *scrapperv1.ListLinksResponse {
 	links := make([]*scrapperv1.LinkResponse, 0, len(response.Links))
 	for _, link := range response.Links {
 		links = append(links, toProtoLinkResponse(link))

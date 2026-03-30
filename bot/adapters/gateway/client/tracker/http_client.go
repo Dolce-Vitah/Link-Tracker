@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/domain/tracker"
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/api"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/trackerapi"
 )
 
 type HTTPClient struct {
@@ -49,40 +49,40 @@ func (c *HTTPClient) DeleteChat(ctx context.Context, chatID int64) error {
 	return c.handleNoBody(req)
 }
 
-func (c *HTTPClient) AddLink(ctx context.Context, chatID int64, request api.AddLinkRequest) (api.LinkResponse, error) {
+func (c *HTTPClient) AddLink(ctx context.Context, chatID int64, request trackerapi.AddLinkRequest) (trackerapi.LinkResponse, error) {
 	req, err := c.newJSONRequest(ctx, http.MethodPost, "/links", request)
 	if err != nil {
 
-		return api.LinkResponse{}, err
+		return trackerapi.LinkResponse{}, err
 	}
 	req.Header.Set("Tg-Chat-Id", strconv.FormatInt(chatID, 10))
 
 	return c.handleLinkResponse(req)
 }
 
-func (c *HTTPClient) RemoveLink(ctx context.Context, chatID int64, request api.RemoveLinkRequest) (api.LinkResponse, error) {
+func (c *HTTPClient) RemoveLink(ctx context.Context, chatID int64, request trackerapi.RemoveLinkRequest) (trackerapi.LinkResponse, error) {
 	req, err := c.newJSONRequest(ctx, http.MethodDelete, "/links", request)
 	if err != nil {
 
-		return api.LinkResponse{}, err
+		return trackerapi.LinkResponse{}, err
 	}
 	req.Header.Set("Tg-Chat-Id", strconv.FormatInt(chatID, 10))
 
 	return c.handleLinkResponse(req)
 }
 
-func (c *HTTPClient) ListLinks(ctx context.Context, chatID int64) (api.ListLinksResponse, error) {
+func (c *HTTPClient) ListLinks(ctx context.Context, chatID int64) (trackerapi.ListLinksResponse, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.baseURL+"/links", nil)
 	if err != nil {
 
-		return api.ListLinksResponse{}, fmt.Errorf("build list links request: %w", err)
+		return trackerapi.ListLinksResponse{}, fmt.Errorf("build list links request: %w", err)
 	}
 	req.Header.Set("Tg-Chat-Id", strconv.FormatInt(chatID, 10))
 
 	resp, err := c.client.Do(req)
 	if err != nil {
 
-		return api.ListLinksResponse{}, fmt.Errorf("do list links request: %w", err)
+		return trackerapi.ListLinksResponse{}, fmt.Errorf("do list links request: %w", err)
 	}
 	defer func() {
 		_ = resp.Body.Close()
@@ -91,14 +91,14 @@ func (c *HTTPClient) ListLinks(ctx context.Context, chatID int64) (api.ListLinks
 	mapErr := mapHTTPError(resp)
 	if mapErr != nil {
 
-		return api.ListLinksResponse{}, mapErr
+		return trackerapi.ListLinksResponse{}, mapErr
 	}
 
-	var out api.ListLinksResponse
+	var out trackerapi.ListLinksResponse
 	decodeErr := json.NewDecoder(resp.Body).Decode(&out)
 	if decodeErr != nil {
 
-		return api.ListLinksResponse{}, fmt.Errorf("decode list links response: %w", decodeErr)
+		return trackerapi.ListLinksResponse{}, fmt.Errorf("decode list links response: %w", decodeErr)
 	}
 
 	return out, nil
@@ -132,11 +132,11 @@ func (c *HTTPClient) handleNoBody(req *http.Request) error {
 	return mapHTTPError(resp)
 }
 
-func (c *HTTPClient) handleLinkResponse(req *http.Request) (api.LinkResponse, error) {
+func (c *HTTPClient) handleLinkResponse(req *http.Request) (trackerapi.LinkResponse, error) {
 	resp, err := c.client.Do(req)
 	if err != nil {
 
-		return api.LinkResponse{}, fmt.Errorf("do request: %w", err)
+		return trackerapi.LinkResponse{}, fmt.Errorf("do request: %w", err)
 	}
 	defer func() {
 		_ = resp.Body.Close()
@@ -144,13 +144,13 @@ func (c *HTTPClient) handleLinkResponse(req *http.Request) (api.LinkResponse, er
 	mapErr := mapHTTPError(resp)
 	if mapErr != nil {
 
-		return api.LinkResponse{}, mapErr
+		return trackerapi.LinkResponse{}, mapErr
 	}
-	var out api.LinkResponse
+	var out trackerapi.LinkResponse
 	decodeErr := json.NewDecoder(resp.Body).Decode(&out)
 	if decodeErr != nil {
 
-		return api.LinkResponse{}, fmt.Errorf("decode link response: %w", decodeErr)
+		return trackerapi.LinkResponse{}, fmt.Errorf("decode link response: %w", decodeErr)
 	}
 
 	return out, nil
@@ -161,7 +161,7 @@ func mapHTTPError(resp *http.Response) error {
 
 		return nil
 	}
-	var apiErr api.ErrorResponse
+	var apiErr trackerapi.ErrorResponse
 	_ = json.NewDecoder(resp.Body).Decode(&apiErr)
 	switch resp.StatusCode {
 	case http.StatusBadRequest:

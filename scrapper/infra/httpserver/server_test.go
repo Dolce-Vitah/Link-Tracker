@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/api"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/trackerapi"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/scrapper/repository"
 )
 
@@ -62,7 +62,7 @@ func listLinksSize(t *testing.T, h http.Handler, chatID string) int32 {
 		t.Fatalf("GET /links status=%d want=200", rec.Code)
 	}
 
-	var payload api.ListLinksResponse
+	var payload trackerapi.ListLinksResponse
 	if err := json.NewDecoder(rec.Body).Decode(&payload); err != nil {
 		t.Fatalf("decode list response: %v", err)
 	}

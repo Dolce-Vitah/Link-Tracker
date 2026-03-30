@@ -10,11 +10,11 @@ import (
 	"strings"
 	"time"
 
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/api"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/trackerapi"
 )
 
 type UpdatesSender interface {
-	SendUpdate(ctx context.Context, update api.LinkUpdate) error
+	SendUpdate(ctx context.Context, update trackerapi.LinkUpdate) error
 }
 
 type HTTPUpdatesClient struct {
@@ -40,7 +40,7 @@ func NewHTTPUpdatesClient(baseURL string, timeout time.Duration) *HTTPUpdatesCli
 	}
 }
 
-func (c *HTTPUpdatesClient) SendUpdate(ctx context.Context, update api.LinkUpdate) error {
+func (c *HTTPUpdatesClient) SendUpdate(ctx context.Context, update trackerapi.LinkUpdate) error {
 	if err := update.Validate(); err != nil {
 		return fmt.Errorf("validate link update: %w", err)
 	}
