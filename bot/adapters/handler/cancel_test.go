@@ -29,8 +29,10 @@ func TestCancelCommandHandler_Handle(t *testing.T) {
 			name:    "success",
 			request: dto.CommandRequest{Text: "/cancel", ChatID: 1},
 			setupMocks: func(sessions *repositorymock.MockSessionRepository, sender *commandmock.Sender) {
-				sessions.On("Clear", int64(1)).Once()
-				sender.EXPECT().Send(testifymock.Anything).Return(tgbotapi.Message{}, nil).Once()
+				sessions.EXPECT().Clear(int64(1)).Once()
+				sender.EXPECT().Send(testifymock.MatchedBy(func(msg tgbotapi.MessageConfig) bool {
+					return msg.ChatID == 1 && msg.Text != ""
+				})).Return(tgbotapi.Message{}, nil).Once()
 			},
 			assertErr: func(t *testing.T, err error) { require.NoError(t, err) },
 		},
@@ -38,8 +40,10 @@ func TestCancelCommandHandler_Handle(t *testing.T) {
 			name:    "send error",
 			request: dto.CommandRequest{Text: "/cancel", ChatID: 1},
 			setupMocks: func(sessions *repositorymock.MockSessionRepository, sender *commandmock.Sender) {
-				sessions.On("Clear", int64(1)).Once()
-				sender.EXPECT().Send(testifymock.Anything).Return(tgbotapi.Message{}, sendErr).Once()
+				sessions.EXPECT().Clear(int64(1)).Once()
+				sender.EXPECT().Send(testifymock.MatchedBy(func(msg tgbotapi.MessageConfig) bool {
+					return msg.ChatID == 1 && msg.Text != ""
+				})).Return(tgbotapi.Message{}, sendErr).Once()
 			},
 			assertErr: func(t *testing.T, err error) { require.ErrorIs(t, err, sendErr) },
 		},

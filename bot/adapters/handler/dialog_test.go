@@ -42,7 +42,7 @@ func TestTrackDialogHandler_Handle(t *testing.T) {
 				Message: &tgbotapi.Message{Chat: &tgbotapi.Chat{ID: 100}, Text: "hello"},
 			}},
 			setupMocks: func(_ *trackermock.MockService, sessions *repositorymock.MockSessionRepository, _ *mock.Sender) {
-				sessions.On("Get", int64(100)).Return(repository.Session{}, false).Once()
+				sessions.EXPECT().Get(int64(100)).Return(repository.Session{}, false).Once()
 			},
 			assertErr: func(t *testing.T, err error) { require.NoError(t, err) },
 		},
@@ -52,8 +52,10 @@ func TestTrackDialogHandler_Handle(t *testing.T) {
 				Message: &tgbotapi.Message{Chat: &tgbotapi.Chat{ID: 102}, Text: "bad-url"},
 			}},
 			setupMocks: func(_ *trackermock.MockService, sessions *repositorymock.MockSessionRepository, sender *mock.Sender) {
-				sessions.On("Get", int64(102)).Return(repository.Session{State: repository.StateAwaitingURL}, true).Once()
-				sender.EXPECT().Send(testifymock.Anything).Return(tgbotapi.Message{}, nil).Once()
+				sessions.EXPECT().Get(int64(102)).Return(repository.Session{State: repository.StateAwaitingURL}, true).Once()
+				sender.EXPECT().Send(testifymock.MatchedBy(func(msg tgbotapi.MessageConfig) bool {
+					return msg.ChatID == 102 && msg.Text != ""
+				})).Return(tgbotapi.Message{}, nil).Once()
 			},
 			assertErr: func(t *testing.T, err error) { require.NoError(t, err) },
 		},
@@ -63,12 +65,14 @@ func TestTrackDialogHandler_Handle(t *testing.T) {
 				Message: &tgbotapi.Message{Chat: &tgbotapi.Chat{ID: 100}, Text: "https://github.com/user/repo"},
 			}},
 			setupMocks: func(_ *trackermock.MockService, sessions *repositorymock.MockSessionRepository, sender *mock.Sender) {
-				sessions.On("Get", int64(100)).Return(repository.Session{State: repository.StateAwaitingURL}, true).Once()
-				sessions.On("Set", int64(100), repository.Session{
+				sessions.EXPECT().Get(int64(100)).Return(repository.Session{State: repository.StateAwaitingURL}, true).Once()
+				sessions.EXPECT().Set(int64(100), repository.Session{
 					State:      repository.StateAwaitingTags,
 					PendingURL: "https://github.com/user/repo",
 				}).Once()
-				sender.EXPECT().Send(testifymock.Anything).Return(tgbotapi.Message{}, nil).Once()
+				sender.EXPECT().Send(testifymock.MatchedBy(func(msg tgbotapi.MessageConfig) bool {
+					return msg.ChatID == 100 && msg.Text != ""
+				})).Return(tgbotapi.Message{}, nil).Once()
 			},
 			assertErr: func(t *testing.T, err error) { require.NoError(t, err) },
 		},
@@ -78,16 +82,18 @@ func TestTrackDialogHandler_Handle(t *testing.T) {
 				Message: &tgbotapi.Message{Chat: &tgbotapi.Chat{ID: 100}, Text: "work,docs"},
 			}},
 			setupMocks: func(tracker *trackermock.MockService, sessions *repositorymock.MockSessionRepository, sender *mock.Sender) {
-				sessions.On("Get", int64(100)).Return(repository.Session{
+				sessions.EXPECT().Get(int64(100)).Return(repository.Session{
 					State:      repository.StateAwaitingTags,
 					PendingURL: "https://github.com/user/repo",
 				}, true).Once()
-				tracker.On("AddLink", testifymock.Anything, int64(100), api.AddLinkRequest{
+				tracker.EXPECT().AddLink(testifymock.Anything, int64(100), api.AddLinkRequest{
 					Link: "https://github.com/user/repo",
 					Tags: []string{"work", "docs"},
 				}).Return(api.LinkResponse{}, nil).Once()
-				sessions.On("Clear", int64(100)).Once()
-				sender.EXPECT().Send(testifymock.Anything).Return(tgbotapi.Message{}, nil).Once()
+				sessions.EXPECT().Clear(int64(100)).Once()
+				sender.EXPECT().Send(testifymock.MatchedBy(func(msg tgbotapi.MessageConfig) bool {
+					return msg.ChatID == 100 && msg.Text != ""
+				})).Return(tgbotapi.Message{}, nil).Once()
 			},
 			assertErr: func(t *testing.T, err error) { require.NoError(t, err) },
 		},
@@ -97,16 +103,18 @@ func TestTrackDialogHandler_Handle(t *testing.T) {
 				Message: &tgbotapi.Message{Chat: &tgbotapi.Chat{ID: 103}, Text: "work"},
 			}},
 			setupMocks: func(tracker *trackermock.MockService, sessions *repositorymock.MockSessionRepository, sender *mock.Sender) {
-				sessions.On("Get", int64(103)).Return(repository.Session{
+				sessions.EXPECT().Get(int64(103)).Return(repository.Session{
 					State:      repository.StateAwaitingTags,
 					PendingURL: "https://github.com/user/repo",
 				}, true).Once()
-				tracker.On("AddLink", testifymock.Anything, int64(103), api.AddLinkRequest{
+				tracker.EXPECT().AddLink(testifymock.Anything, int64(103), api.AddLinkRequest{
 					Link: "https://github.com/user/repo",
 					Tags: []string{"work"},
 				}).Return(api.LinkResponse{}, errors.New("already exists")).Once()
-				sessions.On("Clear", int64(103)).Once()
-				sender.EXPECT().Send(testifymock.Anything).Return(tgbotapi.Message{}, nil).Once()
+				sessions.EXPECT().Clear(int64(103)).Once()
+				sender.EXPECT().Send(testifymock.MatchedBy(func(msg tgbotapi.MessageConfig) bool {
+					return msg.ChatID == 103 && msg.Text != ""
+				})).Return(tgbotapi.Message{}, nil).Once()
 			},
 			assertErr: func(t *testing.T, err error) { require.NoError(t, err) },
 		},
@@ -116,11 +124,11 @@ func TestTrackDialogHandler_Handle(t *testing.T) {
 				Message: &tgbotapi.Message{Chat: &tgbotapi.Chat{ID: 104}, Text: "work"},
 			}},
 			setupMocks: func(tracker *trackermock.MockService, sessions *repositorymock.MockSessionRepository, _ *mock.Sender) {
-				sessions.On("Get", int64(104)).Return(repository.Session{
+				sessions.EXPECT().Get(int64(104)).Return(repository.Session{
 					State:      repository.StateAwaitingTags,
 					PendingURL: "https://github.com/user/repo",
 				}, true).Once()
-				tracker.On("AddLink", testifymock.Anything, int64(104), api.AddLinkRequest{
+				tracker.EXPECT().AddLink(testifymock.Anything, int64(104), api.AddLinkRequest{
 					Link: "https://github.com/user/repo",
 					Tags: []string{"work"},
 				}).Return(api.LinkResponse{}, addErr).Once()
@@ -136,9 +144,11 @@ func TestTrackDialogHandler_Handle(t *testing.T) {
 				},
 			}},
 			setupMocks: func(_ *trackermock.MockService, sessions *repositorymock.MockSessionRepository, sender *mock.Sender) {
-				sessions.On("Get", int64(101)).Return(repository.Session{State: repository.StateAwaitingURL}, true).Once()
-				sessions.On("Clear", int64(101)).Once()
-				sender.EXPECT().Send(testifymock.Anything).Return(tgbotapi.Message{}, nil).Once()
+				sessions.EXPECT().Get(int64(101)).Return(repository.Session{State: repository.StateAwaitingURL}, true).Once()
+				sessions.EXPECT().Clear(int64(101)).Once()
+				sender.EXPECT().Send(testifymock.MatchedBy(func(msg tgbotapi.MessageConfig) bool {
+					return msg.ChatID == 101 && msg.Text != ""
+				})).Return(tgbotapi.Message{}, nil).Once()
 			},
 			assertErr: func(t *testing.T, err error) { require.NoError(t, err) },
 		},
@@ -151,7 +161,7 @@ func TestTrackDialogHandler_Handle(t *testing.T) {
 				},
 			}},
 			setupMocks: func(_ *trackermock.MockService, sessions *repositorymock.MockSessionRepository, _ *mock.Sender) {
-				sessions.On("Get", int64(101)).Return(repository.Session{State: repository.StateAwaitingURL}, true).Once()
+				sessions.EXPECT().Get(int64(101)).Return(repository.Session{State: repository.StateAwaitingURL}, true).Once()
 			},
 			assertErr: func(t *testing.T, err error) { require.NoError(t, err) },
 		},
@@ -164,9 +174,11 @@ func TestTrackDialogHandler_Handle(t *testing.T) {
 				},
 			}},
 			setupMocks: func(_ *trackermock.MockService, sessions *repositorymock.MockSessionRepository, sender *mock.Sender) {
-				sessions.On("Get", int64(101)).Return(repository.Session{State: repository.StateAwaitingURL}, true).Once()
-				sessions.On("Clear", int64(101)).Once()
-				sender.EXPECT().Send(testifymock.Anything).Return(tgbotapi.Message{}, sendErr).Once()
+				sessions.EXPECT().Get(int64(101)).Return(repository.Session{State: repository.StateAwaitingURL}, true).Once()
+				sessions.EXPECT().Clear(int64(101)).Once()
+				sender.EXPECT().Send(testifymock.MatchedBy(func(msg tgbotapi.MessageConfig) bool {
+					return msg.ChatID == 101 && msg.Text != ""
+				})).Return(tgbotapi.Message{}, sendErr).Once()
 			},
 			assertErr: func(t *testing.T, err error) { require.ErrorIs(t, err, sendErr) },
 		},

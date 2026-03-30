@@ -32,8 +32,8 @@ func TestTrackCommand_Handle(t *testing.T) {
 			name:    "success",
 			request: dto.CommandRequest{Text: "/track", ChatID: 1},
 			setupMocks: func(trackerMock *trackermock.MockService, sessions *repositorymock.MockSessionRepository, sender *mock.Sender) {
-				trackerMock.On("RegisterChat", testifymock.Anything, int64(1)).Return(nil).Once()
-				sessions.On("Set", int64(1), repository.Session{State: repository.StateAwaitingURL}).Once()
+				trackerMock.EXPECT().RegisterChat(testifymock.Anything, int64(1)).Return(nil).Once()
+				sessions.EXPECT().Set(int64(1), repository.Session{State: repository.StateAwaitingURL}).Once()
 				sender.EXPECT().Send(testifymock.MatchedBy(func(msg tgbotapi.MessageConfig) bool {
 					return msg.ChatID == 1
 				})).Return(tgbotapi.Message{}, nil).Once()
@@ -44,7 +44,7 @@ func TestTrackCommand_Handle(t *testing.T) {
 			name:    "register error",
 			request: dto.CommandRequest{Text: "/track", ChatID: 1},
 			setupMocks: func(trackerMock *trackermock.MockService, _ *repositorymock.MockSessionRepository, _ *mock.Sender) {
-				trackerMock.On("RegisterChat", testifymock.Anything, int64(1)).Return(registerErr).Once()
+				trackerMock.EXPECT().RegisterChat(testifymock.Anything, int64(1)).Return(registerErr).Once()
 			},
 			assertErr: func(t *testing.T, err error) { require.Error(t, err) },
 		},
@@ -52,9 +52,11 @@ func TestTrackCommand_Handle(t *testing.T) {
 			name:    "send error",
 			request: dto.CommandRequest{Text: "/track", ChatID: 1},
 			setupMocks: func(trackerMock *trackermock.MockService, sessions *repositorymock.MockSessionRepository, sender *mock.Sender) {
-				trackerMock.On("RegisterChat", testifymock.Anything, int64(1)).Return(nil).Once()
-				sessions.On("Set", int64(1), repository.Session{State: repository.StateAwaitingURL}).Once()
-				sender.EXPECT().Send(testifymock.Anything).Return(tgbotapi.Message{}, sendErr).Once()
+				trackerMock.EXPECT().RegisterChat(testifymock.Anything, int64(1)).Return(nil).Once()
+				sessions.EXPECT().Set(int64(1), repository.Session{State: repository.StateAwaitingURL}).Once()
+				sender.EXPECT().Send(testifymock.MatchedBy(func(msg tgbotapi.MessageConfig) bool {
+					return msg.ChatID == 1 && msg.Text != ""
+				})).Return(tgbotapi.Message{}, sendErr).Once()
 			},
 			assertErr: func(t *testing.T, err error) { require.ErrorIs(t, err, sendErr) },
 		},

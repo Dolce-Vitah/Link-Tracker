@@ -33,7 +33,9 @@ func TestUntrackCommand_Handle(t *testing.T) {
 			name:    "invalid url",
 			request: dto.CommandRequest{Text: "/untrack xxx", ChatID: 9},
 			setupMocks: func(_ *trackermock.MockService, sender *mock.Sender) {
-				sender.EXPECT().Send(testifymock.Anything).Return(tgbotapi.Message{}, nil).Once()
+				sender.EXPECT().Send(testifymock.MatchedBy(func(msg tgbotapi.MessageConfig) bool {
+					return msg.ChatID == 9 && msg.Text != ""
+				})).Return(tgbotapi.Message{}, nil).Once()
 			},
 			assertErr: func(t *testing.T, err error) { require.NoError(t, err) },
 		},
@@ -41,7 +43,7 @@ func TestUntrackCommand_Handle(t *testing.T) {
 			name:    "register error",
 			request: dto.CommandRequest{Text: "/untrack https://a.b", ChatID: 9},
 			setupMocks: func(trackerMock *trackermock.MockService, _ *mock.Sender) {
-				trackerMock.On("RegisterChat", testifymock.Anything, int64(9)).Return(registerErr).Once()
+				trackerMock.EXPECT().RegisterChat(testifymock.Anything, int64(9)).Return(registerErr).Once()
 			},
 			assertErr: func(t *testing.T, err error) { require.Error(t, err) },
 		},
@@ -49,10 +51,12 @@ func TestUntrackCommand_Handle(t *testing.T) {
 			name:    "not found",
 			request: dto.CommandRequest{Text: "/untrack https://a.b", ChatID: 9},
 			setupMocks: func(trackerMock *trackermock.MockService, sender *mock.Sender) {
-				trackerMock.On("RegisterChat", testifymock.Anything, int64(9)).Return(nil).Once()
-				trackerMock.On("RemoveLink", testifymock.Anything, int64(9), api.RemoveLinkRequest{Link: "https://a.b"}).
+				trackerMock.EXPECT().RegisterChat(testifymock.Anything, int64(9)).Return(nil).Once()
+				trackerMock.EXPECT().RemoveLink(testifymock.Anything, int64(9), api.RemoveLinkRequest{Link: "https://a.b"}).
 					Return(api.LinkResponse{}, errors.New(tracker.ErrNotFound.Error())).Once()
-				sender.EXPECT().Send(testifymock.Anything).Return(tgbotapi.Message{}, nil).Once()
+				sender.EXPECT().Send(testifymock.MatchedBy(func(msg tgbotapi.MessageConfig) bool {
+					return msg.ChatID == 9 && msg.Text != ""
+				})).Return(tgbotapi.Message{}, nil).Once()
 			},
 			assertErr: func(t *testing.T, err error) { require.NoError(t, err) },
 		},
@@ -60,8 +64,8 @@ func TestUntrackCommand_Handle(t *testing.T) {
 			name:    "remove error",
 			request: dto.CommandRequest{Text: "/untrack https://a.b", ChatID: 9},
 			setupMocks: func(trackerMock *trackermock.MockService, _ *mock.Sender) {
-				trackerMock.On("RegisterChat", testifymock.Anything, int64(9)).Return(nil).Once()
-				trackerMock.On("RemoveLink", testifymock.Anything, int64(9), api.RemoveLinkRequest{Link: "https://a.b"}).
+				trackerMock.EXPECT().RegisterChat(testifymock.Anything, int64(9)).Return(nil).Once()
+				trackerMock.EXPECT().RemoveLink(testifymock.Anything, int64(9), api.RemoveLinkRequest{Link: "https://a.b"}).
 					Return(api.LinkResponse{}, removeErr).Once()
 			},
 			assertErr: func(t *testing.T, err error) { require.ErrorIs(t, err, removeErr) },
@@ -70,10 +74,12 @@ func TestUntrackCommand_Handle(t *testing.T) {
 			name:    "success",
 			request: dto.CommandRequest{Text: "/untrack https://a.b", ChatID: 9},
 			setupMocks: func(trackerMock *trackermock.MockService, sender *mock.Sender) {
-				trackerMock.On("RegisterChat", testifymock.Anything, int64(9)).Return(nil).Once()
-				trackerMock.On("RemoveLink", testifymock.Anything, int64(9), api.RemoveLinkRequest{Link: "https://a.b"}).
+				trackerMock.EXPECT().RegisterChat(testifymock.Anything, int64(9)).Return(nil).Once()
+				trackerMock.EXPECT().RemoveLink(testifymock.Anything, int64(9), api.RemoveLinkRequest{Link: "https://a.b"}).
 					Return(api.LinkResponse{}, nil).Once()
-				sender.EXPECT().Send(testifymock.Anything).Return(tgbotapi.Message{}, nil).Once()
+				sender.EXPECT().Send(testifymock.MatchedBy(func(msg tgbotapi.MessageConfig) bool {
+					return msg.ChatID == 9 && msg.Text != ""
+				})).Return(tgbotapi.Message{}, nil).Once()
 			},
 			assertErr: func(t *testing.T, err error) { require.NoError(t, err) },
 		},
@@ -81,10 +87,12 @@ func TestUntrackCommand_Handle(t *testing.T) {
 			name:    "send error after remove",
 			request: dto.CommandRequest{Text: "/untrack https://a.b", ChatID: 9},
 			setupMocks: func(trackerMock *trackermock.MockService, sender *mock.Sender) {
-				trackerMock.On("RegisterChat", testifymock.Anything, int64(9)).Return(nil).Once()
-				trackerMock.On("RemoveLink", testifymock.Anything, int64(9), api.RemoveLinkRequest{Link: "https://a.b"}).
+				trackerMock.EXPECT().RegisterChat(testifymock.Anything, int64(9)).Return(nil).Once()
+				trackerMock.EXPECT().RemoveLink(testifymock.Anything, int64(9), api.RemoveLinkRequest{Link: "https://a.b"}).
 					Return(api.LinkResponse{}, nil).Once()
-				sender.EXPECT().Send(testifymock.Anything).Return(tgbotapi.Message{}, sendErr).Once()
+				sender.EXPECT().Send(testifymock.MatchedBy(func(msg tgbotapi.MessageConfig) bool {
+					return msg.ChatID == 9 && msg.Text != ""
+				})).Return(tgbotapi.Message{}, sendErr).Once()
 			},
 			assertErr: func(t *testing.T, err error) { require.ErrorIs(t, err, sendErr) },
 		},

@@ -43,7 +43,9 @@ func TestHelpCommandHandler_Handle(t *testing.T) {
 			name:    "send error",
 			request: dto.CommandRequest{Text: "/help", ChatID: 12345},
 			mockBehavior: func(sender *mock.Sender) {
-				sender.EXPECT().Send(testifymock.Anything).Return(tgbotapi.Message{}, sendErr)
+				sender.EXPECT().Send(testifymock.MatchedBy(func(msg tgbotapi.MessageConfig) bool {
+					return msg.ChatID == 12345 && msg.Text != ""
+				})).Return(tgbotapi.Message{}, sendErr)
 			},
 			checkError: func(t *testing.T, err error) {
 				t.Helper()

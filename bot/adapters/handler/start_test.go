@@ -35,7 +35,7 @@ func TestStartCommandHandler_Handle(t *testing.T) {
 			request:     dto.CommandRequest{Text: "/start", ChatID: 12345},
 			withTracker: true,
 			setupTracker: func(m *trackermock.MockService) {
-				m.On("RegisterChat", testifymock.Anything, int64(12345)).Return(nil).Once()
+				m.EXPECT().RegisterChat(testifymock.Anything, int64(12345)).Return(nil).Once()
 			},
 			setupSender: func(m *mock.Sender) {
 				m.EXPECT().Send(testifymock.MatchedBy(func(msg tgbotapi.MessageConfig) bool {
@@ -52,11 +52,13 @@ func TestStartCommandHandler_Handle(t *testing.T) {
 			request:     dto.CommandRequest{Text: "/start", ChatID: 12345},
 			withTracker: true,
 			setupTracker: func(m *trackermock.MockService) {
-				m.On("RegisterChat", testifymock.Anything, int64(12345)).
+				m.EXPECT().RegisterChat(testifymock.Anything, int64(12345)).
 					Return(errors.New("already exists")).Once()
 			},
 			setupSender: func(m *mock.Sender) {
-				m.EXPECT().Send(testifymock.Anything).Return(tgbotapi.Message{}, nil).Once()
+				m.EXPECT().Send(testifymock.MatchedBy(func(msg tgbotapi.MessageConfig) bool {
+					return msg.ChatID == 12345 && msg.Text != ""
+				})).Return(tgbotapi.Message{}, nil).Once()
 			},
 			assertErrFunc: func(t *testing.T, err error) {
 				t.Helper()
@@ -68,7 +70,7 @@ func TestStartCommandHandler_Handle(t *testing.T) {
 			request:     dto.CommandRequest{Text: "/start", ChatID: 12345},
 			withTracker: true,
 			setupTracker: func(m *trackermock.MockService) {
-				m.On("RegisterChat", testifymock.Anything, int64(12345)).Return(registerErr).Once()
+				m.EXPECT().RegisterChat(testifymock.Anything, int64(12345)).Return(registerErr).Once()
 			},
 			setupSender: nil,
 			assertErrFunc: func(t *testing.T, err error) {
@@ -82,10 +84,12 @@ func TestStartCommandHandler_Handle(t *testing.T) {
 			request:     dto.CommandRequest{Text: "/start", ChatID: 12345},
 			withTracker: true,
 			setupTracker: func(m *trackermock.MockService) {
-				m.On("RegisterChat", testifymock.Anything, int64(12345)).Return(nil).Once()
+				m.EXPECT().RegisterChat(testifymock.Anything, int64(12345)).Return(nil).Once()
 			},
 			setupSender: func(m *mock.Sender) {
-				m.EXPECT().Send(testifymock.Anything).Return(tgbotapi.Message{}, sendErr).Once()
+				m.EXPECT().Send(testifymock.MatchedBy(func(msg tgbotapi.MessageConfig) bool {
+					return msg.ChatID == 12345 && msg.Text != ""
+				})).Return(tgbotapi.Message{}, sendErr).Once()
 			},
 			assertErrFunc: func(t *testing.T, err error) {
 				t.Helper()
