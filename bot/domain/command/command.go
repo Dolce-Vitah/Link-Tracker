@@ -11,7 +11,7 @@ import (
 
 type (
 	Sender interface {
-		Send(c tgbotapi.Chattable) (tgbotapi.Message, error)
+		Send(message tgbotapi.Chattable) (tgbotapi.Message, error)
 	}
 
 	Command interface {
@@ -36,9 +36,11 @@ type UnknownCommandError struct {
 }
 
 func (e *UnknownCommandError) Error() string {
+
 	return fmt.Sprintf("%s: %s", ErrUnknownCommand.Error(), e.Command)
 }
 
 func (e *UnknownCommandError) Unwrap() error {
+
 	return ErrUnknownCommand
 }

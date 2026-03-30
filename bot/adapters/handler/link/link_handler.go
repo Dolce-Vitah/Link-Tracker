@@ -76,15 +76,16 @@ func (h *Handler) Read(ctx context.Context, request dto.CommandRequest) error {
 		return fmt.Errorf("register chat before list: %w", err)
 	}
 
-	resp, err := h.tracker.ListLinks(ctx, request.ChatID)
+	listLinksResponse, err := h.tracker.ListLinks(ctx, request.ChatID)
 	if err != nil {
 
 		return fmt.Errorf("list tracked links: %w", err)
 	}
-
+	
+	linkList := listLinksResponse.Links
 	filterTag := extractCommandArgs(request.Text)
-	filtered := make([]string, 0, len(resp.Links))
-	for _, link := range resp.Links {
+	filtered := make([]string, 0, len(linkList))
+	for _, link := range linkList {
 		if filterTag == "" || hasTag(link.Tags, filterTag) {
 			line := fmt.Sprintf("- %s", link.URL)
 			if len(link.Tags) > 0 {
@@ -184,8 +185,8 @@ func (h *Handler) Delete(ctx context.Context, request dto.CommandRequest) error 
 }
 
 func hasTag(tags []string, tag string) bool {
-	for _, t := range tags {
-		if strings.EqualFold(strings.TrimSpace(t), tag) {
+	for _, existingTag := range tags {
+		if strings.EqualFold(strings.TrimSpace(existingTag), tag) {
 
 			return true
 		}

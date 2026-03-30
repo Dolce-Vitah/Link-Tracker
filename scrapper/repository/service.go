@@ -46,9 +46,11 @@ func (s *Service) RegisterChat(chatID int64) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if _, ok := s.chats[chatID]; ok {
+
 		return ErrChatExists
 	}
 	s.chats[chatID] = struct{}{}
+
 	return nil
 }
 
@@ -56,6 +58,7 @@ func (s *Service) DeleteChat(chatID int64) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if _, ok := s.chats[chatID]; !ok {
+
 		return ErrChatNotFound
 	}
 	delete(s.chats, chatID)
@@ -69,6 +72,7 @@ func (s *Service) DeleteChat(chatID int64) error {
 		}
 		delete(s.linksByChat, chatID)
 	}
+
 	return nil
 }
 
@@ -77,10 +81,12 @@ func (s *Service) AddLink(chatID int64, request api.AddLinkRequest) (api.LinkRes
 	defer s.mu.Unlock()
 
 	if _, ok := s.chats[chatID]; !ok {
+
 		return api.LinkResponse{}, ErrChatNotFound
 	}
 	link := strings.TrimSpace(request.Link)
 	if !isValidLink(link) {
+
 		return api.LinkResponse{}, ErrInvalidLink
 	}
 
@@ -88,6 +94,7 @@ func (s *Service) AddLink(chatID int64, request api.AddLinkRequest) (api.LinkRes
 		s.linksByChat[chatID] = make(map[string]struct{})
 	}
 	if _, exists := s.linksByChat[chatID][link]; exists {
+
 		return api.LinkResponse{}, ErrLinkExists
 	}
 
@@ -116,18 +123,22 @@ func (s *Service) RemoveLink(chatID int64, request api.RemoveLinkRequest) (api.L
 	defer s.mu.Unlock()
 
 	if _, ok := s.chats[chatID]; !ok {
+
 		return api.LinkResponse{}, ErrChatNotFound
 	}
 	link := strings.TrimSpace(request.Link)
 	if link == "" {
+
 		return api.LinkResponse{}, ErrInvalidLink
 	}
 
 	chatLinks, ok := s.linksByChat[chatID]
 	if !ok {
+
 		return api.LinkResponse{}, ErrLinkNotFound
 	}
 	if _, exists := chatLinks[link]; !exists {
+
 		return api.LinkResponse{}, ErrLinkNotFound
 	}
 
@@ -146,6 +157,7 @@ func (s *Service) ListLinks(chatID int64) (api.ListLinksResponse, error) {
 	defer s.mu.RUnlock()
 
 	if _, ok := s.chats[chatID]; !ok {
+
 		return api.ListLinksResponse{}, ErrChatNotFound
 	}
 
@@ -156,6 +168,7 @@ func (s *Service) ListLinks(chatID int64) (api.ListLinksResponse, error) {
 		out.Links = append(out.Links, s.linksByURL[linkURL].Response)
 	}
 	out.Size = int32(len(out.Links))
+
 	return out, nil
 }
 
@@ -174,6 +187,7 @@ func (s *Service) SnapshotLinks() []TrackedLink {
 		}
 		out = append(out, clone)
 	}
+
 	return out
 }
 
@@ -182,6 +196,7 @@ func (s *Service) UpdateLastUpdated(linkURL string, value time.Time) {
 	defer s.mu.Unlock()
 	tracked, ok := s.linksByURL[linkURL]
 	if !ok {
+
 		return
 	}
 	tracked.LastUpdated = value
@@ -196,13 +211,16 @@ func deduplicate(items []string) []string {
 		}
 		out = append(out, trimmed)
 	}
+
 	return out
 }
 
 func isValidLink(value string) bool {
 	parsed, err := url.ParseRequestURI(value)
 	if err != nil {
+
 		return false
 	}
+
 	return parsed.Scheme == "http" || parsed.Scheme == "https"
 }

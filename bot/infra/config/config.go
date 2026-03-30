@@ -27,26 +27,32 @@ type Config struct {
 func Load(path string) (*Config, error) {
 	var cfg Config
 	if err := decode(path, "config.json", &cfg); err != nil {
+
 		return nil, err
 	}
 	applyDefaults(&cfg)
 	if err := normalizeAndValidate(&cfg); err != nil {
+
 		return nil, err
 	}
+
 	return &cfg, nil
 }
 
 func decode(primaryPath string, fallbackPath string, out any) error {
 	err := decodeSingle(primaryPath, out)
 	if err == nil {
+
 		return nil
 	}
 
 	if errors.Is(err, fs.ErrNotExist) && fallbackPath != "" {
 		fallbackErr := decodeSingle(fallbackPath, out)
 		if fallbackErr == nil {
+
 			return nil
 		}
+
 		return fmt.Errorf("load fallback config file %q: %w", fallbackPath, fallbackErr)
 	}
 
@@ -56,6 +62,7 @@ func decode(primaryPath string, fallbackPath string, out any) error {
 func decodeSingle(path string, out any) (_ error) {
 	file, err := os.Open(path)
 	if err != nil {
+
 		return fmt.Errorf("open config file %q: %w", path, err)
 	}
 
@@ -65,6 +72,7 @@ func decodeSingle(path string, out any) (_ error) {
 
 	decodeErr := json.NewDecoder(file).Decode(out)
 	if decodeErr != nil {
+
 		return fmt.Errorf("decode config file %q: %w", path, decodeErr)
 	}
 

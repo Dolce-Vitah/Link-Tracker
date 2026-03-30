@@ -22,6 +22,7 @@ func (b *Bot) StartHTTPServer(address string) error {
 
 	err := http.ListenAndServe(address, mux)
 	if err != nil {
+
 		return fmt.Errorf("start bot http server: %w", err)
 	}
 
@@ -31,12 +32,14 @@ func (b *Bot) StartHTTPServer(address string) error {
 func (b *Bot) handleLinkUpdateHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		w.WriteHeader(http.StatusMethodNotAllowed)
+
 		return
 	}
 
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		writeAPIError(w, http.StatusBadRequest, "failed to read body")
+
 		return
 	}
 	defer func() {
@@ -47,11 +50,13 @@ func (b *Bot) handleLinkUpdateHTTP(w http.ResponseWriter, r *http.Request) {
 	unmarshalErr := json.Unmarshal(body, &update)
 	if unmarshalErr != nil {
 		writeAPIError(w, http.StatusBadRequest, "invalid request schema")
+
 		return
 	}
 
 	if update.URL == "" || len(update.TgChatIDs) == 0 {
 		writeAPIError(w, http.StatusBadRequest, "url and tgChatIds are required")
+
 		return
 	}
 

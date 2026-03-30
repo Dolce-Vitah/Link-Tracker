@@ -13,6 +13,7 @@ type Dispatcher struct {
 }
 
 func NewDispatcher() *Dispatcher {
+
 	return &Dispatcher{
 		commands: make(map[string]Command),
 	}
@@ -36,16 +37,19 @@ func (d *Dispatcher) Commands() []Command {
 
 func (d *Dispatcher) Dispatch(ctx context.Context, request dto.CommandRequest, cmdName string) error {
 	if err := request.Validate(); err != nil {
+
 		return fmt.Errorf("validate command request: %w", err)
 	}
 
 	cmd, exists := d.commands[cmdName]
 	if !exists {
+
 		return &UnknownCommandError{Command: cmdName}
 	}
 
 	handleErr := cmd.Handle(ctx, request)
 	if handleErr != nil {
+
 		return fmt.Errorf("handle command %q: %w", cmdName, handleErr)
 	}
 

@@ -34,6 +34,7 @@ func NewBot(token string, apiURL string, logger *slog.Logger) (*Bot, error) {
 	}
 
 	if err != nil {
+
 		return nil, fmt.Errorf("new telegram bot api: %w", err)
 	}
 

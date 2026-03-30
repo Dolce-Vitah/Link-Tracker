@@ -30,16 +30,19 @@ type App struct {
 func (a *App) New() error {
 	cfg, err := config.Load("config.scrapper.json")
 	if err != nil {
+
 		return fmt.Errorf("load app config: %w", err)
 	}
 
 	timeout, err := time.ParseDuration(cfg.ExternalHTTPTimeout)
 	if err != nil {
+
 		return fmt.Errorf("parse external http timeout: %w", err)
 	}
 
 	interval, err := time.ParseDuration(cfg.SchedulerInterval)
 	if err != nil {
+
 		return fmt.Errorf("parse scheduler interval: %w", err)
 	}
 
@@ -70,6 +73,7 @@ func (a *App) Run() {
 	slog.Info("Scrapper HTTP server is up", slog.String("address", a.config.ScrapperHTTPAddress))
 	if err := http.ListenAndServe(a.config.ScrapperHTTPAddress, a.httpHandler.Handler()); err != nil {
 		slog.Error("Scrapper HTTP server failed", slog.String("error", err.Error()))
+
 		return
 	}
 }
@@ -81,6 +85,7 @@ func (a *App) runScheduledChecks(ctx context.Context) {
 	})
 	if err != nil {
 		slog.Error("Failed to schedule link checks", slog.String("error", err.Error()))
+
 		return
 	}
 
@@ -99,6 +104,7 @@ func (a *App) runGRPCServer(ctx context.Context) {
 			slog.String("address", a.config.ScrapperGRPCAddress),
 			slog.String("error", err.Error()),
 		)
+
 		return
 	}
 

@@ -167,10 +167,11 @@ func parseTags(raw string) []string {
 
 		return nil
 	}
+
 	parts := strings.Split(raw, ",")
 	tags := make([]string, 0, len(parts))
-	for _, p := range parts {
-		tag := strings.TrimSpace(p)
+	for _, part := range parts {
+		tag := strings.TrimSpace(part)
 		if tag != "" {
 			tags = append(tags, tag)
 		}

@@ -17,10 +17,14 @@ type CommandRequest struct {
 
 func (r CommandRequest) Validate() error {
 	if r.ChatID <= 0 {
+
 		return ErrInvalidChatID
 	}
+
 	if strings.TrimSpace(r.Text) == "" {
+
 		return ErrEmptyText
 	}
+
 	return nil
 }

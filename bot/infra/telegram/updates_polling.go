@@ -12,9 +12,9 @@ import (
 )
 
 func (b *Bot) Start() {
-	u := tgbotapi.NewUpdate(0)
-	u.Timeout = 60
-	updates := b.api.GetUpdatesChan(u)
+	updateConfig := tgbotapi.NewUpdate(0)
+	updateConfig.Timeout = 60
+	updates := b.api.GetUpdatesChan(updateConfig)
 
 	for update := range updates {
 		b.handleUpdate(context.Background(), &update, b.api)
