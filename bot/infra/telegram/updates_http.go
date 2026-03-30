@@ -3,7 +3,6 @@ package telegram
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -30,19 +29,13 @@ func (b *Bot) StartHTTPServer(address string) error {
 }
 
 func (b *Bot) handleLinkUpdateHTTP(w http.ResponseWriter, r *http.Request) {
-	body, err := io.ReadAll(r.Body)
-	if err != nil {
-		writeAPIError(w, http.StatusBadRequest, "failed to read body")
-
-		return
-	}
 	defer func() {
 		_ = r.Body.Close()
 	}()
 
 	var update api.LinkUpdate
-	unmarshalErr := json.Unmarshal(body, &update)
-	if unmarshalErr != nil {
+	err := json.NewDecoder(r.Body).Decode(&update)
+	if err != nil {
 		writeAPIError(w, http.StatusBadRequest, "invalid request schema")
 
 		return

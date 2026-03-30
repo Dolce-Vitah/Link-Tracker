@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -163,10 +162,7 @@ func mapHTTPError(resp *http.Response) error {
 		return nil
 	}
 	var apiErr api.ErrorResponse
-	body, _ := io.ReadAll(resp.Body)
-	if len(body) > 0 {
-		_ = json.Unmarshal(body, &apiErr)
-	}
+	_ = json.NewDecoder(resp.Body).Decode(&apiErr)
 	switch resp.StatusCode {
 	case http.StatusBadRequest:
 
