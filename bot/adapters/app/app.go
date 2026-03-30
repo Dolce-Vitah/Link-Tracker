@@ -47,8 +47,8 @@ func (a *App) New() error {
 	}
 	bot.SetTrackerService(trackerService)
 	sessions := bot.Sessions()
-	chatHandler := chat.NewChatHandler(trackerService, slog.Default(), bot.Client())
-	linkHandler := link.NewLinkHandler(sessions, trackerService, slog.Default(), bot.Client())
+	chatHandler := chat.NewChatHandler(trackerService, bot.Client(), slog.Default())
+	linkHandler := link.NewLinkHandler(sessions, trackerService, bot.Client(), slog.Default())
 
 	bot.RegisterCommand(chat.NewStartCommand(chatHandler))
 	bot.RegisterCommand(chat.NewHelpCommand(chatHandler))

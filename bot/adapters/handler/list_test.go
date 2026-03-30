@@ -101,7 +101,7 @@ func TestListCommand_Handle(t *testing.T) {
 			sender := mock.NewSender(t)
 			tt.setupMocks(tracker, sender)
 
-			linkHandler := link.NewLinkHandler(nil, tracker, nil, sender)
+			linkHandler := link.NewLinkHandler(nil, tracker, sender, nil)
 			cmd := link.NewListCommand(linkHandler)
 			err := cmd.Handle(context.Background(), tt.request)
 			tt.assertErr(t, err)

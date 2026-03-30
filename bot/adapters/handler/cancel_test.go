@@ -53,7 +53,7 @@ func TestCancelCommandHandler_Handle(t *testing.T) {
 			sender := commandmock.NewSender(t)
 			tt.setupMocks(sessions, sender)
 
-			linkHandler := link.NewLinkHandler(sessions, nil, nil, sender)
+			linkHandler := link.NewLinkHandler(sessions, nil, sender, nil)
 			cmd := link.NewCancelCommand(linkHandler)
 			err := cmd.Handle(context.Background(), tt.request)
 			tt.assertErr(t, err)

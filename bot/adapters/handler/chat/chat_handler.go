@@ -32,7 +32,7 @@ type Handler struct {
 	tracker   tracker.Service
 }
 
-func NewChatHandler(trackerService tracker.Service, logger *slog.Logger, bot command.Sender) *Handler {
+func NewChatHandler(trackerService tracker.Service, bot command.Sender, logger *slog.Logger) *Handler {
 	if logger == nil {
 		logger = slog.Default()
 	}

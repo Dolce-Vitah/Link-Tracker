@@ -69,7 +69,7 @@ func TestTrackCommand_Handle(t *testing.T) {
 			sender := mock.NewSender(t)
 			tt.setupMocks(trackerMock, sessions, sender)
 
-			linkHandler := link.NewLinkHandler(sessions, trackerMock, nil, sender)
+			linkHandler := link.NewLinkHandler(sessions, trackerMock, sender, nil)
 			cmd := link.NewTrackCommand(linkHandler)
 			err := cmd.Handle(context.Background(), tt.request)
 			tt.assertErr(t, err)

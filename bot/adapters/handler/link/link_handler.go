@@ -26,8 +26,8 @@ type Handler struct {
 func NewLinkHandler(
 	sessions repository.SessionRepository,
 	trackerService tracker.Service,
-	logger *slog.Logger,
 	bot command.Sender,
+	logger *slog.Logger,
 ) *Handler {
 	if logger == nil {
 		logger = slog.Default()
