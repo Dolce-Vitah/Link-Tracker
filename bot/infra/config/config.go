@@ -6,6 +6,12 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
+	"strings"
+)
+
+const (
+	TransportModeHTTP = "http"
+	TransportModeGRPC = "grpc"
 )
 
 type Config struct {
@@ -24,6 +30,9 @@ func Load(path string) (*Config, error) {
 		return nil, err
 	}
 	applyDefaults(&cfg)
+	if err := normalizeAndValidate(&cfg); err != nil {
+		return nil, err
+	}
 	return &cfg, nil
 }
 
@@ -73,9 +82,20 @@ func applyDefaults(cfg *Config) {
 		cfg.ScrapperGRPCTarget = "localhost:8090"
 	}
 	if cfg.TransportMode == "" {
-		cfg.TransportMode = "http"
+		cfg.TransportMode = TransportModeHTTP
 	}
 	if cfg.ExternalHTTPTimeout == "" {
 		cfg.ExternalHTTPTimeout = "5s"
+	}
+}
+
+func normalizeAndValidate(cfg *Config) error {
+	mode := strings.ToLower(strings.TrimSpace(cfg.TransportMode))
+	switch mode {
+	case TransportModeHTTP, TransportModeGRPC:
+		cfg.TransportMode = mode
+		return nil
+	default:
+		return fmt.Errorf("invalid transport_mode %q: expected %q or %q", cfg.TransportMode, TransportModeHTTP, TransportModeGRPC)
 	}
 }

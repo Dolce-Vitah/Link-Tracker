@@ -3,7 +3,6 @@ package app
 import (
 	"fmt"
 	"log/slog"
-	"strings"
 	"time"
 
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/handler"
@@ -36,7 +35,7 @@ func (a *App) New() error {
 	}
 
 	var trackerService tracker.Service
-	if strings.EqualFold(cfg.TransportMode, "grpc") {
+	if cfg.TransportMode == config.TransportModeGRPC {
 		grpcClient, grpcErr := trackerclient.NewGRPCClient(cfg.ScrapperGRPCTarget, timeout)
 		if grpcErr != nil {
 			return fmt.Errorf("create scrapper grpc client: %w", grpcErr)

@@ -7,128 +7,156 @@ import (
 
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/domain/tracker"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/api"
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/scrapper/adapters/dto"
+	scrapperv1 "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/grpcapi/scrapperv1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
-type fakeConn struct {
-	invokeFunc func(ctx context.Context, method string, args any, reply any, opts ...grpc.CallOption) error
-	closeErr   error
+type fakeScrapperClient struct {
+	registerChatFunc func(context.Context, *scrapperv1.RegisterChatRequest, ...grpc.CallOption) (*scrapperv1.RegisterChatResponse, error)
+	deleteChatFunc   func(context.Context, *scrapperv1.DeleteChatRequest, ...grpc.CallOption) (*scrapperv1.DeleteChatResponse, error)
+	addLinkFunc      func(context.Context, *scrapperv1.AddLinkRequest, ...grpc.CallOption) (*scrapperv1.AddLinkResponse, error)
+	removeLinkFunc   func(context.Context, *scrapperv1.RemoveLinkRequest, ...grpc.CallOption) (*scrapperv1.RemoveLinkResponse, error)
+	listLinksFunc    func(context.Context, *scrapperv1.ListLinksRequest, ...grpc.CallOption) (*scrapperv1.ListLinksResponse, error)
 }
 
-func (f *fakeConn) Invoke(ctx context.Context, method string, args any, reply any, opts ...grpc.CallOption) error {
-	if f.invokeFunc != nil {
-		return f.invokeFunc(ctx, method, args, reply, opts...)
+func (f *fakeScrapperClient) RegisterChat(ctx context.Context, req *scrapperv1.RegisterChatRequest, opts ...grpc.CallOption) (*scrapperv1.RegisterChatResponse, error) {
+	if f.registerChatFunc != nil {
+		return f.registerChatFunc(ctx, req, opts...)
 	}
-	return nil
+	return &scrapperv1.RegisterChatResponse{}, nil
 }
 
-func (f *fakeConn) Close() error {
+func (f *fakeScrapperClient) DeleteChat(ctx context.Context, req *scrapperv1.DeleteChatRequest, opts ...grpc.CallOption) (*scrapperv1.DeleteChatResponse, error) {
+	if f.deleteChatFunc != nil {
+		return f.deleteChatFunc(ctx, req, opts...)
+	}
+	return &scrapperv1.DeleteChatResponse{}, nil
+}
+
+func (f *fakeScrapperClient) AddLink(ctx context.Context, req *scrapperv1.AddLinkRequest, opts ...grpc.CallOption) (*scrapperv1.AddLinkResponse, error) {
+	if f.addLinkFunc != nil {
+		return f.addLinkFunc(ctx, req, opts...)
+	}
+	return &scrapperv1.AddLinkResponse{}, nil
+}
+
+func (f *fakeScrapperClient) RemoveLink(ctx context.Context, req *scrapperv1.RemoveLinkRequest, opts ...grpc.CallOption) (*scrapperv1.RemoveLinkResponse, error) {
+	if f.removeLinkFunc != nil {
+		return f.removeLinkFunc(ctx, req, opts...)
+	}
+	return &scrapperv1.RemoveLinkResponse{}, nil
+}
+
+func (f *fakeScrapperClient) ListLinks(ctx context.Context, req *scrapperv1.ListLinksRequest, opts ...grpc.CallOption) (*scrapperv1.ListLinksResponse, error) {
+	if f.listLinksFunc != nil {
+		return f.listLinksFunc(ctx, req, opts...)
+	}
+	return &scrapperv1.ListLinksResponse{}, nil
+}
+
+type fakeCloser struct {
+	closeErr error
+}
+
+func (f *fakeCloser) Close() error {
 	return f.closeErr
-}
-
-type methodTestCase struct {
-	name   string
-	invoke func(t *testing.T, method string, args any, reply any) error
-	call   func(ctx context.Context, c *GRPCClient) (any, error)
-	assert func(t *testing.T, got any, err error)
-}
-
-func runMethodCases(t *testing.T, tests []methodTestCase) {
-	t.Helper()
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
-			conn := &fakeConn{
-				invokeFunc: func(_ context.Context, method string, args any, reply any, _ ...grpc.CallOption) error {
-					return tt.invoke(t, method, args, reply)
-				},
-			}
-			client := &GRPCClient{conn: conn, closer: conn}
-
-			got, err := tt.call(context.Background(), client)
-			tt.assert(t, got, err)
-		})
-	}
 }
 
 func TestGRPCClient_Methods_ErrorMapping_NoServer(t *testing.T) {
 	t.Parallel()
 
-	runMethodCases(t, []methodTestCase{
-		{
-			name: "register chat maps not found",
-			invoke: func(t *testing.T, method string, _ any, _ any) error {
-				t.Helper()
-				if method != "/scrapper.ScrapperService/RegisterChat" {
-					t.Fatalf("unexpected method: %s", method)
-				}
-				return status.Error(codes.NotFound, "chat missing")
+	t.Run("register chat maps not found", func(t *testing.T) {
+		t.Parallel()
+		client := &GRPCClient{
+			client: &fakeScrapperClient{
+				registerChatFunc: func(_ context.Context, req *scrapperv1.RegisterChatRequest, _ ...grpc.CallOption) (*scrapperv1.RegisterChatResponse, error) {
+					if req.GetChatId() != 1 {
+						t.Fatalf("unexpected chat id: %d", req.GetChatId())
+					}
+					return nil, status.Error(codes.NotFound, "chat missing")
+				},
 			},
-			call: func(ctx context.Context, c *GRPCClient) (any, error) {
-				return nil, c.RegisterChat(ctx, 1)
+		}
+		err := client.RegisterChat(context.Background(), 1)
+		if !errors.Is(err, tracker.ErrNotFound) {
+			t.Fatalf("expected tracker.ErrNotFound, got: %v", err)
+		}
+	})
+
+	t.Run("delete chat maps invalid argument", func(t *testing.T) {
+		t.Parallel()
+		client := &GRPCClient{
+			client: &fakeScrapperClient{
+				deleteChatFunc: func(_ context.Context, req *scrapperv1.DeleteChatRequest, _ ...grpc.CallOption) (*scrapperv1.DeleteChatResponse, error) {
+					if req.GetChatId() != 0 {
+						t.Fatalf("unexpected chat id: %d", req.GetChatId())
+					}
+					return nil, status.Error(codes.InvalidArgument, "bad id")
+				},
 			},
-			assert: func(t *testing.T, _ any, err error) {
-				t.Helper()
-				if !errors.Is(err, tracker.ErrNotFound) {
-					t.Fatalf("expected tracker.ErrNotFound, got: %v", err)
-				}
-			},
-		},
-		{
-			name: "delete chat maps invalid argument",
-			invoke: func(t *testing.T, method string, _ any, _ any) error {
-				t.Helper()
-				if method != "/scrapper.ScrapperService/DeleteChat" {
-					t.Fatalf("unexpected method: %s", method)
-				}
-				return status.Error(codes.InvalidArgument, "bad id")
-			},
-			call: func(ctx context.Context, c *GRPCClient) (any, error) {
-				return nil, c.DeleteChat(ctx, 0)
-			},
-			assert: func(t *testing.T, _ any, err error) {
-				t.Helper()
-				if !errors.Is(err, tracker.ErrBadRequest) {
-					t.Fatalf("expected tracker.ErrBadRequest, got: %v", err)
-				}
-			},
-		},
+		}
+		err := client.DeleteChat(context.Background(), 0)
+		if !errors.Is(err, tracker.ErrBadRequest) {
+			t.Fatalf("expected tracker.ErrBadRequest, got: %v", err)
+		}
 	})
 }
 
 func TestGRPCClient_Methods_Success_NoServer(t *testing.T) {
 	t.Parallel()
 
-	runMethodCases(t, []methodTestCase{
-		addLinkSuccessCase(),
-		removeLinkSuccessCase(),
-		listLinksSuccessCase(),
-	})
+	tests := []struct {
+		name   string
+		call   func(context.Context, *GRPCClient) (any, error)
+		assert func(*testing.T, any, error)
+		client scrapperGRPCClient
+	}{
+		addLinkSuccessCase(t),
+		removeLinkSuccessCase(t),
+		listLinksSuccessCase(t),
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			client := &GRPCClient{client: tt.client}
+			got, err := tt.call(context.Background(), client)
+			tt.assert(t, got, err)
+		})
+	}
 }
 
-func addLinkSuccessCase() methodTestCase {
-	return methodTestCase{
+func addLinkSuccessCase(t *testing.T) struct {
+	name   string
+	call   func(context.Context, *GRPCClient) (any, error)
+	assert func(*testing.T, any, error)
+	client scrapperGRPCClient
+} {
+	t.Helper()
+	return struct {
+		name   string
+		call   func(context.Context, *GRPCClient) (any, error)
+		assert func(*testing.T, any, error)
+		client scrapperGRPCClient
+	}{
 		name: "add link success",
-		invoke: func(t *testing.T, method string, args any, reply any) error {
-			t.Helper()
-			if method != "/scrapper.ScrapperService/AddLink" {
-				t.Fatalf("unexpected method: %s", method)
-			}
-			req, ok := args.(dto.AddLinkGRPCRequest)
-			if !ok {
-				t.Fatalf("unexpected request type: %T", args)
-			}
-			resp, ok := reply.(*dto.AddLinkGRPCResponse)
-			if !ok {
-				t.Fatalf("unexpected response type: %T", reply)
-			}
-			resp.Link = api.LinkResponse{ID: 10, URL: req.Body.Link}
-			return nil
+		client: &fakeScrapperClient{
+			addLinkFunc: func(_ context.Context, req *scrapperv1.AddLinkRequest, _ ...grpc.CallOption) (*scrapperv1.AddLinkResponse, error) {
+				if req.GetChatId() != 1 {
+					t.Fatalf("unexpected chat id: %d", req.GetChatId())
+				}
+				if req.GetBody().GetLink() != "https://github.com/user/repo" {
+					t.Fatalf("unexpected link: %s", req.GetBody().GetLink())
+				}
+				return &scrapperv1.AddLinkResponse{
+					Link: &scrapperv1.LinkResponse{
+						Id:  10,
+						Url: req.GetBody().GetLink(),
+					},
+				}, nil
+			},
 		},
 		call: func(ctx context.Context, c *GRPCClient) (any, error) {
 			return c.AddLink(ctx, 1, api.AddLinkRequest{Link: "https://github.com/user/repo"})
@@ -149,24 +177,35 @@ func addLinkSuccessCase() methodTestCase {
 	}
 }
 
-func removeLinkSuccessCase() methodTestCase {
-	return methodTestCase{
+func removeLinkSuccessCase(t *testing.T) struct {
+	name   string
+	call   func(context.Context, *GRPCClient) (any, error)
+	assert func(*testing.T, any, error)
+	client scrapperGRPCClient
+} {
+	t.Helper()
+	return struct {
+		name   string
+		call   func(context.Context, *GRPCClient) (any, error)
+		assert func(*testing.T, any, error)
+		client scrapperGRPCClient
+	}{
 		name: "remove link success",
-		invoke: func(t *testing.T, method string, args any, reply any) error {
-			t.Helper()
-			if method != "/scrapper.ScrapperService/RemoveLink" {
-				t.Fatalf("unexpected method: %s", method)
-			}
-			req, ok := args.(dto.RemoveLinkGRPCRequest)
-			if !ok {
-				t.Fatalf("unexpected request type: %T", args)
-			}
-			resp, ok := reply.(*dto.RemoveLinkGRPCResponse)
-			if !ok {
-				t.Fatalf("unexpected response type: %T", reply)
-			}
-			resp.Link = api.LinkResponse{ID: 11, URL: req.Body.Link}
-			return nil
+		client: &fakeScrapperClient{
+			removeLinkFunc: func(_ context.Context, req *scrapperv1.RemoveLinkRequest, _ ...grpc.CallOption) (*scrapperv1.RemoveLinkResponse, error) {
+				if req.GetChatId() != 1 {
+					t.Fatalf("unexpected chat id: %d", req.GetChatId())
+				}
+				if req.GetBody().GetLink() != "https://github.com/user/repo" {
+					t.Fatalf("unexpected link: %s", req.GetBody().GetLink())
+				}
+				return &scrapperv1.RemoveLinkResponse{
+					Link: &scrapperv1.LinkResponse{
+						Id:  11,
+						Url: req.GetBody().GetLink(),
+					},
+				}, nil
+			},
 		},
 		call: func(ctx context.Context, c *GRPCClient) (any, error) {
 			return c.RemoveLink(ctx, 1, api.RemoveLinkRequest{Link: "https://github.com/user/repo"})
@@ -187,27 +226,30 @@ func removeLinkSuccessCase() methodTestCase {
 	}
 }
 
-func listLinksSuccessCase() methodTestCase {
-	return methodTestCase{
+func listLinksSuccessCase(t *testing.T) struct {
+	name   string
+	call   func(context.Context, *GRPCClient) (any, error)
+	assert func(*testing.T, any, error)
+	client scrapperGRPCClient
+} {
+	t.Helper()
+	return struct {
+		name   string
+		call   func(context.Context, *GRPCClient) (any, error)
+		assert func(*testing.T, any, error)
+		client scrapperGRPCClient
+	}{
 		name: "list links success",
-		invoke: func(t *testing.T, method string, args any, reply any) error {
-			t.Helper()
-			if method != "/scrapper.ScrapperService/ListLinks" {
-				t.Fatalf("unexpected method: %s", method)
-			}
-			_, ok := args.(dto.ListLinksRequest)
-			if !ok {
-				t.Fatalf("unexpected request type: %T", args)
-			}
-			resp, ok := reply.(*dto.ListLinksResponse)
-			if !ok {
-				t.Fatalf("unexpected response type: %T", reply)
-			}
-			resp.Body = api.ListLinksResponse{
-				Links: []api.LinkResponse{{ID: 42, URL: "https://github.com/user/repo"}},
-				Size:  1,
-			}
-			return nil
+		client: &fakeScrapperClient{
+			listLinksFunc: func(_ context.Context, req *scrapperv1.ListLinksRequest, _ ...grpc.CallOption) (*scrapperv1.ListLinksResponse, error) {
+				if req.GetChatId() != 1 {
+					t.Fatalf("unexpected chat id: %d", req.GetChatId())
+				}
+				return &scrapperv1.ListLinksResponse{
+					Links: []*scrapperv1.LinkResponse{{Id: 42, Url: "https://github.com/user/repo"}},
+					Size:  1,
+				}, nil
+			},
 		},
 		call: func(ctx context.Context, c *GRPCClient) (any, error) {
 			return c.ListLinks(ctx, 1)
@@ -237,8 +279,8 @@ func TestGRPCClient_Close(t *testing.T) {
 		wantErr bool
 	}{
 		{name: "nil closer", closer: nil, wantErr: false},
-		{name: "close success", closer: &fakeConn{}, wantErr: false},
-		{name: "close wraps error", closer: &fakeConn{closeErr: errors.New("close failed")}, wantErr: true},
+		{name: "close success", closer: &fakeCloser{}, wantErr: false},
+		{name: "close wraps error", closer: &fakeCloser{closeErr: errors.New("close failed")}, wantErr: true},
 	}
 
 	for _, tt := range tests {
@@ -287,4 +329,29 @@ func TestMapGRPCError(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestFromProtoConversions(t *testing.T) {
+	t.Parallel()
+
+	t.Run("from proto link handles nil", func(t *testing.T) {
+		t.Parallel()
+		got := fromProtoLink(nil)
+		if got.ID != 0 || got.URL != "" || len(got.Tags) != 0 || len(got.Filters) != 0 {
+			t.Fatalf("unexpected non-zero value: %+v", got)
+		}
+	})
+
+	t.Run("from proto list maps values", func(t *testing.T) {
+		t.Parallel()
+		got := fromProtoListLinks(&scrapperv1.ListLinksResponse{
+			Links: []*scrapperv1.LinkResponse{
+				{Id: 5, Url: "https://example.com", Tags: []string{"tag"}, Filters: []string{"f"}},
+			},
+			Size: 1,
+		})
+		if got.Size != 1 || len(got.Links) != 1 || got.Links[0].ID != 5 || got.Links[0].URL != "https://example.com" {
+			t.Fatalf("unexpected conversion result: %+v", got)
+		}
+	})
 }
