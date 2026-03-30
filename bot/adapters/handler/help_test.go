@@ -36,6 +36,7 @@ func TestHelpCommandHandler_Handle(t *testing.T) {
 			},
 			checkError: func(t *testing.T, err error) {
 				t.Helper()
+
 				require.NoError(t, err)
 			},
 		},
@@ -49,6 +50,7 @@ func TestHelpCommandHandler_Handle(t *testing.T) {
 			},
 			checkError: func(t *testing.T, err error) {
 				t.Helper()
+
 				require.ErrorIs(t, err, sendErr)
 			},
 		},
@@ -59,6 +61,7 @@ func TestHelpCommandHandler_Handle(t *testing.T) {
 			},
 			checkError: func(t *testing.T, err error) {
 				t.Helper()
+
 				require.Error(t, err)
 			},
 		},
@@ -76,6 +79,7 @@ func TestHelpCommandHandler_Handle(t *testing.T) {
 			cmd := chat.NewHelpCommand(chatHandler)
 
 			err := cmd.Handle(context.Background(), tt.request)
+
 			tt.checkError(t, err)
 		})
 	}

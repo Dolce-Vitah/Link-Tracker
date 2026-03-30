@@ -33,8 +33,10 @@ func TestListCommand_Handle(t *testing.T) {
 			request: dto.CommandRequest{Text: "/list", ChatID: 7},
 			setupMocks: func(tracker *trackermock.MockService, sender *mock.Sender) {
 				tracker.EXPECT().RegisterChat(testifymock.Anything, int64(7)).Return(nil).Once()
+
 				tracker.EXPECT().ListLinks(testifymock.Anything, int64(7)).
 					Return(api.ListLinksResponse{Links: nil, Size: 0}, nil).Once()
+
 				sender.EXPECT().
 					Send(testifymock.MatchedBy(func(msg tgbotapi.MessageConfig) bool {
 						return msg.Text == "Список отслеживаемых ссылок пуст."
@@ -49,11 +51,13 @@ func TestListCommand_Handle(t *testing.T) {
 			request: dto.CommandRequest{Text: "/list work", ChatID: 10},
 			setupMocks: func(tracker *trackermock.MockService, sender *mock.Sender) {
 				tracker.EXPECT().RegisterChat(testifymock.Anything, int64(10)).Return(nil).Once()
+
 				tracker.EXPECT().ListLinks(testifymock.Anything, int64(10)).
 					Return(api.ListLinksResponse{Links: []api.LinkResponse{
 						{ID: 1, URL: "https://github.com/a/b", Tags: []string{"work"}},
 						{ID: 2, URL: "https://stackoverflow.com/questions/1/x", Tags: []string{"misc"}},
 					}, Size: 2}, nil).Once()
+
 				sender.EXPECT().
 					Send(testifymock.MatchedBy(func(msg tgbotapi.MessageConfig) bool {
 						return msg.ChatID == 10 && msg.Text != "" && msg.Text != "Список отслеживаемых ссылок пуст."
@@ -76,6 +80,7 @@ func TestListCommand_Handle(t *testing.T) {
 			request: dto.CommandRequest{Text: "/list", ChatID: 10},
 			setupMocks: func(tracker *trackermock.MockService, _ *mock.Sender) {
 				tracker.EXPECT().RegisterChat(testifymock.Anything, int64(10)).Return(nil).Once()
+
 				tracker.EXPECT().ListLinks(testifymock.Anything, int64(10)).Return(api.ListLinksResponse{}, listErr).Once()
 			},
 			assertErr: func(t *testing.T, err error) { require.ErrorIs(t, err, listErr) },
@@ -85,8 +90,10 @@ func TestListCommand_Handle(t *testing.T) {
 			request: dto.CommandRequest{Text: "/list", ChatID: 10},
 			setupMocks: func(tracker *trackermock.MockService, sender *mock.Sender) {
 				tracker.EXPECT().RegisterChat(testifymock.Anything, int64(10)).Return(nil).Once()
+
 				tracker.EXPECT().ListLinks(testifymock.Anything, int64(10)).
 					Return(api.ListLinksResponse{Links: nil, Size: 0}, nil).Once()
+
 				sender.EXPECT().Send(testifymock.MatchedBy(func(msg tgbotapi.MessageConfig) bool {
 					return msg.ChatID == 10 && msg.Text != ""
 				})).Return(tgbotapi.Message{}, sendErr).Once()
@@ -101,11 +108,14 @@ func TestListCommand_Handle(t *testing.T) {
 
 			tracker := trackermock.NewMockService(t)
 			sender := mock.NewSender(t)
+
 			tt.setupMocks(tracker, sender)
 
 			linkHandler := link.NewLinkHandler(nil, tracker, sender, nil)
 			cmd := link.NewListCommand(linkHandler)
+
 			err := cmd.Handle(context.Background(), tt.request)
+
 			tt.assertErr(t, err)
 		})
 	}

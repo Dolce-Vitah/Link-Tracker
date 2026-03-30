@@ -51,10 +51,15 @@ func (a *App) New() error {
 	linkHandler := link.NewLinkHandler(sessions, trackerService, bot.Client(), slog.Default())
 
 	bot.RegisterCommand(chat.NewStartCommand(chatHandler))
+
 	bot.RegisterCommand(chat.NewHelpCommand(chatHandler))
+
 	bot.RegisterCommand(link.NewTrackCommand(linkHandler))
+
 	bot.RegisterCommand(link.NewUntrackCommand(linkHandler))
+
 	bot.RegisterCommand(link.NewListCommand(linkHandler))
+
 	bot.RegisterCommand(link.NewCancelCommand(linkHandler))
 
 	setCommandsErr := bot.SetMyCommands()

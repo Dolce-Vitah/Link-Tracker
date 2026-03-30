@@ -47,6 +47,7 @@ func (a *App) New() error {
 	httpHandler := httpserver.NewHandler(service)
 	externalClient := external.NewHTTPClient(timeout)
 	updatesClient := botclient.NewHTTPUpdatesClient(cfg.BotBaseURL, timeout)
+
 	scheduler := scheduler.New(service, externalClient, updatesClient, interval)
 
 	a.config = cfg
@@ -63,6 +64,7 @@ func (a *App) Run() {
 	defer cancel()
 
 	go a.runScheduledChecks(ctx)
+
 	go a.runGRPCServer(ctx)
 
 	slog.Info("Scrapper HTTP server is up", slog.String("address", a.config.ScrapperHTTPAddress))
@@ -81,8 +83,11 @@ func (a *App) runScheduledChecks(ctx context.Context) {
 		slog.Error("Failed to schedule link checks", slog.String("error", err.Error()))
 		return
 	}
+
 	cron.StartAsync()
+
 	<-ctx.Done()
+
 	cron.Stop()
 }
 
@@ -99,6 +104,7 @@ func (a *App) runGRPCServer(ctx context.Context) {
 
 	grpcServer := grpc.NewServer()
 	grpcAppServer := grpcserver.NewServer(a.service)
+
 	grpcAppServer.Register(grpcServer)
 
 	slog.Info("Scrapper gRPC server is up", slog.String("address", a.config.ScrapperGRPCAddress))

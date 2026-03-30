@@ -30,6 +30,7 @@ func TestCancelCommandHandler_Handle(t *testing.T) {
 			request: dto.CommandRequest{Text: "/cancel", ChatID: 1},
 			setupMocks: func(sessions *repositorymock.MockSessionRepository, sender *commandmock.Sender) {
 				sessions.EXPECT().Clear(int64(1)).Once()
+
 				sender.EXPECT().Send(testifymock.MatchedBy(func(msg tgbotapi.MessageConfig) bool {
 					return msg.ChatID == 1 && msg.Text != ""
 				})).Return(tgbotapi.Message{}, nil).Once()
@@ -41,6 +42,7 @@ func TestCancelCommandHandler_Handle(t *testing.T) {
 			request: dto.CommandRequest{Text: "/cancel", ChatID: 1},
 			setupMocks: func(sessions *repositorymock.MockSessionRepository, sender *commandmock.Sender) {
 				sessions.EXPECT().Clear(int64(1)).Once()
+
 				sender.EXPECT().Send(testifymock.MatchedBy(func(msg tgbotapi.MessageConfig) bool {
 					return msg.ChatID == 1 && msg.Text != ""
 				})).Return(tgbotapi.Message{}, sendErr).Once()
@@ -55,11 +57,14 @@ func TestCancelCommandHandler_Handle(t *testing.T) {
 
 			sessions := repositorymock.NewMockSessionRepository(t)
 			sender := commandmock.NewSender(t)
+
 			tt.setupMocks(sessions, sender)
 
 			linkHandler := link.NewLinkHandler(sessions, nil, sender, nil)
 			cmd := link.NewCancelCommand(linkHandler)
+
 			err := cmd.Handle(context.Background(), tt.request)
+
 			tt.assertErr(t, err)
 		})
 	}

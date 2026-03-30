@@ -44,6 +44,7 @@ func TestStartCommandHandler_Handle(t *testing.T) {
 			},
 			assertErrFunc: func(t *testing.T, err error) {
 				t.Helper()
+
 				require.NoError(t, err)
 			},
 		},
@@ -62,6 +63,7 @@ func TestStartCommandHandler_Handle(t *testing.T) {
 			},
 			assertErrFunc: func(t *testing.T, err error) {
 				t.Helper()
+
 				require.NoError(t, err)
 			},
 		},
@@ -75,7 +77,9 @@ func TestStartCommandHandler_Handle(t *testing.T) {
 			setupSender: nil,
 			assertErrFunc: func(t *testing.T, err error) {
 				t.Helper()
+
 				require.Error(t, err)
+
 				require.ErrorContains(t, err, "register chat")
 			},
 		},
@@ -93,6 +97,7 @@ func TestStartCommandHandler_Handle(t *testing.T) {
 			},
 			assertErrFunc: func(t *testing.T, err error) {
 				t.Helper()
+
 				require.ErrorIs(t, err, sendErr)
 			},
 		},
@@ -102,6 +107,7 @@ func TestStartCommandHandler_Handle(t *testing.T) {
 			setupSender: nil,
 			assertErrFunc: func(t *testing.T, err error) {
 				t.Helper()
+
 				require.Error(t, err)
 			},
 		},
@@ -115,6 +121,7 @@ func TestStartCommandHandler_Handle(t *testing.T) {
 			if tt.setupSender != nil {
 				tt.setupSender(mockSender)
 			}
+
 			var trackerSvc *trackermock.MockService
 			if tt.withTracker {
 				trackerSvc = trackermock.NewMockService(t)
@@ -126,7 +133,9 @@ func TestStartCommandHandler_Handle(t *testing.T) {
 			logger := slog.Default()
 			chatHandler := chat.NewChatHandler(trackerSvc, mockSender, logger)
 			cmd := chat.NewStartCommand(chatHandler)
+
 			err := cmd.Handle(context.Background(), tt.request)
+
 			tt.assertErrFunc(t, err)
 		})
 	}

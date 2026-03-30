@@ -53,6 +53,7 @@ func TestTrackDialogHandler_Handle(t *testing.T) {
 			}},
 			setupMocks: func(_ *trackermock.MockService, sessions *repositorymock.MockSessionRepository, sender *mock.Sender) {
 				sessions.EXPECT().Get(int64(102)).Return(repository.Session{State: repository.StateAwaitingURL}, true).Once()
+
 				sender.EXPECT().Send(testifymock.MatchedBy(func(msg tgbotapi.MessageConfig) bool {
 					return msg.ChatID == 102 && msg.Text != ""
 				})).Return(tgbotapi.Message{}, nil).Once()
@@ -66,10 +67,12 @@ func TestTrackDialogHandler_Handle(t *testing.T) {
 			}},
 			setupMocks: func(_ *trackermock.MockService, sessions *repositorymock.MockSessionRepository, sender *mock.Sender) {
 				sessions.EXPECT().Get(int64(100)).Return(repository.Session{State: repository.StateAwaitingURL}, true).Once()
+
 				sessions.EXPECT().Set(int64(100), repository.Session{
 					State:      repository.StateAwaitingTags,
 					PendingURL: "https://github.com/user/repo",
 				}).Once()
+
 				sender.EXPECT().Send(testifymock.MatchedBy(func(msg tgbotapi.MessageConfig) bool {
 					return msg.ChatID == 100 && msg.Text != ""
 				})).Return(tgbotapi.Message{}, nil).Once()
@@ -86,11 +89,14 @@ func TestTrackDialogHandler_Handle(t *testing.T) {
 					State:      repository.StateAwaitingTags,
 					PendingURL: "https://github.com/user/repo",
 				}, true).Once()
+
 				tracker.EXPECT().AddLink(testifymock.Anything, int64(100), api.AddLinkRequest{
 					Link: "https://github.com/user/repo",
 					Tags: []string{"work", "docs"},
 				}).Return(api.LinkResponse{}, nil).Once()
+
 				sessions.EXPECT().Clear(int64(100)).Once()
+
 				sender.EXPECT().Send(testifymock.MatchedBy(func(msg tgbotapi.MessageConfig) bool {
 					return msg.ChatID == 100 && msg.Text != ""
 				})).Return(tgbotapi.Message{}, nil).Once()
@@ -107,11 +113,14 @@ func TestTrackDialogHandler_Handle(t *testing.T) {
 					State:      repository.StateAwaitingTags,
 					PendingURL: "https://github.com/user/repo",
 				}, true).Once()
+
 				tracker.EXPECT().AddLink(testifymock.Anything, int64(103), api.AddLinkRequest{
 					Link: "https://github.com/user/repo",
 					Tags: []string{"work"},
 				}).Return(api.LinkResponse{}, errors.New("already exists")).Once()
+
 				sessions.EXPECT().Clear(int64(103)).Once()
+
 				sender.EXPECT().Send(testifymock.MatchedBy(func(msg tgbotapi.MessageConfig) bool {
 					return msg.ChatID == 103 && msg.Text != ""
 				})).Return(tgbotapi.Message{}, nil).Once()
@@ -145,7 +154,9 @@ func TestTrackDialogHandler_Handle(t *testing.T) {
 			}},
 			setupMocks: func(_ *trackermock.MockService, sessions *repositorymock.MockSessionRepository, sender *mock.Sender) {
 				sessions.EXPECT().Get(int64(101)).Return(repository.Session{State: repository.StateAwaitingURL}, true).Once()
+
 				sessions.EXPECT().Clear(int64(101)).Once()
+
 				sender.EXPECT().Send(testifymock.MatchedBy(func(msg tgbotapi.MessageConfig) bool {
 					return msg.ChatID == 101 && msg.Text != ""
 				})).Return(tgbotapi.Message{}, nil).Once()
@@ -175,7 +186,9 @@ func TestTrackDialogHandler_Handle(t *testing.T) {
 			}},
 			setupMocks: func(_ *trackermock.MockService, sessions *repositorymock.MockSessionRepository, sender *mock.Sender) {
 				sessions.EXPECT().Get(int64(101)).Return(repository.Session{State: repository.StateAwaitingURL}, true).Once()
+
 				sessions.EXPECT().Clear(int64(101)).Once()
+
 				sender.EXPECT().Send(testifymock.MatchedBy(func(msg tgbotapi.MessageConfig) bool {
 					return msg.ChatID == 101 && msg.Text != ""
 				})).Return(tgbotapi.Message{}, sendErr).Once()
@@ -191,10 +204,13 @@ func TestTrackDialogHandler_Handle(t *testing.T) {
 			tracker := trackermock.NewMockService(t)
 			sessions := repositorymock.NewMockSessionRepository(t)
 			sender := mock.NewSender(t)
+
 			tt.setupMocks(tracker, sessions, sender)
 
 			dialogHandler := link.NewDialogHandler(tracker, sessions, sender, nil)
+
 			err := dialogHandler.Handle(context.Background(), tt.request)
+
 			tt.assertErr(t, err)
 		})
 	}

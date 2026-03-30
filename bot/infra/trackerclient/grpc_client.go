@@ -39,7 +39,9 @@ func NewGRPCClient(target string, _ time.Duration) (*GRPCClient, error) {
 	if err != nil {
 		return nil, fmt.Errorf("dial scrapper grpc target: %w", err)
 	}
+
 	conn.Connect()
+
 	return &GRPCClient{
 		client: scrapperv1.NewScrapperServiceClient(conn),
 		closer: conn,
@@ -110,6 +112,7 @@ func mapGRPCError(err error) error {
 	if !ok {
 		return err
 	}
+
 	switch st.Code() {
 	case codes.NotFound:
 		return fmt.Errorf("%w: %s", tracker.ErrNotFound, st.Message())

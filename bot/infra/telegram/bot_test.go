@@ -72,6 +72,7 @@ func TestBot_HandleUpdate(t *testing.T) {
 			}
 			chatHandler := chat.NewChatHandler(nil, mockSender, nil)
 			bot.RegisterCommand(chat.NewStartCommand(chatHandler))
+
 			bot.RegisterCommand(chat.NewHelpCommand(chatHandler))
 
 			bot.handleUpdate(context.Background(), update, mockSender)

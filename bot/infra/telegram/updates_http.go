@@ -15,9 +15,11 @@ import (
 
 func (b *Bot) StartHTTPServer(address string) error {
 	mux := http.NewServeMux()
+
 	mux.HandleFunc("/updates", b.handleLinkUpdateHTTP)
 
 	slog.Info("Starting bot HTTP server", slog.String("address", address))
+
 	err := http.ListenAndServe(address, mux)
 	if err != nil {
 		return fmt.Errorf("start bot http server: %w", err)
@@ -73,7 +75,9 @@ func (b *Bot) handleLinkUpdateHTTP(w http.ResponseWriter, r *http.Request) {
 
 func writeAPIError(w http.ResponseWriter, status int, description string) {
 	w.Header().Set("Content-Type", "application/json")
+
 	w.WriteHeader(status)
+
 	_ = json.NewEncoder(w).Encode(api.ErrorResponse{
 		Description: description,
 		Code:        strconv.Itoa(status),

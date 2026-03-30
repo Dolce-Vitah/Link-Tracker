@@ -27,6 +27,7 @@ func New(service *repository.Service) *Handler {
 func (h *Handler) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/tg-chat/", h.handleChat)
+
 	mux.HandleFunc("/links", h.handleLinks)
 	return mux
 }
@@ -159,12 +160,15 @@ func parseChatIDHeader(r *http.Request) (int64, error) {
 	if err != nil {
 		return 0, errors.New("invalid Tg-Chat-Id header")
 	}
+
 	return chatID, nil
 }
 
 func writeJSON(w http.ResponseWriter, code int, payload any) {
 	w.Header().Set("Content-Type", "application/json")
+
 	w.WriteHeader(code)
+
 	if err := json.NewEncoder(w).Encode(payload); err != nil {
 		slog.Error("Failed to write JSON response", slog.String("error", err.Error()))
 	}

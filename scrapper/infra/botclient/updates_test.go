@@ -46,7 +46,9 @@ func TestHTTPUpdatesClient_SendUpdate_StatusMapping(t *testing.T) {
 				require.NoError(t, err)
 				return
 			}
+
 			require.Error(t, err)
+
 			require.ErrorIs(t, err, tt.expectedErr)
 		})
 	}

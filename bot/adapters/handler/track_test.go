@@ -33,7 +33,9 @@ func TestTrackCommand_Handle(t *testing.T) {
 			request: dto.CommandRequest{Text: "/track", ChatID: 1},
 			setupMocks: func(trackerMock *trackermock.MockService, sessions *repositorymock.MockSessionRepository, sender *mock.Sender) {
 				trackerMock.EXPECT().RegisterChat(testifymock.Anything, int64(1)).Return(nil).Once()
+
 				sessions.EXPECT().Set(int64(1), repository.Session{State: repository.StateAwaitingURL}).Once()
+
 				sender.EXPECT().Send(testifymock.MatchedBy(func(msg tgbotapi.MessageConfig) bool {
 					return msg.ChatID == 1
 				})).Return(tgbotapi.Message{}, nil).Once()
@@ -53,7 +55,9 @@ func TestTrackCommand_Handle(t *testing.T) {
 			request: dto.CommandRequest{Text: "/track", ChatID: 1},
 			setupMocks: func(trackerMock *trackermock.MockService, sessions *repositorymock.MockSessionRepository, sender *mock.Sender) {
 				trackerMock.EXPECT().RegisterChat(testifymock.Anything, int64(1)).Return(nil).Once()
+
 				sessions.EXPECT().Set(int64(1), repository.Session{State: repository.StateAwaitingURL}).Once()
+
 				sender.EXPECT().Send(testifymock.MatchedBy(func(msg tgbotapi.MessageConfig) bool {
 					return msg.ChatID == 1 && msg.Text != ""
 				})).Return(tgbotapi.Message{}, sendErr).Once()
@@ -69,11 +73,14 @@ func TestTrackCommand_Handle(t *testing.T) {
 			trackerMock := trackermock.NewMockService(t)
 			sessions := repositorymock.NewMockSessionRepository(t)
 			sender := mock.NewSender(t)
+
 			tt.setupMocks(trackerMock, sessions, sender)
 
 			linkHandler := link.NewLinkHandler(sessions, trackerMock, sender, nil)
 			cmd := link.NewTrackCommand(linkHandler)
+
 			err := cmd.Handle(context.Background(), tt.request)
+
 			tt.assertErr(t, err)
 		})
 	}
