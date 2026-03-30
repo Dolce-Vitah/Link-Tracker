@@ -16,7 +16,7 @@ import (
 func (b *Bot) StartHTTPServer(address string) error {
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("/updates", b.handleLinkUpdateHTTP)
+	mux.HandleFunc("POST /updates", b.handleLinkUpdateHTTP)
 
 	slog.Info("Starting bot HTTP server", slog.String("address", address))
 
@@ -30,12 +30,6 @@ func (b *Bot) StartHTTPServer(address string) error {
 }
 
 func (b *Bot) handleLinkUpdateHTTP(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		w.WriteHeader(http.StatusMethodNotAllowed)
-
-		return
-	}
-
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		writeAPIError(w, http.StatusBadRequest, "failed to read body")

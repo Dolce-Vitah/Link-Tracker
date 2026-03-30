@@ -54,3 +54,25 @@ func TestBot_HandleLinkUpdateHTTP(t *testing.T) {
 		})
 	}
 }
+
+func TestBot_HandleLinkUpdateHTTP_MethodIsRejectedByRoute(t *testing.T) {
+	t.Parallel()
+
+	bot := &Bot{
+		sendMessage: func(_ tgbotapi.Chattable) (tgbotapi.Message, error) {
+			return tgbotapi.Message{}, nil
+		},
+	}
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("POST /updates", bot.handleLinkUpdateHTTP)
+
+	req := httptest.NewRequest(http.MethodGet, "/updates", nil)
+	rec := httptest.NewRecorder()
+
+	mux.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusMethodNotAllowed {
+		t.Fatalf("expected %d, got %d", http.StatusMethodNotAllowed, rec.Code)
+	}
+}
