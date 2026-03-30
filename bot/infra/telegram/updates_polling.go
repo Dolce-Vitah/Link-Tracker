@@ -31,9 +31,14 @@ func (b *Bot) handleUpdate(ctx context.Context, update *tgbotapi.Update, sender 
 	cmdName := update.Message.Command()
 	text := update.Message.Text
 
-	dialogHandler := link.NewDialogHandler(b.tracker, b.sessions, sender, b.logger)
+	log := b.logger.With(
+		slog.Int64("chat_id", chatID),
+		slog.String("command", cmdName),
+	)
+
+	dialogHandler := link.NewDialogHandler(b.tracker, b.sessions, sender, log)
 	if err := dialogHandler.Handle(ctx, dto.DialogRequest{Update: update}); err != nil {
-		slog.Error("Failed to process track dialog step", slog.String("error", err.Error()))
+		log.Error("Failed to process track dialog step", slog.String("error", err.Error()))
 
 		return
 	}
@@ -60,21 +65,13 @@ func (b *Bot) handleUpdate(ctx context.Context, update *tgbotapi.Update, sender 
 		msg := tgbotapi.NewMessage(chatID, "Неизвестная команда. Воспользуйтесь /help, чтобы посмотреть список доступных команд.")
 		_, sendErr := sender.Send(msg)
 		if sendErr != nil {
-			b.logger.Error("Failed to send unknown command warning", slog.String("error", sendErr.Error()))
+			log.Error("Failed to send unknown command warning", slog.String("error", sendErr.Error()))
 		}
 
-		b.logger.Warn("Unknown command received",
-			slog.String("command", cmdName),
-			slog.Int64("chat_id", chatID),
-			slog.String("username", username),
-		)
+		log.Warn("Unknown command received", slog.String("username", username))
 
 		return
 	}
 
-	b.logger.Error("Failed to handle command",
-		slog.String("command", cmdName),
-		slog.String("error", err.Error()),
-		slog.Int64("chat_id", chatID),
-	)
+	log.Error("Failed to handle command", slog.String("error", err.Error()))
 }
