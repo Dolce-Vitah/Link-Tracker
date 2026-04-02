@@ -1,13 +1,14 @@
 package telegram
 
 import (
+	"errors"
 	"fmt"
 	"log/slog"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/gateway/repository"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/domain/command"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/domain/tracker"
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/repository"
 )
 
 type Bot struct {
@@ -15,11 +16,16 @@ type Bot struct {
 	dispatcher  *command.Dispatcher
 	logger      *slog.Logger
 	sessions    repository.SessionRepository
-	tracker     tracker.Service
+	tracker     tracker.Client
 	sendMessage func(c tgbotapi.Chattable) (tgbotapi.Message, error)
 }
 
-func NewBot(token string, apiURL string, logger *slog.Logger) (*Bot, error) {
+func NewBot(token string, apiURL string, logger *slog.Logger, trk tracker.Client) (*Bot, error) {
+	if trk == nil {
+
+		return nil, errors.New("tracker client is required")
+	}
+
 	if logger == nil {
 		logger = slog.Default()
 	}
@@ -34,6 +40,7 @@ func NewBot(token string, apiURL string, logger *slog.Logger) (*Bot, error) {
 	}
 
 	if err != nil {
+
 		return nil, fmt.Errorf("new telegram bot api: %w", err)
 	}
 
@@ -42,6 +49,7 @@ func NewBot(token string, apiURL string, logger *slog.Logger) (*Bot, error) {
 		dispatcher:  command.NewDispatcher(),
 		logger:      logger,
 		sessions:    repository.NewInMemorySessionRepository(),
+		tracker:     trk,
 		sendMessage: api.Send,
 	}, nil
 }
@@ -56,8 +64,4 @@ func (b *Bot) RegisterCommand(cmd command.Command) {
 
 func (b *Bot) Sessions() repository.SessionRepository {
 	return b.sessions
-}
-
-func (b *Bot) SetTrackerService(service tracker.Service) {
-	b.tracker = service
 }

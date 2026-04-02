@@ -8,7 +8,7 @@ import (
 
 	testifymock "github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/api"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/trackerapi"
 	botclientmock "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/scrapper/infra/botclient/mock"
 	externalmock "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/scrapper/infra/external/mock"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/scrapper/repository"
@@ -28,18 +28,22 @@ func TestScheduler_ProcessOnce_Flow(t *testing.T) {
 
 	tests := []struct {
 		name                 string
-		setup                func(t *testing.T, service repository.Service, external *externalmock.MockLastUpdatedClient, updates *botclientmock.MockUpdatesSender, sent *[]api.LinkUpdate, now time.Time)
+		setup                func(t *testing.T, service repository.Service, external *externalmock.MockLastUpdatedClient, updates *botclientmock.MockUpdatesSender, sent *[]trackerapi.LinkUpdate, now time.Time)
 		expectedUpdatesCount int
 		expectedRecipients   map[string][]int64
 		expectedLastUpdated  map[string]time.Time
 	}{
 		{
 			name: "send update only to subscribed chats",
-			setup: func(t *testing.T, service repository.Service, external *externalmock.MockLastUpdatedClient, updates *botclientmock.MockUpdatesSender, sent *[]api.LinkUpdate, now time.Time) {
+			setup: func(t *testing.T, service repository.Service, external *externalmock.MockLastUpdatedClient, updates *botclientmock.MockUpdatesSender, sent *[]trackerapi.LinkUpdate, now time.Time) {
 				registerChats(t, service, 1, 2, 999)
+
 				addLink(t, service, 1, urlMain)
+
 				addLink(t, service, 2, urlMain)
-				external.On("GetLastUpdated", testifymock.Anything, urlMain).Return(now.Add(10*time.Minute), nil).Once()
+
+				external.EXPECT().GetLastUpdated(testifymock.Anything, urlMain).Return(now.Add(10*time.Minute), nil).Once()
+
 				expectSendUpdate(updates, sent, urlMain, nil)
 			},
 			expectedUpdatesCount: 1,
@@ -52,10 +56,12 @@ func TestScheduler_ProcessOnce_Flow(t *testing.T) {
 		},
 		{
 			name: "skip when external source returns error",
-			setup: func(t *testing.T, service repository.Service, external *externalmock.MockLastUpdatedClient, _ *botclientmock.MockUpdatesSender, _ *[]api.LinkUpdate, _ time.Time) {
+			setup: func(t *testing.T, service repository.Service, external *externalmock.MockLastUpdatedClient, _ *botclientmock.MockUpdatesSender, _ *[]trackerapi.LinkUpdate, _ time.Time) {
 				registerChats(t, service, 10)
+
 				addLink(t, service, 10, urlMain)
-				external.On("GetLastUpdated", testifymock.Anything, urlMain).Return(time.Time{}, errors.New("external failure")).Once()
+
+				external.EXPECT().GetLastUpdated(testifymock.Anything, urlMain).Return(time.Time{}, errors.New("external failure")).Once()
 			},
 			expectedUpdatesCount: 0,
 			expectedRecipients:   map[string][]int64{},
@@ -65,11 +71,14 @@ func TestScheduler_ProcessOnce_Flow(t *testing.T) {
 		},
 		{
 			name: "skip when last updated is not newer",
-			setup: func(t *testing.T, service repository.Service, external *externalmock.MockLastUpdatedClient, _ *botclientmock.MockUpdatesSender, _ *[]api.LinkUpdate, now time.Time) {
+			setup: func(t *testing.T, service repository.Service, external *externalmock.MockLastUpdatedClient, _ *botclientmock.MockUpdatesSender, _ *[]trackerapi.LinkUpdate, now time.Time) {
 				registerChats(t, service, 20)
+
 				addLink(t, service, 20, urlMain)
+
 				service.UpdateLastUpdated(urlMain, now.Add(30*time.Minute))
-				external.On("GetLastUpdated", testifymock.Anything, urlMain).Return(now.Add(5*time.Minute), nil).Once()
+
+				external.EXPECT().GetLastUpdated(testifymock.Anything, urlMain).Return(now.Add(5*time.Minute), nil).Once()
 			},
 			expectedUpdatesCount: 0,
 			expectedRecipients:   map[string][]int64{},
@@ -79,10 +88,13 @@ func TestScheduler_ProcessOnce_Flow(t *testing.T) {
 		},
 		{
 			name: "do not update timestamp when sending update fails",
-			setup: func(t *testing.T, service repository.Service, external *externalmock.MockLastUpdatedClient, updates *botclientmock.MockUpdatesSender, sent *[]api.LinkUpdate, now time.Time) {
+			setup: func(t *testing.T, service repository.Service, external *externalmock.MockLastUpdatedClient, updates *botclientmock.MockUpdatesSender, sent *[]trackerapi.LinkUpdate, now time.Time) {
 				registerChats(t, service, 30)
+
 				addLink(t, service, 30, urlMain)
-				external.On("GetLastUpdated", testifymock.Anything, urlMain).Return(now.Add(15*time.Minute), nil).Once()
+
+				external.EXPECT().GetLastUpdated(testifymock.Anything, urlMain).Return(now.Add(15*time.Minute), nil).Once()
+
 				expectSendUpdate(updates, sent, urlMain, errors.New("send failure"))
 			},
 			expectedUpdatesCount: 1,
@@ -95,12 +107,17 @@ func TestScheduler_ProcessOnce_Flow(t *testing.T) {
 		},
 		{
 			name: "process multiple links independently",
-			setup: func(t *testing.T, service repository.Service, external *externalmock.MockLastUpdatedClient, updates *botclientmock.MockUpdatesSender, sent *[]api.LinkUpdate, now time.Time) {
+			setup: func(t *testing.T, service repository.Service, external *externalmock.MockLastUpdatedClient, updates *botclientmock.MockUpdatesSender, sent *[]trackerapi.LinkUpdate, now time.Time) {
 				registerChats(t, service, 1, 2)
+
 				addLink(t, service, 1, urlA)
+
 				addLink(t, service, 2, urlB)
-				external.On("GetLastUpdated", testifymock.Anything, urlA).Return(now.Add(1*time.Minute), nil).Once()
-				external.On("GetLastUpdated", testifymock.Anything, urlB).Return(time.Time{}, errors.New("external failure")).Once()
+
+				external.EXPECT().GetLastUpdated(testifymock.Anything, urlA).Return(now.Add(1*time.Minute), nil).Once()
+
+				external.EXPECT().GetLastUpdated(testifymock.Anything, urlB).Return(time.Time{}, errors.New("external failure")).Once()
+
 				expectSendUpdate(updates, sent, urlA, nil)
 			},
 			expectedUpdatesCount: 1,
@@ -121,15 +138,17 @@ func TestScheduler_ProcessOnce_Flow(t *testing.T) {
 			service := repositorytest.NewStore()
 			external := externalmock.NewMockLastUpdatedClient(t)
 			updates := botclientmock.NewMockUpdatesSender(t)
-			sentUpdates := make([]api.LinkUpdate, 0)
+			sentUpdates := make([]trackerapi.LinkUpdate, 0)
+
 			tt.setup(t, service, external, updates, &sentUpdates, baseTime)
 
 			scheduler := New(service, external, updates, time.Second)
+
 			scheduler.ProcessOnce(context.Background())
 
 			require.Len(t, sentUpdates, tt.expectedUpdatesCount)
 
-			updatesByURL := make(map[string]api.LinkUpdate, len(sentUpdates))
+			updatesByURL := make(map[string]trackerapi.LinkUpdate, len(sentUpdates))
 			for _, update := range sentUpdates {
 				updatesByURL[update.URL] = update
 			}
@@ -148,13 +167,13 @@ func TestScheduler_ProcessOnce_Flow(t *testing.T) {
 	}
 }
 
-func expectSendUpdate(updates *botclientmock.MockUpdatesSender, sent *[]api.LinkUpdate, rawURL string, returnErr error) {
+func expectSendUpdate(updates *botclientmock.MockUpdatesSender, sent *[]trackerapi.LinkUpdate, rawURL string, returnErr error) {
 	updates.
-		On("SendUpdate", testifymock.Anything, testifymock.MatchedBy(func(update api.LinkUpdate) bool {
-			return update.URL == rawURL
-		})).
-		Run(func(args testifymock.Arguments) {
-			*sent = append(*sent, args[1].(api.LinkUpdate))
+		EXPECT().SendUpdate(testifymock.Anything, testifymock.MatchedBy(func(update trackerapi.LinkUpdate) bool {
+		return update.URL == rawURL
+	})).
+		Run(func(_ context.Context, update trackerapi.LinkUpdate) {
+			*sent = append(*sent, update)
 		}).
 		Return(returnErr).
 		Once()
@@ -169,7 +188,7 @@ func registerChats(t *testing.T, service repository.Service, chatIDs ...int64) {
 
 func addLink(t *testing.T, service repository.Service, chatID int64, rawURL string) {
 	t.Helper()
-	_, err := service.AddLink(chatID, api.AddLinkRequest{Link: rawURL})
+	_, err := service.AddLink(chatID, trackerapi.AddLinkRequest{Link: rawURL})
 	require.NoError(t, err)
 }
 

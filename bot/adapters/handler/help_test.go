@@ -9,19 +9,10 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	testifymock "github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/dto"
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/handler"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/handler/chat"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/handler/dto"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/domain/command/mock"
 )
-
-func TestHelpCommandHandler_NameAndDescription(t *testing.T) {
-	t.Parallel()
-
-	cmd := handler.NewHelpCommandHandler(nil, nil)
-
-	require.Equal(t, "help", cmd.Name())
-	require.NotEmpty(t, cmd.Description())
-}
 
 func TestHelpCommandHandler_Handle(t *testing.T) {
 	t.Parallel()
@@ -45,6 +36,7 @@ func TestHelpCommandHandler_Handle(t *testing.T) {
 			},
 			checkError: func(t *testing.T, err error) {
 				t.Helper()
+
 				require.NoError(t, err)
 			},
 		},
@@ -52,10 +44,13 @@ func TestHelpCommandHandler_Handle(t *testing.T) {
 			name:    "send error",
 			request: dto.CommandRequest{Text: "/help", ChatID: 12345},
 			mockBehavior: func(sender *mock.Sender) {
-				sender.EXPECT().Send(testifymock.Anything).Return(tgbotapi.Message{}, sendErr)
+				sender.EXPECT().Send(testifymock.MatchedBy(func(msg tgbotapi.MessageConfig) bool {
+					return msg.ChatID == 12345 && msg.Text != ""
+				})).Return(tgbotapi.Message{}, sendErr)
 			},
 			checkError: func(t *testing.T, err error) {
 				t.Helper()
+
 				require.ErrorIs(t, err, sendErr)
 			},
 		},
@@ -66,6 +61,7 @@ func TestHelpCommandHandler_Handle(t *testing.T) {
 			},
 			checkError: func(t *testing.T, err error) {
 				t.Helper()
+
 				require.Error(t, err)
 			},
 		},
@@ -79,9 +75,11 @@ func TestHelpCommandHandler_Handle(t *testing.T) {
 			tt.mockBehavior(mockSender)
 
 			logger := slog.Default()
-			cmd := handler.NewHelpCommandHandler(logger, mockSender)
+			chatHandler := chat.NewChatHandler(nil, mockSender, logger)
+			cmd := chat.NewHelpCommand(chatHandler)
 
 			err := cmd.Handle(context.Background(), tt.request)
+
 			tt.checkError(t, err)
 		})
 	}

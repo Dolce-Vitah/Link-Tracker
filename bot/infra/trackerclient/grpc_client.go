@@ -6,9 +6,8 @@ import (
 	"time"
 
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/domain/tracker"
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/api"
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/scrapper/adapters/dto"
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/scrapper/infra/grpcserver"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/grpcapi/scrapperv1"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/trackerapi"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
@@ -16,97 +15,127 @@ import (
 )
 
 type GRPCClient struct {
-	conn   grpcInvoker
+	client scrapperGRPCClient
 	closer grpcCloser
-	target string
-}
-
-type grpcInvoker interface {
-	Invoke(ctx context.Context, method string, args any, reply any, opts ...grpc.CallOption) error
 }
 
 type grpcCloser interface {
 	Close() error
 }
 
+type scrapperGRPCClient interface {
+	RegisterChat(ctx context.Context, in *scrapperv1.RegisterChatRequest, opts ...grpc.CallOption) (*scrapperv1.RegisterChatResponse, error)
+	DeleteChat(ctx context.Context, in *scrapperv1.DeleteChatRequest, opts ...grpc.CallOption) (*scrapperv1.DeleteChatResponse, error)
+	AddLink(ctx context.Context, in *scrapperv1.AddLinkRequest, opts ...grpc.CallOption) (*scrapperv1.AddLinkResponse, error)
+	RemoveLink(ctx context.Context, in *scrapperv1.RemoveLinkRequest, opts ...grpc.CallOption) (*scrapperv1.RemoveLinkResponse, error)
+	ListLinks(ctx context.Context, in *scrapperv1.ListLinksRequest, opts ...grpc.CallOption) (*scrapperv1.ListLinksResponse, error)
+}
+
 func NewGRPCClient(target string, _ time.Duration) (*GRPCClient, error) {
-	grpcserver.RegisterJSONCodec()
 	conn, err := grpc.NewClient(
 		target,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithDefaultCallOptions(grpc.ForceCodec(grpcserver.JSONCodec{})),
 	)
 	if err != nil {
+
 		return nil, fmt.Errorf("dial scrapper grpc target: %w", err)
 	}
+
 	conn.Connect()
-	return &GRPCClient{conn: conn, closer: conn, target: target}, nil
+
+	return &GRPCClient{
+		client: scrapperv1.NewScrapperServiceClient(conn),
+		closer: conn,
+	}, nil
 }
 
 func (c *GRPCClient) RegisterChat(ctx context.Context, chatID int64) error {
-	var response dto.RegisterChatResponse
-	err := c.conn.Invoke(ctx, "/scrapper.ScrapperService/RegisterChat", dto.RegisterChatRequest{ChatID: chatID}, &response)
+	_, err := c.client.RegisterChat(ctx, &scrapperv1.RegisterChatRequest{ChatId: chatID})
+
 	return mapGRPCError(err)
 }
 
 func (c *GRPCClient) DeleteChat(ctx context.Context, chatID int64) error {
-	var response dto.DeleteChatResponse
-	err := c.conn.Invoke(ctx, "/scrapper.ScrapperService/DeleteChat", dto.DeleteChatRequest{ChatID: chatID}, &response)
+	_, err := c.client.DeleteChat(ctx, &scrapperv1.DeleteChatRequest{ChatId: chatID})
+
 	return mapGRPCError(err)
 }
 
-func (c *GRPCClient) AddLink(ctx context.Context, chatID int64, request api.AddLinkRequest) (api.LinkResponse, error) {
-	var response dto.AddLinkGRPCResponse
-	err := c.conn.Invoke(ctx, "/scrapper.ScrapperService/AddLink", dto.AddLinkGRPCRequest{ChatID: chatID, Body: request}, &response)
+func (c *GRPCClient) AddLink(ctx context.Context, chatID int64, request trackerapi.AddLinkRequest) (trackerapi.LinkResponse, error) {
+	response, err := c.client.AddLink(ctx, &scrapperv1.AddLinkRequest{
+		ChatId: chatID,
+		Body: &scrapperv1.AddLinkPayload{
+			Link:    request.Link,
+			Tags:    request.Tags,
+			Filters: request.Filters,
+		},
+	})
 	if err != nil {
-		return api.LinkResponse{}, mapGRPCError(err)
+
+		return trackerapi.LinkResponse{}, mapGRPCError(err)
 	}
-	return response.Link, nil
+
+	return fromProtoLink(response.GetLink()), nil
 }
 
-func (c *GRPCClient) RemoveLink(ctx context.Context, chatID int64, request api.RemoveLinkRequest) (api.LinkResponse, error) {
-	var response dto.RemoveLinkGRPCResponse
-	err := c.conn.Invoke(ctx, "/scrapper.ScrapperService/RemoveLink", dto.RemoveLinkGRPCRequest{ChatID: chatID, Body: request}, &response)
+func (c *GRPCClient) RemoveLink(ctx context.Context, chatID int64, request trackerapi.RemoveLinkRequest) (trackerapi.LinkResponse, error) {
+	response, err := c.client.RemoveLink(ctx, &scrapperv1.RemoveLinkRequest{
+		ChatId: chatID,
+		Body: &scrapperv1.RemoveLinkPayload{
+			Link: request.Link,
+		},
+	})
 	if err != nil {
-		return api.LinkResponse{}, mapGRPCError(err)
+
+		return trackerapi.LinkResponse{}, mapGRPCError(err)
 	}
-	return response.Link, nil
+
+	return fromProtoLink(response.GetLink()), nil
 }
 
-func (c *GRPCClient) ListLinks(ctx context.Context, chatID int64) (api.ListLinksResponse, error) {
-	var response dto.ListLinksResponse
-	err := c.conn.Invoke(ctx, "/scrapper.ScrapperService/ListLinks", dto.ListLinksRequest{ChatID: chatID}, &response)
+func (c *GRPCClient) ListLinks(ctx context.Context, chatID int64) (trackerapi.ListLinksResponse, error) {
+	response, err := c.client.ListLinks(ctx, &scrapperv1.ListLinksRequest{ChatId: chatID})
 	if err != nil {
-		return api.ListLinksResponse{}, mapGRPCError(err)
+
+		return trackerapi.ListLinksResponse{}, mapGRPCError(err)
 	}
-	return response.Body, nil
+
+	return fromProtoListLinks(response), nil
 }
 
 func (c *GRPCClient) Close() error {
 	if c.closer == nil {
+
 		return nil
 	}
+
 	if err := c.closer.Close(); err != nil {
+
 		return fmt.Errorf("close grpc client connection: %w", err)
 	}
+
 	return nil
 }
 
 func mapGRPCError(err error) error {
 	if err == nil {
+
 		return nil
 	}
-	st, ok := status.FromError(err)
-	if !ok {
+
+	grpcStatus, isGRPCStatus := status.FromError(err)
+	if !isGRPCStatus {
+
 		return err
 	}
-	switch st.Code() {
+
+	switch grpcStatus.Code() {
 	case codes.NotFound:
-		return fmt.Errorf("%w: %s", tracker.ErrNotFound, st.Message())
+		return fmt.Errorf("%w: %s", tracker.ErrNotFound, grpcStatus.Message())
 	case codes.AlreadyExists:
-		return fmt.Errorf("%w: %s", tracker.ErrAlreadyExists, st.Message())
+		return fmt.Errorf("%w: %s", tracker.ErrAlreadyExists, grpcStatus.Message())
 	case codes.InvalidArgument:
-		return fmt.Errorf("%w: %s", tracker.ErrBadRequest, st.Message())
+		return fmt.Errorf("%w: %s", tracker.ErrBadRequest, grpcStatus.Message())
 	case codes.OK,
 		codes.Canceled,
 		codes.Unknown,
@@ -124,5 +153,36 @@ func mapGRPCError(err error) error {
 		return err
 	default:
 		return err
+	}
+}
+
+func fromProtoLink(link *scrapperv1.LinkResponse) trackerapi.LinkResponse {
+	if link == nil {
+
+		return trackerapi.LinkResponse{}
+	}
+
+	return trackerapi.LinkResponse{
+		ID:      link.GetId(),
+		URL:     link.GetUrl(),
+		Tags:    link.GetTags(),
+		Filters: link.GetFilters(),
+	}
+}
+
+func fromProtoListLinks(response *scrapperv1.ListLinksResponse) trackerapi.ListLinksResponse {
+	if response == nil {
+
+		return trackerapi.ListLinksResponse{}
+	}
+
+	links := make([]trackerapi.LinkResponse, 0, len(response.GetLinks()))
+	for _, link := range response.GetLinks() {
+		links = append(links, fromProtoLink(link))
+	}
+
+	return trackerapi.ListLinksResponse{
+		Links: links,
+		Size:  response.GetSize(),
 	}
 }

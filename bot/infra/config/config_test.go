@@ -3,6 +3,7 @@ package config
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -31,5 +32,45 @@ func TestLoad_FallsBackToConfigJSONWhenPrimaryMissing(t *testing.T) {
 	}
 	if cfg.TelegramToken != "token" {
 		t.Fatalf("expected telegram token from fallback, got %q", cfg.TelegramToken)
+	}
+}
+
+func TestLoad_InvalidTransportMode_ReturnsError(t *testing.T) {
+	tmp := t.TempDir()
+	configPath := filepath.Join(tmp, "config.bot.json")
+	content := `{
+		"telegram_token": "token",
+		"transport_mode": "mq"
+	}`
+	if err := os.WriteFile(configPath, []byte(content), 0o644); err != nil {
+		t.Fatalf("write config: %v", err)
+	}
+
+	_, err := Load(configPath)
+	if err == nil {
+		t.Fatalf("expected invalid transport mode error")
+	}
+	if !strings.Contains(err.Error(), "invalid transport_mode") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestLoad_TransportMode_Normalized(t *testing.T) {
+	tmp := t.TempDir()
+	configPath := filepath.Join(tmp, "config.bot.json")
+	content := `{
+		"telegram_token": "token",
+		"transport_mode": " GRPC "
+	}`
+	if err := os.WriteFile(configPath, []byte(content), 0o644); err != nil {
+		t.Fatalf("write config: %v", err)
+	}
+
+	cfg, err := Load(configPath)
+	if err != nil {
+		t.Fatalf("load config: %v", err)
+	}
+	if cfg.TransportMode != TransportModeGRPC {
+		t.Fatalf("expected normalized mode %q, got %q", TransportModeGRPC, cfg.TransportMode)
 	}
 }

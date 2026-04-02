@@ -4,34 +4,34 @@ import (
 	"sort"
 	"strings"
 
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/api"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/trackerapi"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/scrapper/repository"
 )
 
-func (s *Store) AddLink(chatID int64, request api.AddLinkRequest) (api.LinkResponse, error) {
+func (s *Store) AddLink(chatID int64, request trackerapi.AddLinkRequest) (trackerapi.LinkResponse, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	if _, ok := s.chats[chatID]; !ok {
-		return api.LinkResponse{}, repository.ErrChatNotFound
+		return trackerapi.LinkResponse{}, repository.ErrChatNotFound
 	}
 	link, linkErr := trimAndValidateLink(request.Link)
 	if linkErr != nil {
-		return api.LinkResponse{}, linkErr
+		return trackerapi.LinkResponse{}, linkErr
 	}
 
 	if _, ok := s.linksByChat[chatID]; !ok {
 		s.linksByChat[chatID] = make(map[string]struct{})
 	}
 	if _, exists := s.linksByChat[chatID][link]; exists {
-		return api.LinkResponse{}, repository.ErrLinkExists
+		return trackerapi.LinkResponse{}, repository.ErrLinkExists
 	}
 
 	tracked, exists := s.linksByURL[link]
 	if !exists {
 		tracked = &memoryLink{
 			tracked: repository.TrackedLink{
-				Response: api.LinkResponse{
+				Response: trackerapi.LinkResponse{
 					ID:      s.nextID,
 					URL:     link,
 					Tags:    nil,
@@ -76,24 +76,24 @@ func (s *Store) AddLink(chatID int64, request api.AddLinkRequest) (api.LinkRespo
 	return resp, nil
 }
 
-func (s *Store) RemoveLink(chatID int64, request api.RemoveLinkRequest) (api.LinkResponse, error) {
+func (s *Store) RemoveLink(chatID int64, request trackerapi.RemoveLinkRequest) (trackerapi.LinkResponse, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	if _, ok := s.chats[chatID]; !ok {
-		return api.LinkResponse{}, repository.ErrChatNotFound
+		return trackerapi.LinkResponse{}, repository.ErrChatNotFound
 	}
 	link := strings.TrimSpace(request.Link)
 	if link == "" {
-		return api.LinkResponse{}, repository.ErrInvalidLink
+		return trackerapi.LinkResponse{}, repository.ErrInvalidLink
 	}
 
 	chatLinks, ok := s.linksByChat[chatID]
 	if !ok {
-		return api.LinkResponse{}, repository.ErrLinkNotFound
+		return trackerapi.LinkResponse{}, repository.ErrLinkNotFound
 	}
 	if _, exists := chatLinks[link]; !exists {
-		return api.LinkResponse{}, repository.ErrLinkNotFound
+		return trackerapi.LinkResponse{}, repository.ErrLinkNotFound
 	}
 
 	resp := s.linksByURL[link].tracked.Response
@@ -113,14 +113,14 @@ func (s *Store) RemoveLink(chatID int64, request api.RemoveLinkRequest) (api.Lin
 	return resp, nil
 }
 
-func (s *Store) ListLinks(chatID int64) (api.ListLinksResponse, error) {
+func (s *Store) ListLinks(chatID int64) (trackerapi.ListLinksResponse, error) {
 	const pageSize = 100
 	offset := 0
-	out := api.ListLinksResponse{Links: make([]api.LinkResponse, 0)}
+	out := trackerapi.ListLinksResponse{Links: make([]trackerapi.LinkResponse, 0)}
 	for {
 		chunk, err := s.ListLinksPage(chatID, pageSize, offset)
 		if err != nil {
-			return api.ListLinksResponse{}, err
+			return trackerapi.ListLinksResponse{}, err
 		}
 		if len(chunk) == 0 {
 			break
@@ -132,7 +132,7 @@ func (s *Store) ListLinks(chatID int64) (api.ListLinksResponse, error) {
 	return out, nil
 }
 
-func (s *Store) ListLinksPage(chatID int64, limit int, offset int) ([]api.LinkResponse, error) {
+func (s *Store) ListLinksPage(chatID int64, limit int, offset int) ([]trackerapi.LinkResponse, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -143,7 +143,7 @@ func (s *Store) ListLinksPage(chatID int64, limit int, offset int) ([]api.LinkRe
 		limit = len(s.linksByChat[chatID])
 	}
 
-	all := make([]api.LinkResponse, 0, len(s.linksByChat[chatID]))
+	all := make([]trackerapi.LinkResponse, 0, len(s.linksByChat[chatID]))
 	for linkURL := range s.linksByChat[chatID] {
 		resp := s.linksByURL[linkURL].tracked.Response
 		resp.Tags = s.getLinkTagsLocked(chatID, linkURL)
@@ -153,7 +153,7 @@ func (s *Store) ListLinksPage(chatID int64, limit int, offset int) ([]api.LinkRe
 		return all[i].ID < all[j].ID
 	})
 	if offset >= len(all) {
-		return []api.LinkResponse{}, nil
+		return []trackerapi.LinkResponse{}, nil
 	}
 	end := offset + limit
 	if end > len(all) {

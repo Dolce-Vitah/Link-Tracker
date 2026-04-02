@@ -7,6 +7,13 @@ import (
 	"time"
 )
 
+const (
+	githubHost         = "github.com"
+	githubWWWHost      = "www.github.com"
+	stackOverflowHost  = "stackoverflow.com"
+	stackOverflowWHost = "www.stackoverflow.com"
+)
+
 type LastUpdatedClient interface {
 	GetLastUpdated(ctx context.Context, rawURL string) (time.Time, error)
 }
@@ -15,13 +22,6 @@ type HTTPClient struct {
 	githubClient        *GitHubClient
 	stackOverflowClient *StackOverflowClient
 }
-
-const (
-	githubHost         = "github.com"
-	githubWWWHost      = "www.github.com"
-	stackOverflowHost  = "stackoverflow.com"
-	stackOverflowWHost = "www.stackoverflow.com"
-)
 
 func NewHTTPClient(timeout time.Duration) *HTTPClient {
 	return &HTTPClient{
@@ -33,6 +33,7 @@ func NewHTTPClient(timeout time.Duration) *HTTPClient {
 func (c *HTTPClient) GetLastUpdated(ctx context.Context, rawURL string) (time.Time, error) {
 	u, err := url.Parse(rawURL)
 	if err != nil {
+
 		return time.Time{}, fmt.Errorf("parse url: %w", err)
 	}
 

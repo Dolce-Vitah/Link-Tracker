@@ -6,25 +6,25 @@ import (
 	"fmt"
 	"strings"
 
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/api"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/trackerapi"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/scrapper/repository"
 	"gorm.io/gorm"
 )
 
 //nolint:gocognit // Transaction flow is explicit to preserve repository invariants.
-func (r *Repository) AddLink(chatID int64, request api.AddLinkRequest) (api.LinkResponse, error) {
+func (r *Repository) AddLink(chatID int64, request trackerapi.AddLinkRequest) (trackerapi.LinkResponse, error) {
 	link, linkErr := trimAndValidateLink(request.Link)
 	if linkErr != nil {
-		return api.LinkResponse{}, linkErr
+		return trackerapi.LinkResponse{}, linkErr
 	}
 	tags := deduplicate(request.Tags)
 	filters := deduplicate(request.Filters)
 	filtersRaw, marshalErr := json.Marshal(filters)
 	if marshalErr != nil {
-		return api.LinkResponse{}, fmt.Errorf("marshal filters orm: %w", marshalErr)
+		return trackerapi.LinkResponse{}, fmt.Errorf("marshal filters orm: %w", marshalErr)
 	}
 
-	var output api.LinkResponse
+	var output trackerapi.LinkResponse
 	err := r.db.Transaction(func(tx *gorm.DB) error {
 		var chat ChatModel
 		if chatErr := tx.Where("chat_id = ?", chatID).Take(&chat).Error; chatErr != nil {
@@ -80,7 +80,7 @@ func (r *Repository) AddLink(chatID int64, request api.AddLinkRequest) (api.Link
 			}
 		}
 
-		output = api.LinkResponse{
+		output = trackerapi.LinkResponse{
 			ID:      linkModel.ID,
 			URL:     linkModel.URL,
 			Tags:    tags,
@@ -89,17 +89,17 @@ func (r *Repository) AddLink(chatID int64, request api.AddLinkRequest) (api.Link
 		return nil
 	})
 	if err != nil {
-		return api.LinkResponse{}, fmt.Errorf("add link orm transaction: %w", err)
+		return trackerapi.LinkResponse{}, fmt.Errorf("add link orm transaction: %w", err)
 	}
 	return output, nil
 }
 
-func (r *Repository) RemoveLink(chatID int64, request api.RemoveLinkRequest) (api.LinkResponse, error) {
+func (r *Repository) RemoveLink(chatID int64, request trackerapi.RemoveLinkRequest) (trackerapi.LinkResponse, error) {
 	linkURL := strings.TrimSpace(request.Link)
 	if linkURL == "" {
-		return api.LinkResponse{}, repository.ErrInvalidLink
+		return trackerapi.LinkResponse{}, repository.ErrInvalidLink
 	}
-	var output api.LinkResponse
+	var output trackerapi.LinkResponse
 	err := r.db.Transaction(func(tx *gorm.DB) error {
 		var chat ChatModel
 		if chatErr := tx.Where("chat_id = ?", chatID).Take(&chat).Error; chatErr != nil {
@@ -156,7 +156,7 @@ func (r *Repository) RemoveLink(chatID int64, request api.RemoveLinkRequest) (ap
 			return fmt.Errorf("cleanup tags after remove orm: %w", cleanupTagsErr)
 		}
 
-		output = api.LinkResponse{
+		output = trackerapi.LinkResponse{
 			ID:      link.ID,
 			URL:     linkURL,
 			Tags:    tags,
@@ -165,19 +165,19 @@ func (r *Repository) RemoveLink(chatID int64, request api.RemoveLinkRequest) (ap
 		return nil
 	})
 	if err != nil {
-		return api.LinkResponse{}, fmt.Errorf("remove link orm transaction: %w", err)
+		return trackerapi.LinkResponse{}, fmt.Errorf("remove link orm transaction: %w", err)
 	}
 	return output, nil
 }
 
-func (r *Repository) ListLinks(chatID int64) (api.ListLinksResponse, error) {
+func (r *Repository) ListLinks(chatID int64) (trackerapi.ListLinksResponse, error) {
 	const pageSize = 100
 	offset := 0
-	out := api.ListLinksResponse{Links: make([]api.LinkResponse, 0)}
+	out := trackerapi.ListLinksResponse{Links: make([]trackerapi.LinkResponse, 0)}
 	for {
 		chunk, err := r.ListLinksPage(chatID, pageSize, offset)
 		if err != nil {
-			return api.ListLinksResponse{}, err
+			return trackerapi.ListLinksResponse{}, err
 		}
 		if len(chunk) == 0 {
 			break
@@ -189,7 +189,7 @@ func (r *Repository) ListLinks(chatID int64) (api.ListLinksResponse, error) {
 	return out, nil
 }
 
-func (r *Repository) ListLinksPage(chatID int64, limit int, offset int) ([]api.LinkResponse, error) {
+func (r *Repository) ListLinksPage(chatID int64, limit int, offset int) ([]trackerapi.LinkResponse, error) {
 	var chatExists int64
 	if err := r.db.Model(&ChatModel{}).Where("chat_id = ?", chatID).Count(&chatExists).Error; err != nil {
 		return nil, fmt.Errorf("check chat exists orm: %w", err)
@@ -206,7 +206,7 @@ func (r *Repository) ListLinksPage(chatID int64, limit int, offset int) ([]api.L
 		return nil, fmt.Errorf("list chat_links orm: %w", err)
 	}
 
-	out := make([]api.LinkResponse, 0, len(chatLinks))
+	out := make([]trackerapi.LinkResponse, 0, len(chatLinks))
 	for _, chatLink := range chatLinks {
 		var link LinkModel
 		if err := r.db.Where("id = ?", chatLink.LinkID).Take(&link).Error; err != nil {
@@ -222,7 +222,7 @@ func (r *Repository) ListLinksPage(chatID int64, limit int, offset int) ([]api.L
 		if tagsErr != nil {
 			return nil, tagsErr
 		}
-		out = append(out, api.LinkResponse{
+		out = append(out, trackerapi.LinkResponse{
 			ID:      link.ID,
 			URL:     link.URL,
 			Tags:    tags,

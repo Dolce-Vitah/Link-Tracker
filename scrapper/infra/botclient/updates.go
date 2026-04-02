@@ -10,17 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/api"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/trackerapi"
 )
-
-type UpdatesSender interface {
-	SendUpdate(ctx context.Context, update api.LinkUpdate) error
-}
-
-type HTTPUpdatesClient struct {
-	baseURL string
-	client  *http.Client
-}
 
 var (
 	ErrBadRequest      = errors.New("bad request")
@@ -33,6 +24,15 @@ var (
 	ErrInternal        = errors.New("internal error")
 )
 
+type UpdatesSender interface {
+	SendUpdate(ctx context.Context, update trackerapi.LinkUpdate) error
+}
+
+type HTTPUpdatesClient struct {
+	baseURL string
+	client  *http.Client
+}
+
 func NewHTTPUpdatesClient(baseURL string, timeout time.Duration) *HTTPUpdatesClient {
 	return &HTTPUpdatesClient{
 		baseURL: strings.TrimRight(baseURL, "/"),
@@ -40,33 +40,45 @@ func NewHTTPUpdatesClient(baseURL string, timeout time.Duration) *HTTPUpdatesCli
 	}
 }
 
-func (c *HTTPUpdatesClient) SendUpdate(ctx context.Context, update api.LinkUpdate) error {
+func (c *HTTPUpdatesClient) SendUpdate(ctx context.Context, update trackerapi.LinkUpdate) error {
+	if err := update.Validate(); err != nil {
+
+		return fmt.Errorf("validate link update: %w", err)
+	}
+
 	body, err := json.Marshal(update)
 	if err != nil {
+
 		return fmt.Errorf("marshal link update: %w", err)
 	}
+
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.baseURL+"/updates", bytes.NewReader(body))
 	if err != nil {
+
 		return fmt.Errorf("build update request: %w", err)
 	}
+
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := c.client.Do(req)
 	if err != nil {
+
 		return fmt.Errorf("send update request: %w", err)
 	}
 	defer func() {
 		_ = resp.Body.Close()
 	}()
 
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return mapStatusError(resp.StatusCode)
-	}
-	return nil
+	return mapStatusError(resp.StatusCode)
 }
 
 func mapStatusError(status int) error {
 	const serverErrorMinStatus = 500
+
+	if status >= http.StatusOK && status < 300 {
+
+		return nil
+	}
 
 	switch status {
 	case http.StatusBadRequest:
@@ -83,11 +95,14 @@ func mapStatusError(status int) error {
 		return ErrTooManyRequests
 	default:
 		if status >= 400 && status < 500 {
+
 			return ErrClient
 		}
 		if status >= serverErrorMinStatus {
+
 			return ErrInternal
 		}
+
 		return fmt.Errorf("unexpected status code: %d", status)
 	}
 }

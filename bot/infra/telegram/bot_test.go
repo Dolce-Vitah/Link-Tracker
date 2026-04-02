@@ -8,10 +8,11 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	testifymock "github.com/stretchr/testify/mock"
 
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/handler"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/gateway/repository"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/handler/chat"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/domain/command"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/domain/command/mock"
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/repository"
+	trackermock "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/domain/tracker/mock"
 )
 
 func TestBot_HandleUpdate(t *testing.T) {
@@ -65,13 +66,17 @@ func TestBot_HandleUpdate(t *testing.T) {
 				Return(tgbotapi.Message{}, nil).
 				Once()
 
+			trackerMock := trackermock.NewMockClient(t)
 			bot := &Bot{
 				dispatcher: command.NewDispatcher(),
 				logger:     slog.Default(),
 				sessions:   repository.NewInMemorySessionRepository(),
+				tracker:    trackerMock,
 			}
-			bot.RegisterCommand(handler.NewStartCommandHandler(nil, nil, mockSender))
-			bot.RegisterCommand(handler.NewHelpCommandHandler(nil, mockSender))
+			chatHandler := chat.NewChatHandler(nil, mockSender, nil)
+			bot.RegisterCommand(chat.NewStartCommand(chatHandler))
+
+			bot.RegisterCommand(chat.NewHelpCommand(chatHandler))
 
 			bot.handleUpdate(context.Background(), update, mockSender)
 		})

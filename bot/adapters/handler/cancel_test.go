@@ -8,10 +8,10 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	testifymock "github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/dto"
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/handler"
+	repositorymock "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/gateway/repository/mock"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/handler/dto"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/handler/link"
 	commandmock "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/domain/command/mock"
-	repositorymock "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/repository/mock"
 )
 
 func TestCancelCommandHandler_Handle(t *testing.T) {
@@ -29,8 +29,11 @@ func TestCancelCommandHandler_Handle(t *testing.T) {
 			name:    "success",
 			request: dto.CommandRequest{Text: "/cancel", ChatID: 1},
 			setupMocks: func(sessions *repositorymock.MockSessionRepository, sender *commandmock.Sender) {
-				sessions.On("Clear", int64(1)).Once()
-				sender.EXPECT().Send(testifymock.Anything).Return(tgbotapi.Message{}, nil).Once()
+				sessions.EXPECT().Clear(int64(1)).Once()
+
+				sender.EXPECT().Send(testifymock.MatchedBy(func(msg tgbotapi.MessageConfig) bool {
+					return msg.ChatID == 1 && msg.Text != ""
+				})).Return(tgbotapi.Message{}, nil).Once()
 			},
 			assertErr: func(t *testing.T, err error) { require.NoError(t, err) },
 		},
@@ -38,8 +41,11 @@ func TestCancelCommandHandler_Handle(t *testing.T) {
 			name:    "send error",
 			request: dto.CommandRequest{Text: "/cancel", ChatID: 1},
 			setupMocks: func(sessions *repositorymock.MockSessionRepository, sender *commandmock.Sender) {
-				sessions.On("Clear", int64(1)).Once()
-				sender.EXPECT().Send(testifymock.Anything).Return(tgbotapi.Message{}, sendErr).Once()
+				sessions.EXPECT().Clear(int64(1)).Once()
+
+				sender.EXPECT().Send(testifymock.MatchedBy(func(msg tgbotapi.MessageConfig) bool {
+					return msg.ChatID == 1 && msg.Text != ""
+				})).Return(tgbotapi.Message{}, sendErr).Once()
 			},
 			assertErr: func(t *testing.T, err error) { require.ErrorIs(t, err, sendErr) },
 		},
@@ -51,10 +57,14 @@ func TestCancelCommandHandler_Handle(t *testing.T) {
 
 			sessions := repositorymock.NewMockSessionRepository(t)
 			sender := commandmock.NewSender(t)
+
 			tt.setupMocks(sessions, sender)
 
-			cmd := handler.NewCancelCommandHandler(sessions, nil, sender)
+			linkHandler := link.NewLinkHandler(sessions, nil, sender, nil)
+			cmd := link.NewCancelCommand(linkHandler)
+
 			err := cmd.Handle(context.Background(), tt.request)
+
 			tt.assertErr(t, err)
 		})
 	}

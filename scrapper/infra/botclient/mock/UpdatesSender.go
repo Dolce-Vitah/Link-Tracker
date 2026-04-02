@@ -8,7 +8,7 @@ import (
 	"context"
 
 	mock "github.com/stretchr/testify/mock"
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/api"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/trackerapi"
 )
 
 // NewMockUpdatesSender creates a new instance of MockUpdatesSender. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
@@ -39,7 +39,7 @@ func (_m *MockUpdatesSender) EXPECT() *MockUpdatesSender_Expecter {
 }
 
 // SendUpdate provides a mock function for the type MockUpdatesSender
-func (_mock *MockUpdatesSender) SendUpdate(ctx context.Context, update api.LinkUpdate) error {
+func (_mock *MockUpdatesSender) SendUpdate(ctx context.Context, update trackerapi.LinkUpdate) error {
 	ret := _mock.Called(ctx, update)
 
 	if len(ret) == 0 {
@@ -47,7 +47,7 @@ func (_mock *MockUpdatesSender) SendUpdate(ctx context.Context, update api.LinkU
 	}
 
 	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, api.LinkUpdate) error); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, trackerapi.LinkUpdate) error); ok {
 		r0 = returnFunc(ctx, update)
 	} else {
 		r0 = ret.Error(0)
@@ -62,20 +62,20 @@ type MockUpdatesSender_SendUpdate_Call struct {
 
 // SendUpdate is a helper method to define mock.On call
 //   - ctx context.Context
-//   - update api.LinkUpdate
+//   - update trackerapi.LinkUpdate
 func (_e *MockUpdatesSender_Expecter) SendUpdate(ctx interface{}, update interface{}) *MockUpdatesSender_SendUpdate_Call {
 	return &MockUpdatesSender_SendUpdate_Call{Call: _e.mock.On("SendUpdate", ctx, update)}
 }
 
-func (_c *MockUpdatesSender_SendUpdate_Call) Run(run func(ctx context.Context, update api.LinkUpdate)) *MockUpdatesSender_SendUpdate_Call {
+func (_c *MockUpdatesSender_SendUpdate_Call) Run(run func(ctx context.Context, update trackerapi.LinkUpdate)) *MockUpdatesSender_SendUpdate_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 api.LinkUpdate
+		var arg1 trackerapi.LinkUpdate
 		if args[1] != nil {
-			arg1 = args[1].(api.LinkUpdate)
+			arg1 = args[1].(trackerapi.LinkUpdate)
 		}
 		run(
 			arg0,
@@ -90,7 +90,7 @@ func (_c *MockUpdatesSender_SendUpdate_Call) Return(err error) *MockUpdatesSende
 	return _c
 }
 
-func (_c *MockUpdatesSender_SendUpdate_Call) RunAndReturn(run func(ctx context.Context, update api.LinkUpdate) error) *MockUpdatesSender_SendUpdate_Call {
+func (_c *MockUpdatesSender_SendUpdate_Call) RunAndReturn(run func(ctx context.Context, update trackerapi.LinkUpdate) error) *MockUpdatesSender_SendUpdate_Call {
 	_c.Call.Return(run)
 	return _c
 }

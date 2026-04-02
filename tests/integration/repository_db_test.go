@@ -14,8 +14,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/api"
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/scrapper/adapters/app"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/trackerapi"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/scrapper/app"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/scrapper/infra/db"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/scrapper/infra/db/migrations"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/scrapper/repository"
@@ -111,7 +111,7 @@ func runRepositoryContractScenarios(t *testing.T, svc repository.Service) {
 
 	require.NoError(t, svc.RegisterChat(chatID))
 
-	added, addErr := svc.AddLink(chatID, api.AddLinkRequest{
+	added, addErr := svc.AddLink(chatID, trackerapi.AddLinkRequest{
 		Link:    rawURL,
 		Tags:    []string{"work", "backend"},
 		Filters: []string{"lang=go"},
@@ -120,7 +120,7 @@ func runRepositoryContractScenarios(t *testing.T, svc repository.Service) {
 	require.Equal(t, rawURL, added.URL)
 	require.NotEmpty(t, added.ID)
 
-	_, duplicateErr := svc.AddLink(chatID, api.AddLinkRequest{Link: rawURL})
+	_, duplicateErr := svc.AddLink(chatID, trackerapi.AddLinkRequest{Link: rawURL})
 	require.Error(t, duplicateErr)
 	require.True(t, errors.Is(duplicateErr, repository.ErrLinkExists))
 
@@ -130,7 +130,7 @@ func runRepositoryContractScenarios(t *testing.T, svc repository.Service) {
 	require.Len(t, listed.Links, 1)
 	require.Equal(t, rawURL, listed.Links[0].URL)
 
-	removed, removeErr := svc.RemoveLink(chatID, api.RemoveLinkRequest{Link: rawURL})
+	removed, removeErr := svc.RemoveLink(chatID, trackerapi.RemoveLinkRequest{Link: rawURL})
 	require.NoError(t, removeErr)
 	require.Equal(t, rawURL, removed.URL)
 

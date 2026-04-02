@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/api"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/trackerapi"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/scrapper/repository"
 )
 
@@ -29,7 +29,7 @@ func (r *Repository) ListTrackedLinksPage(limit int, checkedBefore time.Time, af
 			return nil, fmt.Errorf("load chat links for tracked link orm: %w", err)
 		}
 		item := repository.TrackedLink{
-			Response: api.LinkResponse{
+			Response: trackerapi.LinkResponse{
 				ID:  link.ID,
 				URL: link.URL,
 			},

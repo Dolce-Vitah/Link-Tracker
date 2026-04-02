@@ -1,0 +1,69 @@
+syntax = "proto3";
+
+package scrapper.v1;
+
+option go_package = "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/grpcapi/scrapperv1;scrapperv1";
+
+service ScrapperService {
+  rpc RegisterChat(RegisterChatRequest) returns (RegisterChatResponse);
+  rpc DeleteChat(DeleteChatRequest) returns (DeleteChatResponse);
+  rpc AddLink(AddLinkRequest) returns (AddLinkResponse);
+  rpc RemoveLink(RemoveLinkRequest) returns (RemoveLinkResponse);
+  rpc ListLinks(ListLinksRequest) returns (ListLinksResponse);
+}
+
+message RegisterChatRequest {
+  int64 chat_id = 1;
+}
+
+message RegisterChatResponse {}
+
+message DeleteChatRequest {
+  int64 chat_id = 1;
+}
+
+message DeleteChatResponse {}
+
+message AddLinkPayload {
+  string link = 1;
+  repeated string tags = 2;
+  repeated string filters = 3;
+}
+
+message AddLinkRequest {
+  int64 chat_id = 1;
+  AddLinkPayload body = 2;
+}
+
+message RemoveLinkPayload {
+  string link = 1;
+}
+
+message RemoveLinkRequest {
+  int64 chat_id = 1;
+  RemoveLinkPayload body = 2;
+}
+
+message LinkResponse {
+  int64 id = 1;
+  string url = 2;
+  repeated string tags = 3;
+  repeated string filters = 4;
+}
+
+message AddLinkResponse {
+  LinkResponse link = 1;
+}
+
+message RemoveLinkResponse {
+  LinkResponse link = 1;
+}
+
+message ListLinksRequest {
+  int64 chat_id = 1;
+}
+
+message ListLinksResponse {
+  repeated LinkResponse links = 1;
+  int32 size = 2;
+}

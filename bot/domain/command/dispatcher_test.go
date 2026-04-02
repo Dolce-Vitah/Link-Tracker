@@ -7,7 +7,7 @@ import (
 
 	testifymock "github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/dto"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/handler/dto"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/domain/command"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/domain/command/mock"
 )
@@ -40,6 +40,7 @@ func TestDispatcher_Dispatch(t *testing.T) {
 			},
 			checkError: func(t *testing.T, err error) {
 				t.Helper()
+
 				require.NoError(t, err)
 			},
 		},
@@ -58,6 +59,7 @@ func TestDispatcher_Dispatch(t *testing.T) {
 			},
 			checkError: func(t *testing.T, err error) {
 				t.Helper()
+
 				require.ErrorIs(t, err, handleErr)
 			},
 		},
@@ -71,6 +73,7 @@ func TestDispatcher_Dispatch(t *testing.T) {
 			},
 			checkError: func(t *testing.T, err error) {
 				t.Helper()
+
 				require.ErrorIs(t, err, command.ErrUnknownCommand)
 			},
 		},
@@ -83,6 +86,7 @@ func TestDispatcher_Dispatch(t *testing.T) {
 			if tt.commandName != "" {
 				mockCmd := mock.NewCommand(t)
 				tt.mockBehavior(mockCmd)
+
 				dispatcher.Register(mockCmd)
 			}
 
@@ -105,10 +109,13 @@ func TestDispatcher_Commands(t *testing.T) {
 	cmd2.EXPECT().Name().Return("a_command")
 
 	dispatcher.Register(cmd1)
+
 	dispatcher.Register(cmd2)
 
 	commands := dispatcher.Commands()
 	require.Len(t, commands, 2)
+
 	require.Equal(t, "a_command", commands[0].Name())
+
 	require.Equal(t, "b_command", commands[1].Name())
 }

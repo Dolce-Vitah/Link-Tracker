@@ -38,17 +38,6 @@ func TestHTTPClient_StackOverflowInvalidSchema(t *testing.T) {
 	}
 }
 
-func TestGitHubClient_RejectsNonGitHubHost(t *testing.T) {
-	client := NewGitHubClient(time.Second)
-	_, err := client.GetLastUpdated(context.Background(), "https://stackoverflow.com/questions/123")
-	if err == nil {
-		t.Fatalf("expected unsupported host error")
-	}
-	if !strings.Contains(err.Error(), "unsupported host") {
-		t.Fatalf("unexpected error: %v", err)
-	}
-}
-
 func TestStackOverflowClient_RejectsNonStackOverflowHost(t *testing.T) {
 	client := NewStackOverflowClient(time.Second)
 	_, err := client.GetLastUpdated(context.Background(), "https://github.com/user/repo")

@@ -4,7 +4,7 @@ import (
 	"log/slog"
 	"os"
 
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/app"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/app"
 )
 
 func main() {
