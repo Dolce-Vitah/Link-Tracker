@@ -84,7 +84,7 @@ func TestBotAndScrapperContainersStart(t *testing.T) {
 		"telegram_token": "fake-test-token",
 		"telegram_api_url": "%s",
 		"bot_http_address": ":8081",
-		"bot_base_url": "http://localhost:8081",
+		"bot_base_url": "http://127.0.0.1:8081",
 		"scrapper_http_address": ":8080",
 		"scrapper_base_url": "http://localhost:8080",
 		"scrapper_grpc_address": ":8090",

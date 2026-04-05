@@ -11,7 +11,7 @@ import (
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/trackerapi"
 )
 
-func TestHTTPUpdatesClient_SendUpdate_StatusMapping(t *testing.T) {
+func TestHTTPUpdatesClient_SendLinkUpdate_StatusMapping(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
@@ -40,9 +40,14 @@ func TestHTTPUpdatesClient_SendUpdate_StatusMapping(t *testing.T) {
 			t.Cleanup(server.Close)
 
 			client := NewHTTPUpdatesClient(server.URL, time.Second)
-			err := client.SendUpdate(context.Background(), trackerapi.LinkUpdate{
+			err := client.SendLinkUpdate(context.Background(), trackerapi.LinkUpdate{
 				URL:       "https://example.com",
 				TgChatIDs: []int64{1},
+				EventKind: trackerapi.EventKindGitHubIssue,
+				Title:     "t",
+				Author:    "a",
+				CreatedAt: time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC),
+				Preview:   "p",
 			})
 
 			if tt.expectedErr == nil {
@@ -57,11 +62,26 @@ func TestHTTPUpdatesClient_SendUpdate_StatusMapping(t *testing.T) {
 	}
 }
 
-func TestHTTPUpdatesClient_SendUpdate_RejectsInvalidPayload(t *testing.T) {
+func TestHTTPUpdatesClient_SendLinkUpdate_RejectsInvalidPayload(t *testing.T) {
 	t.Parallel()
 
 	client := NewHTTPUpdatesClient("http://unused.example", time.Second)
-	err := client.SendUpdate(context.Background(), trackerapi.LinkUpdate{URL: "https://example.com"})
+	err := client.SendLinkUpdate(context.Background(), trackerapi.LinkUpdate{URL: "https://example.com"})
 	require.Error(t, err)
 	require.ErrorIs(t, err, trackerapi.ErrInvalidLinkUpdate)
+}
+
+func TestHTTPUpdatesClient_SendProcessingFailureReport_OK(t *testing.T) {
+	t.Parallel()
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, "/updates/failures", r.URL.Path)
+		w.WriteHeader(http.StatusOK)
+	}))
+	t.Cleanup(server.Close)
+	client := NewHTTPUpdatesClient(server.URL, time.Second)
+	err := client.SendProcessingFailureReport(context.Background(), trackerapi.ProcessingFailureReport{
+		TgChatID: 42,
+		URLs:     []string{"https://a.com"},
+	})
+	require.NoError(t, err)
 }

@@ -18,8 +18,9 @@ func TestBot_HandleLinkUpdateHTTP(t *testing.T) {
 		wantStatus int
 	}{
 		{
-			name:       "valid payload returns 200",
-			body:       `{"id":1,"url":"https://github.com/org/repo","description":"u","tgChatIds":[1,2]}`,
+			name: "valid payload returns 200",
+			body: `{"id":1,"url":"https://github.com/org/repo","tgChatIds":[1,2],` +
+				`"eventKind":"github_issue","title":"T","author":"a","createdAt":"2026-01-01T00:00:00Z","preview":"p"}`,
 			wantStatus: http.StatusOK,
 		},
 		{
@@ -52,6 +53,23 @@ func TestBot_HandleLinkUpdateHTTP(t *testing.T) {
 				t.Fatalf("expected %d, got %d", tt.wantStatus, rec.Code)
 			}
 		})
+	}
+}
+
+func TestBot_HandleProcessingFailuresHTTP_valid(t *testing.T) {
+	t.Parallel()
+
+	bot := &Bot{
+		sendMessage: func(_ tgbotapi.Chattable) (tgbotapi.Message, error) {
+			return tgbotapi.Message{}, nil
+		},
+	}
+	body := `{"tgChatId":99,"urls":["https://a.com"],"detail":"x"}`
+	req := httptest.NewRequest(http.MethodPost, "/updates/failures", bytes.NewReader([]byte(body)))
+	rec := httptest.NewRecorder()
+	bot.handleProcessingFailuresHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", rec.Code)
 	}
 }
 

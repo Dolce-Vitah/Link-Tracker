@@ -9,17 +9,22 @@ import (
 )
 
 type Config struct {
-	BotBaseURL          string `json:"bot_base_url"`
-	ScrapperHTTPAddress string `json:"scrapper_http_address"`
-	ScrapperGRPCAddress string `json:"scrapper_grpc_address"`
-	SchedulerInterval   string `json:"scheduler_interval"`
-	ExternalHTTPTimeout string `json:"external_http_timeout"`
-	AccessType          string `json:"access_type"`
-	DBDsn               string `json:"db_dsn"`
-	DBMaxOpenConns      int    `json:"db_max_open_conns"`
-	DBMaxIdleConns      int    `json:"db_max_idle_conns"`
-	DBConnMaxLifetime   string `json:"db_conn_max_lifetime"`
-	AutoMigrate         bool   `json:"auto_migrate"`
+	BotBaseURL              string `json:"bot_base_url"`
+	ScrapperHTTPAddress     string `json:"scrapper_http_address"`
+	ScrapperGRPCAddress     string `json:"scrapper_grpc_address"`
+	SchedulerInterval       string `json:"scheduler_interval"`
+	SchedulerDBPageSize     int    `json:"scheduler_db_page_size"`
+	SchedulerSuperBatchSize int    `json:"scheduler_super_batch_size"`
+	SchedulerWorkerCount    int    `json:"scheduler_worker_count"`
+	ExternalHTTPTimeout     string `json:"external_http_timeout"`
+	GitHubAPIBaseURL        string `json:"github_api_base_url"`
+	StackExchangeAPIBaseURL string `json:"stackexchange_api_base_url"`
+	AccessType              string `json:"access_type"`
+	DBDsn                   string `json:"db_dsn"`
+	DBMaxOpenConns          int    `json:"db_max_open_conns"`
+	DBMaxIdleConns          int    `json:"db_max_idle_conns"`
+	DBConnMaxLifetime       string `json:"db_conn_max_lifetime"`
+	AutoMigrate             bool   `json:"auto_migrate"`
 }
 
 func Load(path string) (*Config, error) {
@@ -28,7 +33,23 @@ func Load(path string) (*Config, error) {
 		return nil, err
 	}
 	applyDefaults(&cfg)
+	if err := cfg.Validate(); err != nil {
+		return nil, err
+	}
 	return &cfg, nil
+}
+
+func (cfg *Config) Validate() error {
+	if cfg.SchedulerDBPageSize < 50 || cfg.SchedulerDBPageSize > 500 {
+		return fmt.Errorf("scheduler_db_page_size must be between 50 and 500, got %d", cfg.SchedulerDBPageSize)
+	}
+	if cfg.SchedulerSuperBatchSize < 1 {
+		return fmt.Errorf("scheduler_super_batch_size must be >= 1, got %d", cfg.SchedulerSuperBatchSize)
+	}
+	if cfg.SchedulerWorkerCount < 1 {
+		return fmt.Errorf("scheduler_worker_count must be >= 1, got %d", cfg.SchedulerWorkerCount)
+	}
+	return nil
 }
 
 func decode(primaryPath string, fallbackPath string, out any) error {
@@ -68,7 +89,7 @@ func decodeSingle(path string, out any) (_ error) {
 
 func applyDefaults(cfg *Config) {
 	if cfg.BotBaseURL == "" {
-		cfg.BotBaseURL = "http://localhost:8081"
+		cfg.BotBaseURL = "http://127.0.0.1:8081"
 	}
 	if cfg.ScrapperHTTPAddress == "" {
 		cfg.ScrapperHTTPAddress = ":8080"
@@ -96,5 +117,14 @@ func applyDefaults(cfg *Config) {
 	}
 	if cfg.DBConnMaxLifetime == "" {
 		cfg.DBConnMaxLifetime = "30m"
+	}
+	if cfg.SchedulerDBPageSize == 0 {
+		cfg.SchedulerDBPageSize = 100
+	}
+	if cfg.SchedulerSuperBatchSize == 0 {
+		cfg.SchedulerSuperBatchSize = 1000
+	}
+	if cfg.SchedulerWorkerCount == 0 {
+		cfg.SchedulerWorkerCount = 4
 	}
 }

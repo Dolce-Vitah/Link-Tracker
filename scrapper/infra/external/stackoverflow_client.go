@@ -18,10 +18,13 @@ type StackOverflowClient struct {
 	baseURL    string
 }
 
-func NewStackOverflowClient(timeout time.Duration) *StackOverflowClient {
+func NewStackOverflowClient(timeout time.Duration, baseURL string) *StackOverflowClient {
+	if strings.TrimSpace(baseURL) == "" {
+		baseURL = "https://api.stackexchange.com/2.3"
+	}
 	return &StackOverflowClient{
 		httpClient: &http.Client{Timeout: timeout},
-		baseURL:    "https://api.stackexchange.com/2.3",
+		baseURL:    strings.TrimRight(baseURL, "/"),
 	}
 }
 
@@ -47,7 +50,7 @@ func (c *StackOverflowClient) getLastUpdatedFromURL(ctx context.Context, u *url.
 		return time.Time{}, errors.New("invalid stackoverflow question url")
 	}
 
-	reqURL := fmt.Sprintf("%s/questions/%d?site=stackoverflow", strings.TrimRight(c.baseURL, "/"), questionID)
+	reqURL := fmt.Sprintf("%s/questions/%d?site=stackoverflow", c.baseURL, questionID)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, reqURL, nil)
 	if err != nil {

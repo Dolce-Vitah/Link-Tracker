@@ -40,7 +40,7 @@ func TestGitHubClient_GetLastUpdated_validationErrors(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			client := NewGitHubClient(time.Second)
+			client := NewGitHubClient(time.Second, "")
 			_, err := client.GetLastUpdated(context.Background(), tt.rawURL)
 			require.Error(t, err)
 			require.Contains(t, err.Error(), tt.wantErrSubstr)
@@ -113,7 +113,7 @@ func TestGitHubClient_GetLastUpdated_http(t *testing.T) {
 			}))
 			defer srv.Close()
 
-			client := NewGitHubClient(5 * time.Second)
+			client := NewGitHubClient(5*time.Second, "")
 			client.baseURL = srv.URL
 
 			got, err := client.GetLastUpdated(context.Background(), tt.rawURL)

@@ -15,7 +15,7 @@ func TestHTTPClient_GitHubNon2xx(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	client := NewHTTPClient(time.Second)
+	client := NewHTTPClient(time.Second, "", "")
 	client.githubClient.baseURL = srv.URL
 	_, err := client.GetLastUpdated(context.Background(), "https://github.com/user/repo")
 	if err == nil {
@@ -30,7 +30,7 @@ func TestHTTPClient_StackOverflowInvalidSchema(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	client := NewHTTPClient(time.Second)
+	client := NewHTTPClient(time.Second, "", "")
 	client.stackOverflowClient.baseURL = srv.URL
 	_, err := client.GetLastUpdated(context.Background(), "https://stackoverflow.com/questions/123")
 	if err == nil {
@@ -39,7 +39,7 @@ func TestHTTPClient_StackOverflowInvalidSchema(t *testing.T) {
 }
 
 func TestStackOverflowClient_RejectsNonStackOverflowHost(t *testing.T) {
-	client := NewStackOverflowClient(time.Second)
+	client := NewStackOverflowClient(time.Second, "")
 	_, err := client.GetLastUpdated(context.Background(), "https://github.com/user/repo")
 	if err == nil {
 		t.Fatalf("expected unsupported host error")
@@ -50,7 +50,7 @@ func TestStackOverflowClient_RejectsNonStackOverflowHost(t *testing.T) {
 }
 
 func TestHTTPClient_GitHubInvalidPath(t *testing.T) {
-	client := NewHTTPClient(time.Second)
+	client := NewHTTPClient(time.Second, "", "")
 	_, err := client.GetLastUpdated(context.Background(), "https://github.com/user/repo/issues/1")
 	if err == nil {
 		t.Fatalf("expected error for non-repository github path")
@@ -61,7 +61,7 @@ func TestHTTPClient_GitHubInvalidPath(t *testing.T) {
 }
 
 func TestHTTPClient_RejectsHostContainingGitHub(t *testing.T) {
-	client := NewHTTPClient(time.Second)
+	client := NewHTTPClient(time.Second, "", "")
 	_, err := client.GetLastUpdated(context.Background(), "https://evilgithub.com/user/repo")
 	if err == nil {
 		t.Fatalf("expected unsupported host error")
@@ -110,10 +110,10 @@ func TestParseGitHubRepoPath(t *testing.T) {
 }
 
 func TestHTTPClient_StackOverflowInvalidPath(t *testing.T) {
-	client := NewHTTPClient(time.Second)
-	_, err := client.GetLastUpdated(context.Background(), "https://stackoverflow.com/questions/123/title")
+	client := NewHTTPClient(time.Second, "", "")
+	_, err := client.GetLastUpdated(context.Background(), "https://stackoverflow.com/questions/not-a-number")
 	if err == nil {
-		t.Fatalf("expected error for non-question stackoverflow path")
+		t.Fatalf("expected error for non-numeric stackoverflow question id")
 	}
 	if !strings.Contains(err.Error(), "invalid stackoverflow question url") {
 		t.Fatalf("unexpected error: %v", err)
@@ -131,7 +131,9 @@ func TestParseStackOverflowQuestionPath(t *testing.T) {
 	}{
 		{name: "valid", path: "/questions/123", wantID: 123},
 		{name: "valid trailing slash", path: "/questions/123/", wantID: 123},
-		{name: "too many segments", path: "/questions/123/title", wantErr: true},
+		{name: "with title slug", path: "/questions/123/title", wantID: 123},
+		{name: "with long slug", path: "/questions/123/title/more/segments", wantID: 123},
+		{name: "missing id", path: "/questions", wantErr: true},
 		{name: "wrong prefix", path: "/question/123", wantErr: true},
 		{name: "non numeric id", path: "/questions/abc", wantErr: true},
 		{name: "zero id", path: "/questions/0", wantErr: true},

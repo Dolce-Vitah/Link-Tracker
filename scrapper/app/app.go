@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/go-co-op/gocron"
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/scrapper/domain/scheduler"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/scrapper/domain/poller"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/scrapper/infra/botclient"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/scrapper/infra/config"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/scrapper/infra/db"
@@ -29,7 +29,7 @@ type App struct {
 	config      *config.Config
 	service     repository.Service
 	httpHandler *httpserver.Handler
-	scheduler   *scheduler.Scheduler
+	poller      *poller.Poller
 	interval    time.Duration
 	sqlDB       *sql.DB
 }
@@ -75,16 +75,21 @@ func (a *App) New() error {
 
 	httpHandler := httpserver.NewHandler(service)
 
-	externalClient := external.NewHTTPClient(timeout)
+	externalClient := external.NewHTTPClient(timeout, cfg.GitHubAPIBaseURL, cfg.StackExchangeAPIBaseURL)
 
 	updatesClient := botclient.NewHTTPUpdatesClient(cfg.BotBaseURL, timeout)
 
-	sched := scheduler.New(service, externalClient, updatesClient, interval)
+	p := poller.New(service, externalClient, updatesClient, poller.Config{
+		DBPageSize:      cfg.SchedulerDBPageSize,
+		SuperBatchSize:  cfg.SchedulerSuperBatchSize,
+		WorkerCount:     cfg.SchedulerWorkerCount,
+		CheckInterval:   interval,
+	})
 
 	a.config = cfg
 	a.service = service
 	a.httpHandler = httpHandler
-	a.scheduler = sched
+	a.poller = p
 	a.interval = interval
 	a.sqlDB = sqlDB
 
@@ -135,7 +140,7 @@ func createRepositoryByAccessType(accessType string, opts db.Options) (repositor
 func (a *App) runScheduledChecks(ctx context.Context) {
 	cron := gocron.NewScheduler(time.UTC)
 	_, err := cron.Every(a.interval).Do(func() {
-		a.scheduler.ProcessOnce(ctx)
+		a.poller.ProcessOnce(ctx)
 	})
 	if err != nil {
 		slog.Error("Failed to schedule link checks", slog.String("error", err.Error()))

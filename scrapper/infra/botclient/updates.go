@@ -24,8 +24,9 @@ var (
 	ErrInternal        = errors.New("internal error")
 )
 
-type UpdatesSender interface {
-	SendUpdate(ctx context.Context, update trackerapi.LinkUpdate) error
+type MessageSender interface {
+	SendLinkUpdate(ctx context.Context, update trackerapi.LinkUpdate) error
+	SendProcessingFailureReport(ctx context.Context, report trackerapi.ProcessingFailureReport) error
 }
 
 type HTTPUpdatesClient struct {
@@ -40,7 +41,7 @@ func NewHTTPUpdatesClient(baseURL string, timeout time.Duration) *HTTPUpdatesCli
 	}
 }
 
-func (c *HTTPUpdatesClient) SendUpdate(ctx context.Context, update trackerapi.LinkUpdate) error {
+func (c *HTTPUpdatesClient) SendLinkUpdate(ctx context.Context, update trackerapi.LinkUpdate) error {
 	if err := update.Validate(); err != nil {
 
 		return fmt.Errorf("validate link update: %w", err)
@@ -69,6 +70,29 @@ func (c *HTTPUpdatesClient) SendUpdate(ctx context.Context, update trackerapi.Li
 		_ = resp.Body.Close()
 	}()
 
+	return mapStatusError(resp.StatusCode)
+}
+
+func (c *HTTPUpdatesClient) SendProcessingFailureReport(ctx context.Context, report trackerapi.ProcessingFailureReport) error {
+	if err := report.Validate(); err != nil {
+		return fmt.Errorf("validate failure report: %w", err)
+	}
+	body, err := json.Marshal(report)
+	if err != nil {
+		return fmt.Errorf("marshal failure report: %w", err)
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.baseURL+"/updates/failures", bytes.NewReader(body))
+	if err != nil {
+		return fmt.Errorf("build failure report request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := c.client.Do(req)
+	if err != nil {
+		return fmt.Errorf("send failure report request: %w", err)
+	}
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 	return mapStatusError(resp.StatusCode)
 }
 

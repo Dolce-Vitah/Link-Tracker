@@ -43,10 +43,8 @@ func parseGitHubRepoPath(rawPath string) (string, string, error) {
 }
 
 func parseStackOverflowQuestionPath(rawPath string) (int64, error) {
-	const requiredStackPathParts = 2
-
 	parts := strings.Split(strings.Trim(rawPath, "/"), "/")
-	if len(parts) != requiredStackPathParts || parts[0] != "questions" {
+	if len(parts) < 2 || parts[0] != "questions" {
 		return 0, errors.New("invalid stackoverflow question path")
 	}
 	questionID, err := strconv.ParseInt(parts[1], 10, 64)
