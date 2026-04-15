@@ -19,18 +19,6 @@ type GRPCClient struct {
 	closer grpcCloser
 }
 
-type grpcCloser interface {
-	Close() error
-}
-
-type scrapperGRPCClient interface {
-	RegisterChat(ctx context.Context, in *scrapperv1.RegisterChatRequest, opts ...grpc.CallOption) (*scrapperv1.RegisterChatResponse, error)
-	DeleteChat(ctx context.Context, in *scrapperv1.DeleteChatRequest, opts ...grpc.CallOption) (*scrapperv1.DeleteChatResponse, error)
-	AddLink(ctx context.Context, in *scrapperv1.AddLinkRequest, opts ...grpc.CallOption) (*scrapperv1.AddLinkResponse, error)
-	RemoveLink(ctx context.Context, in *scrapperv1.RemoveLinkRequest, opts ...grpc.CallOption) (*scrapperv1.RemoveLinkResponse, error)
-	ListLinks(ctx context.Context, in *scrapperv1.ListLinksRequest, opts ...grpc.CallOption) (*scrapperv1.ListLinksResponse, error)
-}
-
 func NewGRPCClient(target string, _ time.Duration) (*GRPCClient, error) {
 	conn, err := grpc.NewClient(
 		target,
