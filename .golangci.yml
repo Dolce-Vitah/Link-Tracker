@@ -111,8 +111,6 @@ linters:
         - -ST1000
         # Use consistent method receiver names.
         - -QF1008
-
-
   exclusions:
     # Predefined exclusion rules.
     # Default: []
