@@ -10,7 +10,6 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/gateway/repository"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/handler/dto"
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/handler/linkdto"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/domain/command"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/domain/tracker"
 )
@@ -122,7 +121,7 @@ func (h *DialogHandler) handleAwaitingTags(ctx context.Context, chatID int64, pe
 	tags := parseTags(rawTags)
 	cleanURL := textOrPendingURL(pendingURL)
 
-	_, err := h.trackerService.AddLink(ctx, chatID, linkdto.AddLinkRequest{
+	_, err := h.trackerService.AddLink(ctx, chatID, dto.AddLinkRequest{
 		Link: cleanURL,
 		Tags: tags,
 	})

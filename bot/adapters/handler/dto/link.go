@@ -1,4 +1,4 @@
-package linkdto
+package dto
 
 import (
 	"errors"
