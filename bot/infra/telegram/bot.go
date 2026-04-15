@@ -29,8 +29,10 @@ func NewBot(token string, apiURL string, logger *slog.Logger, trk tracker.Client
 		logger = slog.Default()
 	}
 
-	var api *tgbotapi.BotAPI
-	var err error
+	var (
+		api *tgbotapi.BotAPI
+		err error
+	)
 
 	if apiURL != "" {
 		api, err = tgbotapi.NewBotAPIWithAPIEndpoint(token, apiURL)
