@@ -2,9 +2,9 @@ package chat
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
-	"strings"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/handler/dto"
@@ -54,7 +54,7 @@ func (h *Handler) Create(ctx context.Context, request dto.CommandRequest) error 
 
 	if h.tracker != nil {
 		err := h.tracker.RegisterChat(ctx, request.ChatID)
-		if err != nil && !strings.Contains(err.Error(), tracker.ErrAlreadyExists.Error()) {
+		if err != nil && !errors.Is(err, tracker.ErrAlreadyExists) {
 
 			return fmt.Errorf("register chat: %w", err)
 		}

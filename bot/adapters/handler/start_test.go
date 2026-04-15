@@ -3,6 +3,7 @@ package handler_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"testing"
 
@@ -13,6 +14,7 @@ import (
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/handler/chat"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/handler/dto"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/domain/command/mock"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/domain/tracker"
 	trackermock "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/domain/tracker/mock"
 )
 
@@ -54,7 +56,7 @@ func TestStartCommandHandler_Handle(t *testing.T) {
 			withTracker: true,
 			setupTracker: func(m *trackermock.MockClient) {
 				m.EXPECT().RegisterChat(testifymock.Anything, int64(12345)).
-					Return(errors.New("already exists")).Once()
+					Return(fmt.Errorf("wrapped: %w", tracker.ErrAlreadyExists)).Once()
 			},
 			setupSender: func(m *mock.Sender) {
 				m.EXPECT().Send(testifymock.MatchedBy(func(msg tgbotapi.MessageConfig) bool {
