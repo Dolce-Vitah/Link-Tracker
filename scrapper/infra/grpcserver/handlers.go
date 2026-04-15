@@ -7,7 +7,7 @@ import (
 
 	scrapperv1 "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/api/proto/scrapper/v1"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/trackerapi"
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/scrapper/repository"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/scrapper/adapters/gateway/repository"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
