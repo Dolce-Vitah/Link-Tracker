@@ -44,7 +44,6 @@ func (_m *Sender) Send(c tgbotapi.Chattable) (tgbotapi.Message, error) {
 	} else {
 		r1 = ret.Error(1)
 	}
-
 	return r0, r1
 }
 
@@ -87,6 +86,5 @@ func NewSender(t interface {
 	mock.Mock.Test(t)
 
 	t.Cleanup(func() { mock.AssertExpectations(t) })
-
 	return mock
 }

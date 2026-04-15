@@ -15,10 +15,8 @@ type DialogRequest struct {
 
 func (r DialogRequest) Validate() error {
 	if r.Update == nil || r.Update.Message == nil {
-
 		return ErrInvalidUpdate
 	}
-
 	return nil
 }
 

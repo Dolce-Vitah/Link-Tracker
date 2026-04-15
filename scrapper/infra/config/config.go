@@ -38,7 +38,6 @@ func decode(primaryPath string, fallbackPath string, out any) error {
 		}
 		return fmt.Errorf("load fallback config file %q: %w", fallbackPath, fallbackErr)
 	}
-
 	return err
 }
 
@@ -56,7 +55,6 @@ func decodeSingle(path string, out any) (_ error) {
 	if decodeErr != nil {
 		return fmt.Errorf("decode config file %q: %w", path, decodeErr)
 	}
-
 	return nil
 }
 

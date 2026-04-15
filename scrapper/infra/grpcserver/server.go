@@ -11,7 +11,6 @@ type Server struct {
 }
 
 func NewServer(service *repository.Service) *Server {
-
 	return &Server{
 		handlers: NewHandlers(service),
 	}

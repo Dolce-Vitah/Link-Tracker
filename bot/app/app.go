@@ -23,13 +23,11 @@ type App struct {
 func (a *App) New() error {
 	cfg, err := config.Load("config.bot.json")
 	if err != nil {
-
 		return fmt.Errorf("load app config: %w", err)
 	}
 
 	timeout, err := time.ParseDuration(cfg.ExternalHTTPTimeout)
 	if err != nil {
-
 		return fmt.Errorf("parse external http timeout: %w", err)
 	}
 
@@ -37,7 +35,6 @@ func (a *App) New() error {
 	if cfg.TransportMode == config.TransportModeGRPC {
 		grpcClient, grpcErr := trackerclient.NewGRPCClient(cfg.ScrapperGRPCTarget, timeout)
 		if grpcErr != nil {
-
 			return fmt.Errorf("create scrapper grpc client: %w", grpcErr)
 		}
 		trackerService = grpcClient
@@ -47,7 +44,6 @@ func (a *App) New() error {
 
 	bot, err := telegram.NewBot(cfg.TelegramToken, cfg.TelegramAPIURL, slog.Default(), trackerService)
 	if err != nil {
-
 		return fmt.Errorf("create telegram bot: %w", err)
 	}
 
@@ -79,7 +75,6 @@ func (a *App) New() error {
 	a.bot = bot
 	a.config = cfg
 	a.trackerSvc = trackerService
-
 	return nil
 }
 

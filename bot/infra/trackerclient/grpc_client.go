@@ -37,12 +37,10 @@ func NewGRPCClient(target string, _ time.Duration) (*GRPCClient, error) {
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 	if err != nil {
-
 		return nil, fmt.Errorf("dial scrapper grpc target: %w", err)
 	}
 
 	conn.Connect()
-
 	return &GRPCClient{
 		client: scrapperv1.NewScrapperServiceClient(conn),
 		closer: conn,
@@ -51,13 +49,11 @@ func NewGRPCClient(target string, _ time.Duration) (*GRPCClient, error) {
 
 func (c *GRPCClient) RegisterChat(ctx context.Context, chatID int64) error {
 	_, err := c.client.RegisterChat(ctx, &scrapperv1.RegisterChatRequest{ChatId: chatID})
-
 	return mapGRPCError(err)
 }
 
 func (c *GRPCClient) DeleteChat(ctx context.Context, chatID int64) error {
 	_, err := c.client.DeleteChat(ctx, &scrapperv1.DeleteChatRequest{ChatId: chatID})
-
 	return mapGRPCError(err)
 }
 
@@ -71,10 +67,8 @@ func (c *GRPCClient) AddLink(ctx context.Context, chatID int64, request trackera
 		},
 	})
 	if err != nil {
-
 		return trackerapi.LinkResponse{}, mapGRPCError(err)
 	}
-
 	return fromProtoLink(response.GetLink()), nil
 }
 
@@ -86,46 +80,37 @@ func (c *GRPCClient) RemoveLink(ctx context.Context, chatID int64, request track
 		},
 	})
 	if err != nil {
-
 		return trackerapi.LinkResponse{}, mapGRPCError(err)
 	}
-
 	return fromProtoLink(response.GetLink()), nil
 }
 
 func (c *GRPCClient) ListLinks(ctx context.Context, chatID int64) (trackerapi.ListLinksResponse, error) {
 	response, err := c.client.ListLinks(ctx, &scrapperv1.ListLinksRequest{ChatId: chatID})
 	if err != nil {
-
 		return trackerapi.ListLinksResponse{}, mapGRPCError(err)
 	}
-
 	return fromProtoListLinks(response), nil
 }
 
 func (c *GRPCClient) Close() error {
 	if c.closer == nil {
-
 		return nil
 	}
 
 	if err := c.closer.Close(); err != nil {
-
 		return fmt.Errorf("close grpc client connection: %w", err)
 	}
-
 	return nil
 }
 
 func mapGRPCError(err error) error {
 	if err == nil {
-
 		return nil
 	}
 
 	grpcStatus, isGRPCStatus := status.FromError(err)
 	if !isGRPCStatus {
-
 		return err
 	}
 
@@ -158,10 +143,8 @@ func mapGRPCError(err error) error {
 
 func fromProtoLink(link *scrapperv1.LinkResponse) trackerapi.LinkResponse {
 	if link == nil {
-
 		return trackerapi.LinkResponse{}
 	}
-
 	return trackerapi.LinkResponse{
 		ID:      link.GetId(),
 		URL:     link.GetUrl(),
@@ -172,7 +155,6 @@ func fromProtoLink(link *scrapperv1.LinkResponse) trackerapi.LinkResponse {
 
 func fromProtoListLinks(response *scrapperv1.ListLinksResponse) trackerapi.ListLinksResponse {
 	if response == nil {
-
 		return trackerapi.ListLinksResponse{}
 	}
 
@@ -180,7 +162,6 @@ func fromProtoListLinks(response *scrapperv1.ListLinksResponse) trackerapi.ListL
 	for _, link := range response.GetLinks() {
 		links = append(links, fromProtoLink(link))
 	}
-
 	return trackerapi.ListLinksResponse{
 		Links: links,
 		Size:  response.GetSize(),

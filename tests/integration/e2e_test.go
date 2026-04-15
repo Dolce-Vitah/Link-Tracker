@@ -101,7 +101,7 @@ func TestBotAndScrapperContainersStart(t *testing.T) {
 			Dockerfile: "Dockerfile.bot",
 		},
 		ExposedPorts: []string{"8081/tcp"},
-		ExtraHosts: []string{"host.docker.internal:host-gateway"},
+		ExtraHosts:   []string{"host.docker.internal:host-gateway"},
 		Files: []testcontainers.ContainerFile{
 			{
 				HostFilePath:      testConfigPath,

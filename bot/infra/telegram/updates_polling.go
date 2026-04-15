@@ -24,7 +24,6 @@ func (b *Bot) Start() {
 
 func (b *Bot) handleUpdate(ctx context.Context, update *tgbotapi.Update, sender command.Sender) {
 	if update == nil || update.Message == nil {
-
 		return
 	}
 
@@ -40,12 +39,10 @@ func (b *Bot) handleUpdate(ctx context.Context, update *tgbotapi.Update, sender 
 	dialogHandler := link.NewDialogHandler(b.tracker, b.sessions, sender, log)
 	if err := dialogHandler.Handle(ctx, dto.DialogRequest{Update: update}); err != nil {
 		log.Error("Failed to process track dialog step", slog.String("error", err.Error()))
-
 		return
 	}
 
 	if !update.Message.IsCommand() {
-
 		return
 	}
 
@@ -54,7 +51,6 @@ func (b *Bot) handleUpdate(ctx context.Context, update *tgbotapi.Update, sender 
 		ChatID: chatID,
 	}, cmdName)
 	if err == nil {
-
 		return
 	}
 
@@ -71,7 +67,6 @@ func (b *Bot) handleUpdate(ctx context.Context, update *tgbotapi.Update, sender 
 		}
 
 		log.Warn("Unknown command received", slog.String("username", username))
-
 		return
 	}
 

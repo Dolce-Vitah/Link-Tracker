@@ -36,7 +36,6 @@ func (_m *Command) Description() string {
 	} else {
 		r0 = ret.Get(0).(string)
 	}
-
 	return r0
 }
 
@@ -81,7 +80,6 @@ func (_m *Command) Handle(ctx context.Context, request dto.CommandRequest) error
 	} else {
 		r0 = ret.Error(0)
 	}
-
 	return r0
 }
 
@@ -128,7 +126,6 @@ func (_m *Command) Name() string {
 	} else {
 		r0 = ret.Get(0).(string)
 	}
-
 	return r0
 }
 
@@ -170,6 +167,5 @@ func NewCommand(t interface {
 	mock.Mock.Test(t)
 
 	t.Cleanup(func() { mock.AssertExpectations(t) })
-
 	return mock
 }

@@ -22,7 +22,6 @@ type Bot struct {
 
 func NewBot(token string, apiURL string, logger *slog.Logger, trk tracker.Client) (*Bot, error) {
 	if trk == nil {
-
 		return nil, errors.New("tracker client is required")
 	}
 
@@ -40,10 +39,8 @@ func NewBot(token string, apiURL string, logger *slog.Logger, trk tracker.Client
 	}
 
 	if err != nil {
-
 		return nil, fmt.Errorf("new telegram bot api: %w", err)
 	}
-
 	return &Bot{
 		api:         api,
 		dispatcher:  command.NewDispatcher(),

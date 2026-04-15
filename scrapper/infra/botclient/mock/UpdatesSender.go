@@ -21,7 +21,6 @@ func NewMockUpdatesSender(t interface {
 	mock.Mock.Test(t)
 
 	t.Cleanup(func() { mock.AssertExpectations(t) })
-
 	return mock
 }
 

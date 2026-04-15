@@ -47,11 +47,9 @@ func (s *Service) RegisterChat(chatID int64) error {
 	defer s.mu.Unlock()
 
 	if _, ok := s.chats[chatID]; ok {
-
 		return ErrChatExists
 	}
 	s.chats[chatID] = struct{}{}
-
 	return nil
 }
 
@@ -60,7 +58,6 @@ func (s *Service) DeleteChat(chatID int64) error {
 	defer s.mu.Unlock()
 
 	if _, ok := s.chats[chatID]; !ok {
-
 		return ErrChatNotFound
 	}
 	delete(s.chats, chatID)
@@ -75,7 +72,6 @@ func (s *Service) DeleteChat(chatID int64) error {
 		}
 		delete(s.linksByChat, chatID)
 	}
-
 	return nil
 }
 
@@ -84,14 +80,12 @@ func (s *Service) AddLink(chatID int64, request trackerapi.AddLinkRequest) (trac
 	defer s.mu.Unlock()
 
 	if _, ok := s.chats[chatID]; !ok {
-
 		return trackerapi.LinkResponse{}, ErrChatNotFound
 	}
 
 	link := strings.TrimSpace(request.Link)
 
 	if !isValidLink(link) {
-
 		return trackerapi.LinkResponse{}, ErrInvalidLink
 	}
 
@@ -100,7 +94,6 @@ func (s *Service) AddLink(chatID int64, request trackerapi.AddLinkRequest) (trac
 	}
 
 	if _, exists := s.linksByChat[chatID][link]; exists {
-
 		return trackerapi.LinkResponse{}, ErrLinkExists
 	}
 
@@ -121,7 +114,6 @@ func (s *Service) AddLink(chatID int64, request trackerapi.AddLinkRequest) (trac
 
 	tracked.ChatIDs[chatID] = struct{}{}
 	s.linksByChat[chatID][link] = struct{}{}
-
 	return tracked.Response, nil
 }
 
@@ -130,24 +122,20 @@ func (s *Service) RemoveLink(chatID int64, request trackerapi.RemoveLinkRequest)
 	defer s.mu.Unlock()
 
 	if _, ok := s.chats[chatID]; !ok {
-
 		return trackerapi.LinkResponse{}, ErrChatNotFound
 	}
 
 	link := strings.TrimSpace(request.Link)
 
 	if link == "" {
-
 		return trackerapi.LinkResponse{}, ErrInvalidLink
 	}
 
 	chatLinks, ok := s.linksByChat[chatID]
 	if !ok {
-
 		return trackerapi.LinkResponse{}, ErrLinkNotFound
 	}
 	if _, exists := chatLinks[link]; !exists {
-
 		return trackerapi.LinkResponse{}, ErrLinkNotFound
 	}
 
@@ -158,7 +146,6 @@ func (s *Service) RemoveLink(chatID int64, request trackerapi.RemoveLinkRequest)
 	if len(tracked.ChatIDs) == 0 {
 		delete(s.linksByURL, link)
 	}
-
 	return tracked.Response, nil
 }
 
@@ -167,7 +154,6 @@ func (s *Service) ListLinks(chatID int64) (trackerapi.ListLinksResponse, error) 
 	defer s.mu.RUnlock()
 
 	if _, ok := s.chats[chatID]; !ok {
-
 		return trackerapi.ListLinksResponse{}, ErrChatNotFound
 	}
 
@@ -179,7 +165,6 @@ func (s *Service) ListLinks(chatID int64) (trackerapi.ListLinksResponse, error) 
 		out.Links = append(out.Links, s.linksByURL[linkURL].Response)
 	}
 	out.Size = int32(len(out.Links))
-
 	return out, nil
 }
 
@@ -198,7 +183,6 @@ func (s *Service) SnapshotLinks() []TrackedLink {
 		}
 		out = append(out, clone)
 	}
-
 	return out
 }
 
@@ -207,7 +191,6 @@ func (s *Service) UpdateLastUpdated(linkURL string, value time.Time) {
 	defer s.mu.Unlock()
 	tracked, ok := s.linksByURL[linkURL]
 	if !ok {
-
 		return
 	}
 	tracked.LastUpdated = value
@@ -222,16 +205,13 @@ func deduplicate(items []string) []string {
 		}
 		out = append(out, trimmed)
 	}
-
 	return out
 }
 
 func isValidLink(value string) bool {
 	parsed, err := url.ParseRequestURI(value)
 	if err != nil {
-
 		return false
 	}
-
 	return parsed.Scheme == "http" || parsed.Scheme == "https"
 }

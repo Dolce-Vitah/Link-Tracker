@@ -120,7 +120,6 @@ func TestGitHubClient_GetLastUpdated_http(t *testing.T) {
 			if tt.wantErrSubstr != "" {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), tt.wantErrSubstr)
-
 				return
 			}
 

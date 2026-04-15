@@ -37,7 +37,6 @@ func (r *InMemorySessionRepository) Get(chatID int64) (Session, bool) {
 	defer r.mu.RUnlock()
 
 	session, ok := r.sessions[chatID]
-
 	return session, ok
 }
 

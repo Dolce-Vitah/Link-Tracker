@@ -36,11 +36,9 @@ type UnknownCommandError struct {
 }
 
 func (e *UnknownCommandError) Error() string {
-
 	return fmt.Sprintf("%s: %s", ErrUnknownCommand.Error(), e.Command)
 }
 
 func (e *UnknownCommandError) Unwrap() error {
-
 	return ErrUnknownCommand
 }

@@ -22,10 +22,8 @@ func (b *Bot) StartHTTPServer(address string) error {
 
 	err := http.ListenAndServe(address, mux)
 	if err != nil {
-
 		return fmt.Errorf("start bot http server: %w", err)
 	}
-
 	return nil
 }
 
@@ -39,7 +37,6 @@ func (b *Bot) handleLinkUpdateHTTP(w http.ResponseWriter, r *http.Request) {
 	decodeErr := json.NewDecoder(r.Body).Decode(&update)
 	if decodeErr != nil {
 		writeAPIError(w, http.StatusBadRequest, "invalid request schema")
-
 		return
 	}
 
@@ -47,7 +44,6 @@ func (b *Bot) handleLinkUpdateHTTP(w http.ResponseWriter, r *http.Request) {
 
 	if validateErr != nil {
 		writeAPIError(w, http.StatusBadRequest, validateErr.Error())
-
 		return
 	}
 

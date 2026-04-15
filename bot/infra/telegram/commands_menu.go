@@ -19,9 +19,7 @@ func (b *Bot) SetMyCommands() error {
 	config := tgbotapi.NewSetMyCommands(tgCommands...)
 	_, err := b.api.Request(config)
 	if err != nil {
-
 		return fmt.Errorf("set telegram commands menu: %w", err)
 	}
-
 	return nil
 }

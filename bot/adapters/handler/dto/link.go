@@ -18,7 +18,6 @@ func (u LinkUpdate) Validate() error {
 	if strings.TrimSpace(u.URL) == "" || len(u.TgChatIDs) == 0 {
 		return ErrInvalidLinkUpdate
 	}
-
 	return nil
 }
 
