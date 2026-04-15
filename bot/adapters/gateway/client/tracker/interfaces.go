@@ -3,7 +3,7 @@ package trackerclient
 import (
 	"context"
 
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/grpcapi/scrapperv1"
+	scrapperv1 "gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/api/proto/scrapper/v1"
 	"google.golang.org/grpc"
 )
 

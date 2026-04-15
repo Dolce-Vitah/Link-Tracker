@@ -685,7 +685,7 @@ const file_scrapper_v1_scrapper_proto_rawDesc = "" +
 	"\aAddLink\x12\x1b.scrapper.v1.AddLinkRequest\x1a\x1c.scrapper.v1.AddLinkResponse\x12M\n" +
 	"\n" +
 	"RemoveLink\x12\x1e.scrapper.v1.RemoveLinkRequest\x1a\x1f.scrapper.v1.RemoveLinkResponse\x12J\n" +
-	"\tListLinks\x12\x1d.scrapper.v1.ListLinksRequest\x1a\x1e.scrapper.v1.ListLinksResponseBlZjgitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/grpcapi/scrapperv1;scrapperv1b\x06proto3"
+	"\tListLinks\x12\x1d.scrapper.v1.ListLinksRequest\x1a\x1e.scrapper.v1.ListLinksResponseBkZigitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/api/proto/scrapper/v1;scrapperv1b\x06proto3"
 
 var (
 	file_scrapper_v1_scrapper_proto_rawDescOnce sync.Once
