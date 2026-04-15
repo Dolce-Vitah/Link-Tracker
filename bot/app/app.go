@@ -11,7 +11,6 @@ import (
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/domain/tracker"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/infra/config"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/infra/telegram"
-	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/infra/trackerclient"
 )
 
 type App struct {
@@ -33,7 +32,7 @@ func (a *App) New() error {
 
 	var trackerService tracker.Client
 	if cfg.TransportMode == config.TransportModeGRPC {
-		grpcClient, grpcErr := trackerclient.NewGRPCClient(cfg.ScrapperGRPCTarget, timeout)
+		grpcClient, grpcErr := trackergateway.NewGRPCClient(cfg.ScrapperGRPCTarget, timeout)
 		if grpcErr != nil {
 			return fmt.Errorf("create scrapper grpc client: %w", grpcErr)
 		}
