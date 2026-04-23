@@ -74,3 +74,22 @@ func TestLoad_TransportMode_Normalized(t *testing.T) {
 		t.Fatalf("expected normalized mode %q, got %q", TransportModeGRPC, cfg.TransportMode)
 	}
 }
+
+func TestLoad_NotificationMode_DefaultsToKafka(t *testing.T) {
+	tmp := t.TempDir()
+	configPath := filepath.Join(tmp, "config.bot.json")
+	content := `{
+		"telegram_token": "token"
+	}`
+	if err := os.WriteFile(configPath, []byte(content), 0o644); err != nil {
+		t.Fatalf("write config: %v", err)
+	}
+
+	cfg, err := Load(configPath)
+	if err != nil {
+		t.Fatalf("load config: %v", err)
+	}
+	if cfg.NotificationMode != NotificationModeKafka {
+		t.Fatalf("expected notification mode %q, got %q", NotificationModeKafka, cfg.NotificationMode)
+	}
+}

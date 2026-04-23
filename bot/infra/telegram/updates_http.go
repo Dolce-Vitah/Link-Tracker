@@ -57,18 +57,8 @@ func (b *Bot) handleLinkUpdateHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	for _, chatID := range update.TgChatIDs {
-		text := formatLinkUpdateMessage(update)
-
-		msg := tgbotapi.NewMessage(chatID, text)
-
-		if _, sendErr := b.sendMessage(msg); sendErr != nil {
-			slog.Error("Failed to send update message",
-				slog.String("error", sendErr.Error()),
-				slog.Int64("chat_id", chatID),
-				slog.String("url", update.URL),
-			)
-		}
+	if err := b.ProcessLinkUpdate(update); err != nil {
+		slog.Error("Failed to process update message in HTTP handler", slog.String("error", err.Error()))
 	}
 
 	w.WriteHeader(http.StatusOK)
@@ -99,6 +89,22 @@ func (b *Bot) handleProcessingFailuresHTTP(w http.ResponseWriter, r *http.Reques
 	}
 
 	w.WriteHeader(http.StatusOK)
+}
+
+func (b *Bot) ProcessLinkUpdate(update linkdto.LinkUpdate) error {
+	if err := update.Validate(); err != nil {
+		return fmt.Errorf("validate link update: %w", err)
+	}
+
+	text := formatLinkUpdateMessage(update)
+	for _, chatID := range update.TgChatIDs {
+		msg := tgbotapi.NewMessage(chatID, text)
+		if _, sendErr := b.sendMessage(msg); sendErr != nil {
+			return fmt.Errorf("send update message to chat %d: %w", chatID, sendErr)
+		}
+	}
+
+	return nil
 }
 
 func writeAPIError(w http.ResponseWriter, status int, description string) {

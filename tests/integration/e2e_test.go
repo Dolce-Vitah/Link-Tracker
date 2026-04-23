@@ -90,6 +90,7 @@ func TestBotAndScrapperContainersStart(t *testing.T) {
 		"scrapper_grpc_address": ":8090",
 		"scrapper_grpc_target": "localhost:8090",
 		"transport_mode": "http",
+		"notification_mode": "http",
 		"scheduler_interval": "30s",
 		"external_http_timeout": "5s",
 		"access_type": "SQL",
