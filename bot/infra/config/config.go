@@ -121,10 +121,10 @@ func applyDefaults(cfg *Config) {
 		cfg.KafkaConsumerGroup = defaultKafkaConsumerGroup
 	}
 	if cfg.KafkaReaderMinBytes <= 0 {
-		cfg.KafkaReaderMinBytes = 10e3
+		cfg.KafkaReaderMinBytes = 10000
 	}
 	if cfg.KafkaReaderMaxBytes <= 0 {
-		cfg.KafkaReaderMaxBytes = 10e6
+		cfg.KafkaReaderMaxBytes = 10000000
 	}
 	if cfg.KafkaMaxRetryAttempts <= 0 {
 		cfg.KafkaMaxRetryAttempts = 3

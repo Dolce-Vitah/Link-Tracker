@@ -58,10 +58,10 @@ func NewKafkaConsumer(cfg KafkaConfig, handler LinkUpdateHandler) (*KafkaConsume
 		return nil, fmt.Errorf("kafka consumer group is required")
 	}
 	if cfg.ReaderMinBytes <= 0 {
-		cfg.ReaderMinBytes = 10e3
+		cfg.ReaderMinBytes = 10000
 	}
 	if cfg.ReaderMaxBytes <= 0 {
-		cfg.ReaderMaxBytes = 10e6
+		cfg.ReaderMaxBytes = 10000000
 	}
 	if cfg.MaxRetryAttempts <= 0 {
 		cfg.MaxRetryAttempts = 3
@@ -126,6 +126,8 @@ func (c *KafkaConsumer) Run(ctx context.Context) {
 }
 
 func (c *KafkaConsumer) handleMessage(ctx context.Context, msg kafka.Message) error {
+	const retryBackoff = 200 * time.Millisecond
+
 	var update linkdto.LinkUpdate
 	if err := json.Unmarshal(msg.Value, &update); err != nil {
 		return c.sendToDLQ(ctx, msg.Value, fmt.Sprintf("deserialization_error: %v", err))
@@ -139,6 +141,13 @@ func (c *KafkaConsumer) handleMessage(ctx context.Context, msg kafka.Message) er
 		processingErr = c.handler.ProcessLinkUpdate(update)
 		if processingErr == nil {
 			return nil
+		}
+		if attempt < c.maxRetry {
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case <-time.After(retryBackoff):
+			}
 		}
 	}
 
