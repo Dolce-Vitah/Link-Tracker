@@ -16,26 +16,26 @@ const (
 )
 
 type Config struct {
-	BotBaseURL              string `json:"bot_base_url"`
-	ScrapperHTTPAddress     string `json:"scrapper_http_address"`
-	ScrapperGRPCAddress     string `json:"scrapper_grpc_address"`
+	BotBaseURL              string   `json:"bot_base_url"`
+	ScrapperHTTPAddress     string   `json:"scrapper_http_address"`
+	ScrapperGRPCAddress     string   `json:"scrapper_grpc_address"`
 	NotificationMode        string   `json:"notification_mode"`
 	KafkaBrokers            []string `json:"kafka_brokers"`
 	KafkaTopic              string   `json:"kafka_topic"`
 	KafkaWriteTimeout       string   `json:"kafka_write_timeout"`
-	SchedulerInterval       string `json:"scheduler_interval"`
-	SchedulerDBPageSize     int    `json:"scheduler_db_page_size"`
-	SchedulerSuperBatchSize int    `json:"scheduler_super_batch_size"`
-	SchedulerWorkerCount    int    `json:"scheduler_worker_count"`
-	ExternalHTTPTimeout     string `json:"external_http_timeout"`
-	GitHubAPIBaseURL        string `json:"github_api_base_url"`
-	StackExchangeAPIBaseURL string `json:"stackexchange_api_base_url"`
-	AccessType              string `json:"access_type"`
-	DBDsn                   string `json:"db_dsn"`
-	DBMaxOpenConns          int    `json:"db_max_open_conns"`
-	DBMaxIdleConns          int    `json:"db_max_idle_conns"`
-	DBConnMaxLifetime       string `json:"db_conn_max_lifetime"`
-	AutoMigrate             bool   `json:"auto_migrate"`
+	SchedulerInterval       string   `json:"scheduler_interval"`
+	SchedulerDBPageSize     int      `json:"scheduler_db_page_size"`
+	SchedulerSuperBatchSize int      `json:"scheduler_super_batch_size"`
+	SchedulerWorkerCount    int      `json:"scheduler_worker_count"`
+	ExternalHTTPTimeout     string   `json:"external_http_timeout"`
+	GitHubAPIBaseURL        string   `json:"github_api_base_url"`
+	StackExchangeAPIBaseURL string   `json:"stackexchange_api_base_url"`
+	AccessType              string   `json:"access_type"`
+	DBDsn                   string   `json:"db_dsn"`
+	DBMaxOpenConns          int      `json:"db_max_open_conns"`
+	DBMaxIdleConns          int      `json:"db_max_idle_conns"`
+	DBConnMaxLifetime       string   `json:"db_conn_max_lifetime"`
+	AutoMigrate             bool     `json:"auto_migrate"`
 }
 
 func Load(path string) (*Config, error) {

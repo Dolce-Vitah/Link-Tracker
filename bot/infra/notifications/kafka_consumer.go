@@ -34,11 +34,11 @@ type DLQMessage struct {
 }
 
 type KafkaConsumer struct {
-	reader       *kafka.Reader
-	dlqWriter    *kafka.Writer
-	handler      LinkUpdateHandler
-	sourceTopic  string
-	maxRetry     int
+	reader      *kafka.Reader
+	dlqWriter   *kafka.Writer
+	handler     LinkUpdateHandler
+	sourceTopic string
+	maxRetry    int
 }
 
 func NewKafkaConsumer(cfg KafkaConfig, handler LinkUpdateHandler) (*KafkaConsumer, error) {

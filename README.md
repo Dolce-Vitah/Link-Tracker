@@ -14,6 +14,7 @@
 
 **Архитектурные и системные требования:**
 - [x] **Различные протоколы связи:** Клиенты и серверы для интеграции между сервисами поддерживают HTTP (REST) или gRPC в зависимости от конфигурации (`transport_mode`).
+- [x] **Асинхронные уведомления Scrapper → Bot через Kafka** с переключаемым транспортом (`notification_mode`: `kafka`/`http`), JSON-сообщениями и DLQ.
 - [x] **Структурное логирование (`log/slog`).**
 - [x] **Защищенная конфигурация через `config.json`.**
 - [x] **PostgreSQL-хранилище:** миграции SQL, запуск миграций из кода, переключение `access_type` (`SQL`/`ORM`).
@@ -37,7 +38,14 @@
      cp config.example.json config.json
      ```
    - Заполните `config.json` актуальными данными, включая токен от BotFather в поле `telegram_token`.
-  - При необходимости выберите `transport_mode` (`http` или `grpc`).
+  - При необходимости выберите `transport_mode` (`http` или `grpc`) для Bot ↔ Scrapper API.
+  - Для нотификаций Scrapper → Bot настройте:
+    - `notification_mode`: `kafka` (по умолчанию) или `http`
+    - `kafka_brokers`: список брокеров
+    - `kafka_topic`: топик уведомлений
+    - `kafka_dlq_topic`: топик dead-letter (для Bot-консьюмера)
+    - `kafka_consumer_group`: group id консьюмера Bot
+    - `kafka_max_retry_attempts`: число попыток обработки в Bot
   - Для `scrapper` настройте доступ к БД:
     - `access_type`: `SQL` или `ORM`
     - `db_dsn`: строка подключения к PostgreSQL
@@ -51,6 +59,7 @@
 
 **Для локальной разработки:**
 - Поднять PostgreSQL: `make db-up`
+- Поднять Kafka-кластер и топики: `docker compose up -d zookeeper kafka1 kafka2 kafka3 kafka-init`
 - Бот: `make run-bot`
 - Парсер: `make run-scrapper`
 - Агент: `make run-agent`
@@ -83,3 +92,14 @@ make build
 - SQL-миграции находятся в каталоге `migrations/`.
 - Локальный Postgres поднимается из `docker-compose.yml`.
 - Интеграционные тесты БД используют Testcontainers (чистая БД + программный запуск миграций).
+
+### Настройки Kafka-топиков
+
+В `docker-compose.yml` автоматически создаются:
+- `link-updates` (`partitions=6`, `replication-factor=3`) — основной топик нотификаций.
+- `link-updates-dlq` (`partitions=3`, `replication-factor=3`) — DLQ для невалидных/необрабатываемых сообщений.
+
+Почему такие настройки:
+- `replication-factor=3` — отказоустойчивость при падении одного брокера.
+- Несколько partition в `link-updates` — возможность горизонтального масштабирования консьюмеров Bot.
+- Отдельный DLQ-топик — изоляция проблемных сообщений для ручного разбора без блокировки основного потока.

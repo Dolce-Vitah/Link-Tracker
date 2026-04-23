@@ -94,10 +94,10 @@ func (a *App) New() error {
 	}
 
 	p := poller.New(service, externalClient, updatesClient, poller.Config{
-		DBPageSize:      cfg.SchedulerDBPageSize,
-		SuperBatchSize:  cfg.SchedulerSuperBatchSize,
-		WorkerCount:     cfg.SchedulerWorkerCount,
-		CheckInterval:   interval,
+		DBPageSize:     cfg.SchedulerDBPageSize,
+		SuperBatchSize: cfg.SchedulerSuperBatchSize,
+		WorkerCount:    cfg.SchedulerWorkerCount,
+		CheckInterval:  interval,
 	})
 
 	a.config = cfg
