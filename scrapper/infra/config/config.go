@@ -6,12 +6,23 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
+	"strings"
+)
+
+const (
+	NotificationModeHTTP  = "http"
+	NotificationModeKafka = "kafka"
+	defaultKafkaTopic     = "link-updates"
 )
 
 type Config struct {
 	BotBaseURL              string `json:"bot_base_url"`
 	ScrapperHTTPAddress     string `json:"scrapper_http_address"`
 	ScrapperGRPCAddress     string `json:"scrapper_grpc_address"`
+	NotificationMode        string   `json:"notification_mode"`
+	KafkaBrokers            []string `json:"kafka_brokers"`
+	KafkaTopic              string   `json:"kafka_topic"`
+	KafkaWriteTimeout       string   `json:"kafka_write_timeout"`
 	SchedulerInterval       string `json:"scheduler_interval"`
 	SchedulerDBPageSize     int    `json:"scheduler_db_page_size"`
 	SchedulerSuperBatchSize int    `json:"scheduler_super_batch_size"`
@@ -40,6 +51,23 @@ func Load(path string) (*Config, error) {
 }
 
 func (cfg *Config) Validate() error {
+	mode := strings.ToLower(strings.TrimSpace(cfg.NotificationMode))
+	switch mode {
+	case NotificationModeHTTP, NotificationModeKafka:
+		cfg.NotificationMode = mode
+	default:
+		return fmt.Errorf("invalid notification_mode %q: expected %q or %q", cfg.NotificationMode, NotificationModeHTTP, NotificationModeKafka)
+	}
+
+	if cfg.NotificationMode == NotificationModeKafka {
+		if len(cfg.KafkaBrokers) == 0 {
+			return errors.New("kafka_brokers must not be empty when notification_mode is kafka")
+		}
+		if strings.TrimSpace(cfg.KafkaTopic) == "" {
+			return errors.New("kafka_topic must not be empty when notification_mode is kafka")
+		}
+	}
+
 	if cfg.SchedulerDBPageSize < 50 || cfg.SchedulerDBPageSize > 500 {
 		return fmt.Errorf("scheduler_db_page_size must be between 50 and 500, got %d", cfg.SchedulerDBPageSize)
 	}
@@ -96,6 +124,18 @@ func applyDefaults(cfg *Config) {
 	}
 	if cfg.ScrapperGRPCAddress == "" {
 		cfg.ScrapperGRPCAddress = ":8090"
+	}
+	if cfg.NotificationMode == "" {
+		cfg.NotificationMode = NotificationModeKafka
+	}
+	if len(cfg.KafkaBrokers) == 0 {
+		cfg.KafkaBrokers = []string{"localhost:9092", "localhost:9093", "localhost:9094"}
+	}
+	if cfg.KafkaTopic == "" {
+		cfg.KafkaTopic = defaultKafkaTopic
+	}
+	if cfg.KafkaWriteTimeout == "" {
+		cfg.KafkaWriteTimeout = "5s"
 	}
 	if cfg.SchedulerInterval == "" {
 		cfg.SchedulerInterval = "30s"

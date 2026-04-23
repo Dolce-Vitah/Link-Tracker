@@ -77,7 +77,21 @@ func (a *App) New() error {
 
 	externalClient := external.NewHTTPClient(timeout, cfg.GitHubAPIBaseURL, cfg.StackExchangeAPIBaseURL)
 
-	updatesClient := botclient.NewHTTPUpdatesClient(cfg.BotBaseURL, timeout)
+	var updatesClient botclient.MessageSender
+	switch cfg.NotificationMode {
+	case config.NotificationModeKafka:
+		writeTimeout, parseErr := time.ParseDuration(cfg.KafkaWriteTimeout)
+		if parseErr != nil {
+			return fmt.Errorf("parse kafka write timeout: %w", parseErr)
+		}
+		kafkaClient, kafkaErr := botclient.NewKafkaUpdatesClient(cfg.KafkaBrokers, cfg.KafkaTopic, writeTimeout)
+		if kafkaErr != nil {
+			return fmt.Errorf("create kafka updates client: %w", kafkaErr)
+		}
+		updatesClient = kafkaClient
+	default:
+		updatesClient = botclient.NewHTTPUpdatesClient(cfg.BotBaseURL, timeout)
+	}
 
 	p := poller.New(service, externalClient, updatesClient, poller.Config{
 		DBPageSize:      cfg.SchedulerDBPageSize,
