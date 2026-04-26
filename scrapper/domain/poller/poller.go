@@ -14,21 +14,27 @@ import (
 )
 
 type Config struct {
-	DBPageSize       int
-	SuperBatchSize   int
-	WorkerCount      int
-	CheckInterval    time.Duration
+	DBPageSize     int
+	SuperBatchSize int
+	WorkerCount    int
+	CheckInterval  time.Duration
 }
 
 type Poller struct {
-	store  repository.TrackedLinkService
+	store interface {
+		repository.TrackedLinkService
+		repository.OutboxService
+	}
 	ext    external.LinkChangesClient
 	sender botclient.MessageSender
 	cfg    Config
 }
 
 func New(
-	store repository.TrackedLinkService,
+	store interface {
+		repository.TrackedLinkService
+		repository.OutboxService
+	},
 	ext external.LinkChangesClient,
 	sender botclient.MessageSender,
 	cfg Config,
@@ -144,9 +150,9 @@ func (p *Poller) processOneLink(
 		return
 	}
 
-	allSent := true
+	updates := make([]trackerapi.LinkUpdate, 0, len(changes))
 	for _, ch := range changes {
-		update := trackerapi.NewLinkUpdate(
+		updates = append(updates, trackerapi.NewLinkUpdate(
 			link.Response.ID,
 			link.Response.URL,
 			chatIDs,
@@ -155,29 +161,16 @@ func (p *Poller) processOneLink(
 			ch.Author,
 			ch.CreatedAt,
 			ch.Preview,
-		)
-		if sendErr := p.sender.SendLinkUpdate(ctx, update); sendErr != nil {
-			logger.Warn("Failed to send update to bot", slog.String("error", sendErr.Error()))
-			allSent = false
-			break
-		}
+		))
 	}
 
-	if allSent {
-		if !wm.IsZero() {
-			if updErr := p.store.UpdateLastUpdated(link.Response.URL, wm); updErr != nil {
-				logger.Warn("Failed to update last_updated", slog.String("error", updErr.Error()))
-			}
-		}
-	} else {
+	if outboxErr := p.store.StoreLinkUpdates(link.Response.URL, updates, wm, time.Now().UTC()); outboxErr != nil {
+		logger.Warn("Failed to write outbox messages", slog.String("error", outboxErr.Error()))
 		mu.Lock()
 		for chatID := range link.ChatIDs {
 			failed[chatID] = append(failed[chatID], link.Response.URL)
 		}
 		mu.Unlock()
-	}
-	if touchErr := p.store.TouchLastChecked(link.Response.URL, time.Now().UTC()); touchErr != nil {
-		logger.Warn("Failed to mark last_checked_at", slog.String("error", touchErr.Error()))
 	}
 }
 

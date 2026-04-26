@@ -2,19 +2,20 @@ package botclient
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"time"
 
 	"github.com/segmentio/kafka-go"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/avrokafka"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/trackerapi"
 )
 
 type KafkaUpdatesClient struct {
 	writer *kafka.Writer
+	codec  *avrokafka.LinkUpdateCodec
 }
 
-func NewKafkaUpdatesClient(brokers []string, topic string, writeTimeout time.Duration) (*KafkaUpdatesClient, error) {
+func NewKafkaUpdatesClient(brokers []string, topic string, writeTimeout time.Duration, schemaRegistryURL string) (*KafkaUpdatesClient, error) {
 	if len(brokers) == 0 {
 		return nil, fmt.Errorf("kafka brokers are required")
 	}
@@ -23,6 +24,10 @@ func NewKafkaUpdatesClient(brokers []string, topic string, writeTimeout time.Dur
 	}
 	if writeTimeout <= 0 {
 		writeTimeout = 5 * time.Second
+	}
+	codec, err := avrokafka.NewLinkUpdateCodec(schemaRegistryURL, topic+"-value")
+	if err != nil {
+		return nil, fmt.Errorf("init avro codec: %w", err)
 	}
 
 	return &KafkaUpdatesClient{
@@ -34,6 +39,7 @@ func NewKafkaUpdatesClient(brokers []string, topic string, writeTimeout time.Dur
 			Async:        false,
 			WriteTimeout: writeTimeout,
 		},
+		codec: codec,
 	}, nil
 }
 
@@ -42,9 +48,9 @@ func (c *KafkaUpdatesClient) SendLinkUpdate(ctx context.Context, update trackera
 		return fmt.Errorf("validate link update: %w", err)
 	}
 
-	body, err := json.Marshal(update)
+	body, err := c.codec.Encode(ctx, update)
 	if err != nil {
-		return fmt.Errorf("marshal link update: %w", err)
+		return fmt.Errorf("avro encode link update: %w", err)
 	}
 
 	if writeErr := c.writer.WriteMessages(ctx, kafka.Message{Value: body}); writeErr != nil {

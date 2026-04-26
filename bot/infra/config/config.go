@@ -20,21 +20,22 @@ const (
 )
 
 type Config struct {
-	TelegramToken         string   `json:"telegram_token"`
-	TelegramAPIURL        string   `json:"telegram_api_url,omitempty"`
-	BotHTTPAddress        string   `json:"bot_http_address"`
-	ScrapperBaseURL       string   `json:"scrapper_base_url"`
-	ScrapperGRPCTarget    string   `json:"scrapper_grpc_target"`
-	TransportMode         string   `json:"transport_mode"`
-	NotificationMode      string   `json:"notification_mode"`
-	KafkaBrokers          []string `json:"kafka_brokers"`
-	KafkaTopic            string   `json:"kafka_topic"`
-	KafkaDLQTopic         string   `json:"kafka_dlq_topic"`
-	KafkaConsumerGroup    string   `json:"kafka_consumer_group"`
-	KafkaReaderMinBytes   int      `json:"kafka_reader_min_bytes"`
-	KafkaReaderMaxBytes   int      `json:"kafka_reader_max_bytes"`
-	KafkaMaxRetryAttempts int      `json:"kafka_max_retry_attempts"`
-	ExternalHTTPTimeout   string   `json:"external_http_timeout"`
+	TelegramToken          string   `json:"telegram_token"`
+	TelegramAPIURL         string   `json:"telegram_api_url,omitempty"`
+	BotHTTPAddress         string   `json:"bot_http_address"`
+	ScrapperBaseURL        string   `json:"scrapper_base_url"`
+	ScrapperGRPCTarget     string   `json:"scrapper_grpc_target"`
+	TransportMode          string   `json:"transport_mode"`
+	NotificationMode       string   `json:"notification_mode"`
+	KafkaBrokers           []string `json:"kafka_brokers"`
+	KafkaTopic             string   `json:"kafka_topic"`
+	KafkaDLQTopic          string   `json:"kafka_dlq_topic"`
+	KafkaConsumerGroup     string   `json:"kafka_consumer_group"`
+	KafkaReaderMinBytes    int      `json:"kafka_reader_min_bytes"`
+	KafkaReaderMaxBytes    int      `json:"kafka_reader_max_bytes"`
+	KafkaMaxRetryAttempts  int      `json:"kafka_max_retry_attempts"`
+	KafkaSchemaRegistryURL string   `json:"kafka_schema_registry_url"`
+	ExternalHTTPTimeout    string   `json:"external_http_timeout"`
 }
 
 func Load(path string) (*Config, error) {
@@ -129,6 +130,9 @@ func applyDefaults(cfg *Config) {
 	if cfg.KafkaMaxRetryAttempts <= 0 {
 		cfg.KafkaMaxRetryAttempts = 3
 	}
+	if cfg.KafkaSchemaRegistryURL == "" {
+		cfg.KafkaSchemaRegistryURL = "http://localhost:8085"
+	}
 	if cfg.ExternalHTTPTimeout == "" {
 		cfg.ExternalHTTPTimeout = "5s"
 	}
@@ -163,6 +167,9 @@ func normalizeAndValidate(cfg *Config) error {
 		}
 		if strings.TrimSpace(cfg.KafkaConsumerGroup) == "" {
 			return errors.New("kafka_consumer_group must not be empty when notification_mode is kafka")
+		}
+		if strings.TrimSpace(cfg.KafkaSchemaRegistryURL) == "" {
+			return errors.New("kafka_schema_registry_url must not be empty when notification_mode is kafka")
 		}
 	}
 

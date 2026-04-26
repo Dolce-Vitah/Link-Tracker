@@ -3,7 +3,11 @@
   "scrapper_http_address": ":8080",
   "scrapper_grpc_address": ":8090",
   "notification_mode": "kafka",
-  "kafka_brokers": ["localhost:9092", "localhost:9093", "localhost:9094"],
+  "kafka_brokers": [
+    "localhost:9092",
+    "localhost:9093",
+    "localhost:9094"
+  ],
   "kafka_topic": "link-updates",
   "kafka_write_timeout": "5s",
   "scheduler_interval": "30s",
@@ -18,5 +22,7 @@
   "db_max_open_conns": 10,
   "db_max_idle_conns": 5,
   "db_conn_max_lifetime": "30m",
-  "auto_migrate": true
+  "auto_migrate": true,
+  "kafka_schema_registry_url": "http://localhost:8085",
+  "outbox_dispatch_interval": "2s"
 }

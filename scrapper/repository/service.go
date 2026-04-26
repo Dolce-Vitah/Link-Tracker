@@ -64,5 +64,6 @@ type TrackingService interface {
 type Service interface {
 	TrackingService
 	TrackedLinkService
+	OutboxService
 	TagService
 }

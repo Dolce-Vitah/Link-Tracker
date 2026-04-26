@@ -47,3 +47,16 @@ type ChatLinkTagModel struct {
 }
 
 func (ChatLinkTagModel) TableName() string { return "chat_link_tags" }
+
+type OutboxMessageModel struct {
+	ID            int64      `gorm:"primaryKey;column:id"`
+	EventType     string     `gorm:"column:event_type"`
+	Payload       []byte     `gorm:"column:payload"`
+	Attempts      int        `gorm:"column:attempts"`
+	NextAttemptAt time.Time  `gorm:"column:next_attempt_at"`
+	LastError     *string    `gorm:"column:last_error"`
+	CreatedAt     time.Time  `gorm:"column:created_at"`
+	SentAt        *time.Time `gorm:"column:sent_at"`
+}
+
+func (OutboxMessageModel) TableName() string { return "outbox_messages" }

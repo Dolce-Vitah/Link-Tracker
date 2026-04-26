@@ -85,13 +85,14 @@ func (a *App) New() error {
 
 	if cfg.NotificationMode == config.NotificationModeKafka {
 		consumer, consumerErr := notifications.NewKafkaConsumer(notifications.KafkaConfig{
-			Brokers:          cfg.KafkaBrokers,
-			Topic:            cfg.KafkaTopic,
-			DLQTopic:         cfg.KafkaDLQTopic,
-			ConsumerGroup:    cfg.KafkaConsumerGroup,
-			ReaderMinBytes:   cfg.KafkaReaderMinBytes,
-			ReaderMaxBytes:   cfg.KafkaReaderMaxBytes,
-			MaxRetryAttempts: cfg.KafkaMaxRetryAttempts,
+			Brokers:           cfg.KafkaBrokers,
+			Topic:             cfg.KafkaTopic,
+			SchemaRegistryURL: cfg.KafkaSchemaRegistryURL,
+			DLQTopic:          cfg.KafkaDLQTopic,
+			ConsumerGroup:     cfg.KafkaConsumerGroup,
+			ReaderMinBytes:    cfg.KafkaReaderMinBytes,
+			ReaderMaxBytes:    cfg.KafkaReaderMaxBytes,
+			MaxRetryAttempts:  cfg.KafkaMaxRetryAttempts,
 		}, bot)
 		if consumerErr != nil {
 			return fmt.Errorf("create kafka consumer: %w", consumerErr)
