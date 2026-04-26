@@ -31,6 +31,8 @@ type App struct {
 	httpHandler *httpserver.Handler
 	poller      *poller.Poller
 	interval    time.Duration
+	outbox      *poller.OutboxDispatcher
+	outboxTick  time.Duration
 	sqlDB       *sql.DB
 }
 
@@ -84,7 +86,7 @@ func (a *App) New() error {
 		if parseErr != nil {
 			return fmt.Errorf("parse kafka write timeout: %w", parseErr)
 		}
-		kafkaClient, kafkaErr := botclient.NewKafkaUpdatesClient(cfg.KafkaBrokers, cfg.KafkaTopic, writeTimeout)
+		kafkaClient, kafkaErr := botclient.NewKafkaUpdatesClient(cfg.KafkaBrokers, cfg.KafkaTopic, writeTimeout, cfg.KafkaSchemaRegistryURL)
 		if kafkaErr != nil {
 			return fmt.Errorf("create kafka updates client: %w", kafkaErr)
 		}
@@ -106,6 +108,14 @@ func (a *App) New() error {
 	a.poller = p
 	a.interval = interval
 	a.sqlDB = sqlDB
+	if cfg.NotificationMode == config.NotificationModeKafka {
+		dispatchInterval, parseErr := time.ParseDuration(cfg.OutboxDispatchInterval)
+		if parseErr != nil {
+			return fmt.Errorf("parse outbox dispatch interval: %w", parseErr)
+		}
+		a.outbox = poller.NewOutboxDispatcher(service, updatesClient, 100, dispatchInterval)
+		a.outboxTick = dispatchInterval
+	}
 
 	return nil
 }
@@ -122,6 +132,9 @@ func (a *App) Run() {
 	go a.runScheduledChecks(ctx)
 
 	go a.runGRPCServer(ctx)
+	if a.outbox != nil {
+		go a.runOutboxDispatcher(ctx)
+	}
 
 	slog.Info("Scrapper HTTP server is up", slog.String("address", a.config.ScrapperHTTPAddress))
 
@@ -167,6 +180,23 @@ func (a *App) runScheduledChecks(ctx context.Context) {
 	<-ctx.Done()
 
 	cron.Stop()
+}
+
+func (a *App) runOutboxDispatcher(ctx context.Context) {
+	tick := a.outboxTick
+	if tick <= 0 {
+		tick = 2 * time.Second
+	}
+	ticker := time.NewTicker(tick)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			a.outbox.DispatchOnce(ctx)
+		}
+	}
 }
 
 func (a *App) runGRPCServer(ctx context.Context) {

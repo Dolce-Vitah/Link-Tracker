@@ -102,6 +102,22 @@ services:
       timeout: 5s
       retries: 10
 
+
+  schema-registry:
+    image: confluentinc/cp-schema-registry:7.7.1
+    container_name: link-tracker-schema-registry
+    restart: unless-stopped
+    depends_on:
+      - kafka1
+      - kafka2
+      - kafka3
+    ports:
+      - "8085:8081"
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: PLAINTEXT://kafka1:29092,PLAINTEXT://kafka2:29093,PLAINTEXT://kafka3:29094
+
   kafka-init:
     image: confluentinc/cp-kafka:7.7.1
     container_name: link-tracker-kafka-init

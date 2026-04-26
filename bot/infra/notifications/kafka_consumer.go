@@ -10,6 +10,7 @@ import (
 
 	"github.com/segmentio/kafka-go"
 	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/bot/adapters/handler/linkdto"
+	"gitlab.education.tbank.ru/backend-academy-go-2025/homeworks/link-tracker/pkg/avrokafka"
 )
 
 type LinkUpdateHandler interface {
@@ -17,13 +18,14 @@ type LinkUpdateHandler interface {
 }
 
 type KafkaConfig struct {
-	Brokers          []string
-	Topic            string
-	DLQTopic         string
-	ConsumerGroup    string
-	ReaderMinBytes   int
-	ReaderMaxBytes   int
-	MaxRetryAttempts int
+	SchemaRegistryURL string
+	Brokers           []string
+	Topic             string
+	DLQTopic          string
+	ConsumerGroup     string
+	ReaderMinBytes    int
+	ReaderMaxBytes    int
+	MaxRetryAttempts  int
 }
 
 type DLQMessage struct {
@@ -39,6 +41,7 @@ type KafkaConsumer struct {
 	handler     LinkUpdateHandler
 	sourceTopic string
 	maxRetry    int
+	codec       *avrokafka.LinkUpdateCodec
 }
 
 func NewKafkaConsumer(cfg KafkaConfig, handler LinkUpdateHandler) (*KafkaConsumer, error) {
@@ -76,6 +79,10 @@ func NewKafkaConsumer(cfg KafkaConfig, handler LinkUpdateHandler) (*KafkaConsume
 		StartOffset: kafka.FirstOffset,
 	})
 
+	codec, codecErr := avrokafka.NewLinkUpdateCodec(cfg.SchemaRegistryURL, cfg.Topic+"-value")
+	if codecErr != nil {
+		return nil, fmt.Errorf("init avro codec: %w", codecErr)
+	}
 	dlqWriter := &kafka.Writer{
 		Addr:         kafka.TCP(cfg.Brokers...),
 		Topic:        cfg.DLQTopic,
@@ -90,6 +97,7 @@ func NewKafkaConsumer(cfg KafkaConfig, handler LinkUpdateHandler) (*KafkaConsume
 		handler:     handler,
 		sourceTopic: cfg.Topic,
 		maxRetry:    cfg.MaxRetryAttempts,
+		codec:       codec,
 	}, nil
 }
 
@@ -129,9 +137,11 @@ func (c *KafkaConsumer) handleMessage(ctx context.Context, msg kafka.Message) er
 	const retryBackoff = 200 * time.Millisecond
 
 	var update linkdto.LinkUpdate
-	if err := json.Unmarshal(msg.Value, &update); err != nil {
+	decoded, err := c.codec.Decode(msg.Value)
+	if err != nil {
 		return c.sendToDLQ(ctx, msg.Value, fmt.Sprintf("deserialization_error: %v", err))
 	}
+	update = decoded
 	if err := update.Validate(); err != nil {
 		return c.sendToDLQ(ctx, msg.Value, fmt.Sprintf("validation_error: %v", err))
 	}

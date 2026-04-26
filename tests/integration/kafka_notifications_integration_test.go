@@ -75,13 +75,14 @@ func TestIntegration_ScrapperKafkaBotToTelegram(t *testing.T) {
 	require.NoError(t, err)
 
 	consumer, err := notifications.NewKafkaConsumer(notifications.KafkaConfig{
-		Brokers:          brokers,
-		Topic:            topic,
-		DLQTopic:         dlqTopic,
-		ConsumerGroup:    fmt.Sprintf("bot-group-%d", time.Now().UnixNano()),
-		ReaderMinBytes:   1,
-		ReaderMaxBytes:   10e6,
-		MaxRetryAttempts: 3,
+		Brokers:           brokers,
+		Topic:             topic,
+		SchemaRegistryURL: "http://localhost:8085",
+		DLQTopic:          dlqTopic,
+		ConsumerGroup:     fmt.Sprintf("bot-group-%d", time.Now().UnixNano()),
+		ReaderMinBytes:    1,
+		ReaderMaxBytes:    10e6,
+		MaxRetryAttempts:  3,
 	}, botInstance)
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = consumer.Close() })
@@ -90,7 +91,7 @@ func TestIntegration_ScrapperKafkaBotToTelegram(t *testing.T) {
 	t.Cleanup(cancel)
 	go consumer.Run(ctx)
 
-	producer, err := botclient.NewKafkaUpdatesClient(brokers, topic, 5*time.Second)
+	producer, err := botclient.NewKafkaUpdatesClient(brokers, topic, 5*time.Second, "http://localhost:8085")
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = producer.Close() })
 
@@ -139,13 +140,14 @@ func TestIntegration_KafkaConsumer_InvalidMessageToDLQ(t *testing.T) {
 
 	handler := &flakyHandler{}
 	consumer, err := notifications.NewKafkaConsumer(notifications.KafkaConfig{
-		Brokers:          brokers,
-		Topic:            topic,
-		DLQTopic:         dlqTopic,
-		ConsumerGroup:    fmt.Sprintf("bot-invalid-%d", time.Now().UnixNano()),
-		ReaderMinBytes:   1,
-		ReaderMaxBytes:   10e6,
-		MaxRetryAttempts: 2,
+		Brokers:           brokers,
+		Topic:             topic,
+		SchemaRegistryURL: "http://localhost:8085",
+		DLQTopic:          dlqTopic,
+		ConsumerGroup:     fmt.Sprintf("bot-invalid-%d", time.Now().UnixNano()),
+		ReaderMinBytes:    1,
+		ReaderMaxBytes:    10e6,
+		MaxRetryAttempts:  2,
 	}, handler)
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = consumer.Close() })
@@ -179,13 +181,14 @@ func TestIntegration_KafkaConsumer_ProcessingRetryThenDLQ(t *testing.T) {
 
 	handler := &flakyHandler{failFor: 3}
 	consumer, err := notifications.NewKafkaConsumer(notifications.KafkaConfig{
-		Brokers:          brokers,
-		Topic:            topic,
-		DLQTopic:         dlqTopic,
-		ConsumerGroup:    fmt.Sprintf("bot-retry-%d", time.Now().UnixNano()),
-		ReaderMinBytes:   1,
-		ReaderMaxBytes:   10e6,
-		MaxRetryAttempts: 3,
+		Brokers:           brokers,
+		Topic:             topic,
+		SchemaRegistryURL: "http://localhost:8085",
+		DLQTopic:          dlqTopic,
+		ConsumerGroup:     fmt.Sprintf("bot-retry-%d", time.Now().UnixNano()),
+		ReaderMinBytes:    1,
+		ReaderMaxBytes:    10e6,
+		MaxRetryAttempts:  3,
 	}, handler)
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = consumer.Close() })
@@ -194,7 +197,7 @@ func TestIntegration_KafkaConsumer_ProcessingRetryThenDLQ(t *testing.T) {
 	t.Cleanup(cancel)
 	go consumer.Run(ctx)
 
-	producer, err := botclient.NewKafkaUpdatesClient(brokers, topic, 5*time.Second)
+	producer, err := botclient.NewKafkaUpdatesClient(brokers, topic, 5*time.Second, "http://localhost:8085")
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = producer.Close() })
 

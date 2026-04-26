@@ -23,6 +23,8 @@ type Config struct {
 	KafkaBrokers            []string `json:"kafka_brokers"`
 	KafkaTopic              string   `json:"kafka_topic"`
 	KafkaWriteTimeout       string   `json:"kafka_write_timeout"`
+	KafkaSchemaRegistryURL  string   `json:"kafka_schema_registry_url"`
+	OutboxDispatchInterval  string   `json:"outbox_dispatch_interval"`
 	SchedulerInterval       string   `json:"scheduler_interval"`
 	SchedulerDBPageSize     int      `json:"scheduler_db_page_size"`
 	SchedulerSuperBatchSize int      `json:"scheduler_super_batch_size"`
@@ -65,6 +67,9 @@ func (cfg *Config) Validate() error {
 		}
 		if strings.TrimSpace(cfg.KafkaTopic) == "" {
 			return errors.New("kafka_topic must not be empty when notification_mode is kafka")
+		}
+		if strings.TrimSpace(cfg.KafkaSchemaRegistryURL) == "" {
+			return errors.New("kafka_schema_registry_url must not be empty when notification_mode is kafka")
 		}
 	}
 
@@ -133,6 +138,12 @@ func applyDefaults(cfg *Config) {
 	}
 	if cfg.KafkaTopic == "" {
 		cfg.KafkaTopic = defaultKafkaTopic
+	}
+	if cfg.KafkaSchemaRegistryURL == "" {
+		cfg.KafkaSchemaRegistryURL = "http://localhost:8085"
+	}
+	if cfg.OutboxDispatchInterval == "" {
+		cfg.OutboxDispatchInterval = "2s"
 	}
 	if cfg.KafkaWriteTimeout == "" {
 		cfg.KafkaWriteTimeout = "5s"

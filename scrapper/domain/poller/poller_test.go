@@ -131,18 +131,13 @@ func TestPoller_ProcessOnce_Flow(t *testing.T) {
 					}}, wm, nil).
 					Once()
 				expectSendLinkUpdate(sender, sent, urlMain, errors.New("send failure"))
-				sender.On("SendProcessingFailureReport", testifymock.Anything, testifymock.MatchedBy(func(r trackerapi.ProcessingFailureReport) bool {
-					return r.TgChatID == 30 && len(r.URLs) == 1 && r.URLs[0] == urlMain
-				})).
-					Return(nil).
-					Once()
 			},
 			expectedUpdatesCount: 1,
 			expectedRecipients: map[string][]int64{
 				urlMain: {30},
 			},
 			expectedLastUpdated: map[string]time.Time{
-				urlMain: {},
+				urlMain: baseTime.Add(15 * time.Minute),
 			},
 		},
 		{
@@ -195,7 +190,9 @@ func TestPoller_ProcessOnce_Flow(t *testing.T) {
 				WorkerCount:    1,
 				CheckInterval:  time.Second,
 			})
-			p.ProcessOnce(context.Background())
+			ctx := context.Background()
+			p.ProcessOnce(ctx)
+			NewOutboxDispatcher(service, sender, 100, time.Millisecond).DispatchOnce(ctx)
 
 			require.Len(t, sentUpdates, tt.expectedUpdatesCount)
 
